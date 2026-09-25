@@ -1086,14 +1086,23 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** business logic.
 
 **Acceptance (verify locally)**
-- [ ] `rm -rf .local && DB_PATH=./.local/data/db/trader.db npm run dev` creates the directory, `trader.db` and `trader.db-wal`; `PRAGMA journal_mode` is `wal`; `PRAGMA foreign_keys` in the app connection is 1 (test).
-- [ ] `.tables` lists exactly: `leagues teams games markets game_snapshots strategies strategy_versions trades trade_attempts balance_snapshots bankroll_snapshots audit_log users sessions login_attempts settings hist_games hist_prices backtests backtest_trades` plus Drizzle's migration table.
-- [ ] Restarting against the same file applies no migration and logs no error; `SELECT count(*) FROM leagues` = 6, all with a non-empty `kalshi_series` and `enabled=1`.
-- [ ] Repository tests: two `trades` rows with the same `(strategy_id, game_id)` → `UNIQUE` error; two `trade_attempts` with the same `client_order_id` → `UNIQUE` error; `settings.get('global_dry_run')` → `true` and `settings.get('global_kill_switch')` → `false` on an empty table; `set`/`get` round-trips JSON; every repository has at least one CRUD test.
-- [ ] Inserting `stake_micros: 12.5` or `fill_cc: "200"` fails validation.
-- [ ] Maintenance (fake timers): 100 snapshots aged 91 days of an archived game, 50 aged 91 days of a non-archived game, 10 aged 89 days → after the 02:30 tick 60 remain; `wal_checkpoint` is called once per day (spy).
-- [ ] `db:migrate:down` then `db:migrate` on a seeded DB succeeds with unchanged row counts.
+- [x] `rm -rf .local && DB_PATH=./.local/data/db/trader.db npm run dev` creates the directory, `trader.db` and `trader.db-wal`; `PRAGMA journal_mode` is `wal`; `PRAGMA foreign_keys` in the app connection is 1 (test).
+- [x] `.tables` lists exactly: `leagues teams games markets game_snapshots strategies strategy_versions trades trade_attempts balance_snapshots bankroll_snapshots audit_log users sessions login_attempts settings hist_games hist_prices backtests backtest_trades` plus Drizzle's migration table.
+- [x] Restarting against the same file applies no migration and logs no error; `SELECT count(*) FROM leagues` = 6, all with a non-empty `kalshi_series` and `enabled=1`.
+- [x] Repository tests: two `trades` rows with the same `(strategy_id, game_id)` → `UNIQUE` error; two `trade_attempts` with the same `client_order_id` → `UNIQUE` error; `settings.get('global_dry_run')` → `true` and `settings.get('global_kill_switch')` → `false` on an empty table; `set`/`get` round-trips JSON; every repository has at least one CRUD test.
+- [x] Inserting `stake_micros: 12.5` or `fill_cc: "200"` fails validation.
+- [x] Maintenance (fake timers): 100 snapshots aged 91 days of an archived game, 50 aged 91 days of a non-archived game, 10 aged 89 days → after the 02:30 tick 60 remain; `wal_checkpoint` is called once per day (spy).
+- [x] `db:migrate:down` then `db:migrate` on a seeded DB succeeds with unchanged row counts.
 - [ ] `/healthz` returns `503 {"ok":false,"db":"…"}` when `DB_PATH` points to an unwritable directory.
+
+**Implementation notes (T02, deviations and clarifications)**
+- Migrations live in `kalshi-trader/app/migrations/` (drizzle-kit output: `0000_initial_schema.sql`, `0001_seed_leagues.sql`, `meta/`), outside `src/` so `src/db` and `dist/db` resolve them the same way; T05's Dockerfile must copy this folder into the image. Drizzle has no down migrations, so each migration has a hand-written `migrations/down/<tag>.sql`; `db:migrate:down` runs it and removes the row from `__drizzle_migrations` in one transaction (default one step; `-- --steps N`, `-- --all`). `npm run db:generate` (drizzle-kit) was added for future schema changes.
+- The seed migration uses `INSERT OR IGNORE`; its down migration deletes the six leagues and fails (changing nothing) while teams or games still reference them. `feed_ids` is seeded as `{"apiFootball": <id>, "nhl": null}` with the API-Football league ids (EPL 39, La Liga 140, Bundesliga 78, Serie A 135, Ligue 1 61; NHL `null`); T07/T15 may refine it.
+- Drizzle emits `UNIQUE` constraints as unique indexes (`trades_strategy_game_unique`, `trade_attempts_client_order_id_unique`, …) and the `mode` check as a named `CHECK` constraint; behaviour matches §7. Schema property names are the snake_case column names.
+- Repository validation is derived from the table definition: every INTEGER column (so every `*_micros`, `*_bp`, `*_cc`) must be a safe integer, every TEXT column a string, unknown keys are rejected; NOT NULL is left to SQLite. `fee_balance_precision_micros` accepts any positive divisor of 1 000 000 (100 and 10 000 in practice).
+- Start-up vs. `/healthz`: migrations run before the server listens and a failed migration exits 1, but a database that cannot be *opened* (unwritable or missing directory) does not stop the server — it logs an `error`, `/healthz` returns `503 {"ok":false,"db":"<code>"}` (an error code such as `SQLITE_CANTOPEN` or `ENOTDIR`, never a path) and each probe retries the open, so the app recovers without a restart. Without this, the 503 acceptance item could not be observed.
+- Root ignores directory permissions, so on a root machine the unwritable directory is simulated with a regular file in place of the directory; the `chmod 555` variant is a unit test that runs on the non-root CI runner (skipped as root).
+- Maintenance runs at 02:30 in the process time zone (`TZ`, else the system zone). On the autumn DST change it runs once, at the second 02:30; on the spring change (02:30 does not exist) it runs once just after the gap.
 
 ### T03 — Request classes, authentication, sessions, HTTP hardening, audit log
 

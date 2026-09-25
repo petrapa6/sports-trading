@@ -43,6 +43,7 @@ export default defineConfig({
       PORT: String(PORT),
       LOG_LEVEL: 'warn',
       CONFIG_LOCAL_PATH: '/nonexistent/config.local.json',
+      DB_PATH: './.local/e2e/trader.db',
     },
   },
 });

@@ -17,10 +17,17 @@
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:security": "vitest run test/security && npm audit --audit-level=high",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/db-migrate.ts up",
+    "db:migrate:down": "tsx scripts/db-migrate.ts down",
+    "db:studio": "drizzle-kit studio",
     "verify:T01": "tsx scripts/verify-T01.ts",
+    "verify:T02": "tsx scripts/verify-T02.ts",
     "prepare": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.3",
     "fastify": "^5.12.5",
     "pino": "^10.3.1",
     "zod": "^4.6.5"
@@ -28,7 +35,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.20.4",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",

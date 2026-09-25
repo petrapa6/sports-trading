@@ -1,4 +1,6 @@
 import { ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
+import { startMaintenance } from '../core/maintenance.js';
+import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
 import { buildApp } from './app.js';
 import { loadConfigOrExit } from './boot.js';
 import { createLogger } from './logger.js';
@@ -39,7 +41,27 @@ log.info(
   'Starting kalshi-trader',
 );
 
-const app = buildApp({ logger: log });
+// Migrations run before the server listens; a failed migration exits 1 so the app never serves a
+// half-migrated database. A database that cannot be opened at all (unwritable directory) does not
+// stop the server: /healthz reports 503 and retries the open on every probe.
+const database = new DatabaseManager(config.dbPath, log);
+try {
+  database.open();
+} catch (err) {
+  if (err instanceof DatabaseUnavailableError) {
+    log.error(
+      { err, dbPath: config.dbPath },
+      'Database unavailable; /healthz reports 503 until it can be opened',
+    );
+  } else {
+    log.fatal({ err, dbPath: config.dbPath }, 'Database migration failed');
+    process.exit(1);
+  }
+}
+
+const maintenance = startMaintenance({ getDb: () => database.current, log });
+
+const app = buildApp({ logger: log, database });
 
 let shuttingDown = false;
 async function shutdown(signal: string): Promise<void> {
@@ -47,7 +69,9 @@ async function shutdown(signal: string): Promise<void> {
   shuttingDown = true;
   log.info({ signal }, 'Shutting down');
   try {
+    maintenance.stop();
     await app.close();
+    database.close();
     process.exit(0);
   } catch (err) {
     log.error({ err }, 'Error during shutdown');
