@@ -1,6 +1,6 @@
 # Kalshi Sports Trading Bot — Specification (final, v1)
 
-As of 2026-09-25, with both review rounds applied (§15 lists every change). Target repository: `petrapa6/sports-trading`. Reference app: `petrapa6/family-dashboard` (§14). This file is committed to the repository as `SPEC.md` and is the single source of truth; it supersedes the earlier living copy (https://claude.ai/code/artifact/b26367bb-fab1-44b2-a4e0-4416fbc377e5, rev 37).
+As of 2026-09-25, with both review rounds applied (§15 lists every change). Target repository: `petrapa6/sports-trading`. Conventions taken from the owner's existing Home Assistant app are recorded in §14 (Reference app facts), so no other repository needs to be read. This file is committed to the repository as `SPEC.md` and is the single source of truth; it supersedes the earlier living copy (https://claude.ai/code/artifact/b26367bb-fab1-44b2-a4e0-4416fbc377e5, rev 37).
 
 ### Conventions used everywhere
 
@@ -758,7 +758,7 @@ No `.env` files exist in any environment. Local development reads the same setti
 
 ## 11. Home Assistant app packaging
 
-Home Assistant calls add-ons **apps**; since Supervisor 2026.04 there is no `build.yaml` and no default `BUILD_FROM`, so the base image is an explicit `FROM` in the Dockerfile. The repository is a standard app repository added under **Settings → Apps → Repositories**. Where `petrapa6/family-dashboard` and this section differ on conventions not specified here (slug style, translations, labels, workflows), T01/T05 follow `family-dashboard`; where this section is explicit, it wins.
+Home Assistant calls add-ons **apps**; since Supervisor 2026.04 there is no `build.yaml` and no default `BUILD_FROM`, so the base image is an explicit `FROM` in the Dockerfile. The repository is a standard app repository added under **Settings → Apps → Repositories**. Where this section is silent on a convention (labels, `DOCS.md` layout, local build scripts), T01/T05 follow the reference-app facts in §14; where this section is explicit, it wins.
 
 ### Repository layout
 
@@ -784,6 +784,7 @@ name: Kalshi Sports Trader
 version: "0.1.0"
 slug: kalshi-trader
 description: In-game sports strategy trader for Kalshi with dry-run mode and backtesting
+url: https://github.com/petrapa6/sports-trading
 arch: [aarch64, amd64]
 startup: application
 boot: auto
@@ -827,7 +828,7 @@ The private key is entered as **one base64 line** (`base64 -w0 key.pem`) because
 ### `Dockerfile` (multi-stage, aarch64 + amd64)
 
 ```dockerfile
-# Both stages use the SAME pinned base (tag + digest chosen in T05, mirroring family-dashboard).
+# Both stages use the SAME pinned base (tag + digest chosen in T05; the reference app has no HA base tag to copy, see §14).
 FROM ghcr.io/home-assistant/base:<PINNED_TAG>@sha256:<DIGEST> AS build
 RUN apk add --no-cache nodejs npm python3 make g++
 WORKDIR /app
@@ -847,7 +848,9 @@ COPY run.sh /run.sh
 RUN chmod 755 /run.sh
 ENV NODE_ENV=production
 HEALTHCHECK CMD wget -qO- http://127.0.0.1:8099/healthz || exit 1
-LABEL io.hass.version="0.1.0" io.hass.type="app" io.hass.arch="aarch64|amd64"
+LABEL io.hass.version="0.1.0" io.hass.type="app" io.hass.arch="aarch64|amd64" \
+      org.opencontainers.image.title="Kalshi Sports Trader" \
+      org.opencontainers.image.source="https://github.com/petrapa6/sports-trading"
 ENTRYPOINT []
 CMD ["/run.sh"]
 ```
@@ -960,8 +963,32 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 ### Repositories and references
 
 - **Target repository:** `petrapa6/sports-trading`. Its root is the Home Assistant app repository (layout in §11); the Node project lives in `kalshi-trader/app/`. This document is committed at the root as `SPEC.md`.
-- **Reference implementation:** `petrapa6/family-dashboard` — another app by the same owner, already running on the same HAOS host with a similar pipeline (SQLite under `/share`, nightly Google Drive backup). Before T01 and again before T05 the agent reads its `repository.yaml`, `config.yaml`, `Dockerfile`, `run.sh`, the code that creates the DB path under `/share`, and its GitHub Actions workflows, and mirrors conventions §11 leaves open (slug style, translations, labels, base-image tag, workflows). Where `family-dashboard` and this spec disagree, **this spec wins** and the difference is noted in `CHANGELOG.md`. Access is through the GitHub connector or a clone; if neither is available the agent says so and proceeds from §11 alone.
+- **Reference app:** the owner's *Family Dashboard*, another Home Assistant app already running on the same HAOS host. Everything this project needs from it is recorded under **Reference app facts** below; agents do not read that repository. Where it and this spec disagree, **this spec wins**.
 - **Spec is the source of truth.** Any deviation discovered during a ticket is written into `SPEC.md` in the same commit.
+
+### Reference app facts
+
+*Family Dashboard* (Next.js 16 + Prisma 7 + SQLite via `better-sqlite3`, app version 1.0.37, packaging read on 2026-09-25) runs on the same Raspberry Pi 5 under HAOS. The table records what it does and what this app does with it. "Adopt" items are binding for T01/T05; "Differs" items are listed only so no one "fixes" this app to match the reference.
+
+| Topic | Family Dashboard | This app |
+| --- | --- | --- |
+| Repository shape | Repo root **is** the single app: `config.yaml`, `Dockerfile`, `run.sh`, `DOCS.md`, `repository.yaml` at the root; Next.js project in `app/` | Differs: app repository with the app in `kalshi-trader/` and the Node project in `kalshi-trader/app/` (§11) |
+| `repository.yaml` | Three keys: `name: Family Dashboard`, `url: <its GitHub URL>`, `maintainer: Pavel` | Adopt: same three keys — `name: Kalshi Sports Trader`, `url: https://github.com/petrapa6/sports-trading`, `maintainer: Pavel` |
+| `config.yaml` style | String values quoted (`name: "Family Dashboard"`, `version: "1.0.37"`); has a `url` key; `arch: [aarch64, amd64]`; `startup: application`; `boot: auto`; secrets as `password`, optional keys as `str?` | Adopted into §11: the `url` key. Quoting is optional (YAML-equivalent) |
+| Slug | `family_dashboard` (underscore) | Differs: `kalshi-trader` (§11 is explicit; hyphens are valid) |
+| Ports / ingress | No ingress; `ports: 8099/tcp: 8099` — **host port 8099 on the Pi is taken by Family Dashboard** | Differs: ingress on 8099, `ports: 8099/tcp: null`. If the port is ever mapped (cloudflared outside HA), it must use another host port (e.g. 8100) — `DOCS.md` says so |
+| Storage | `map: [data:rw]` (legacy string syntax); DB at `/data/dashboard.db` (`DATABASE_URL=file:/data/dashboard.db` exported in `run.sh`; dev fallback `file:./data/dashboard.db`); uploads in `/data/uploads`; nothing under `/share` | Differs: DB in `/share/kalshi-trader/trader.db`, map in object syntax (§11). The connection helper creates the directory itself (T02) because Prisma/`better-sqlite3` do not |
+| Backups | Relies on HA backups (which include the app's `/data`) plus the **Google Drive Backup** app (`sabeechen/hassio-google-drive-backup`) for nightly off-site copies; no custom backup scripts | Same Google Drive Backup app; it must back up the **Share** folder too (default for full backups) — T14 checklist item 5 verifies it |
+| Base image | `node:20-alpine`, 3 stages (`builder`, `prisma-deps`, `runner`); `apk add python3 make g++` in build stages to compile `better-sqlite3`/`bcrypt`; runtime adds `bash sqlite jq tini`; `ENTRYPOINT ["/sbin/tini","--"]`; runs as root; `EXPOSE 8099`; no `HEALTHCHECK`, no `io.hass.*` labels | Differs: pinned `ghcr.io/home-assistant/base` for both stages, Docker `init: true`, non-root (§11). No tag to copy — T05 picks it. Adopt: the same native-build toolchain (`python3 make g++`) in the build stage only |
+| `build.yaml` | Present but legacy: `build_from: aarch64: ghcr.io/home-assistant/aarch64-base:3.19` (ignored, the Dockerfile has an explicit `FROM`) and labels `org.opencontainers.image.title` / `org.opencontainers.image.source` | Differs: no `build.yaml` (§11). Adopt: the two OCI labels, moved into the Dockerfile `LABEL` (§11) |
+| `run.sh` | `#!/usr/bin/env bash`, `set -euo pipefail`; reads `/data/options.json` with `jq -r '.key // empty'`; exports env; fails fast (`exit 1`, message on stderr prefixed `[dashboard] ERROR:`) when a required secret is empty; `mkdir -p` data dirs; runs DB migrations before start (a failed migration exits 1, so the app never starts on a half-migrated DB); `exec node server.js` | Differs: `bashio` + fd-3 key hand-over (§11). Adopt: `set -e`-style fail-fast, prefixed stderr messages (`[kalshi-trader] ERROR: …`), migrations before the server listens (done in Node, T02), `exec` so Node receives signals |
+| Translations | None | Differs: `translations/en.yaml` (§11) |
+| `DOCS.md` | Sections *Configuration* (table `Option \| Description`), *Features*, *Data Storage* (paths), *Backup* | Adopt: an options table in the same `Option \| Description` form, plus *Data Storage* and *Backup* sections, alongside the T05 headings |
+| `.dockerignore` | Excludes `.git`, `node_modules`, build output, `.env*`, local data, `*.md` except `!DOCS.md` | Adopt the `*.md` / `!DOCS.md` pattern on top of §10's secret paths |
+| CI | No `.github/workflows`; checks run locally via a `Makefile` | Differs: `ci.yml` / `image.yml` (§11, §12) |
+| Local image builds | `docker buildx build --builder haos-builder --platform linux/amd64 --load` for local runs; arm64 cross-build under QEMU exported as a tarball (`--output type=docker,dest=<name>-arm64.tar.gz`), copied with `scp -P 22222 … root@<pi>:/root/` and loaded with `ssh -p 22222 root@<pi> 'docker load < …'` for manual Pi tests | Adopt: **never run `docker buildx use <builder>`** (it changes the global default and breaks other projects on the same machine); pass `--builder <name>` on each `docker buildx build`. The tarball route is optional for manual Pi tests (T14) |
+| Remote access | Cloudflare Tunnel + Cloudflare Access email gate for its two users; login rate limit; HSTS/CSP/X-Frame-Options headers | Same Cloudflare account and approach (§10 Tunnel); this app gets its own hostname and Access policy |
+| Versioning | `version` in `config.yaml` bumped per release; no `CHANGELOG.md` | Differs: `config.yaml` = `package.json` version, `CHANGELOG.md` (§11) |
 
 ### Local verification environment
 
@@ -1013,7 +1040,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Goal:** a runnable Node.js 22 / TypeScript / ESM project with Fastify serving `/healthz`, plus every guard that keeps secrets out of git.
 
 **Scope**
-- Read `petrapa6/family-dashboard` and record in `docs/decisions/0001-conventions.md` which conventions are adopted.
+- Record in `docs/decisions/0001-conventions.md` which conventions are adopted (from §11 and §14 Reference app facts).
 - Commit this document as `SPEC.md` at the repository root.
 - Layout from §4 under `kalshi-trader/app/`; `package.json` (`"engines": {"node": ">=22"}`) with `dev`, `build`, `test`, `e2e`, `lint`, `typecheck`, `audit:security`, `verify:T01` scripts; committed lockfile.
 - Fastify 5 app factory (`server/app.ts`) with Pino JSON logging and `GET /healthz` returning `{"ok":true}`; `server/main.ts` entrypoint.
@@ -1034,11 +1061,11 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 - [x] `config.local.json` `{"port": 8123}` is honoured; env `PORT=8124` overrides it.
 - [x] Decimal tests: the examples above pass; `dollarsToBp("0.93005")` throws; `fpToCc("1.555")` throws; round-trip of 1 000 random values is exact.
 - [x] Secret hook: on a scratch branch, committing a file containing `-----BEGIN RSA PRIVATE KEY-----` is rejected; `config.local.json` and `foo.db` are ignored by `git status`.
-- [x] `docs/decisions/0001-conventions.md` lists at least slug convention, `map` entries, base image tag, DB path handling taken from `family-dashboard` (or states the repo was not reachable); `SPEC.md` exists at the root.
+- [x] `docs/decisions/0001-conventions.md` lists at least slug convention, `map` entries, base image tag, DB path handling, with their source (§11 or §14 Reference app facts); `SPEC.md` exists at the root.
 - [x] Branch pushed; the GitHub Actions run is green (URL recorded in the verification doc).
 
 **Implementation notes (T01, deviations and clarifications)**
-- `petrapa6/family-dashboard` could not be read in the T01 session (clone refused by the session's permission policy); conventions come from §11 alone (`docs/decisions/0001-conventions.md`). T05 re-checks it.
+- The reference app could not be read in the T01 session, so `docs/decisions/0001-conventions.md` was written from §11 alone. Its facts have since been inlined into §14 (Reference app facts); T05 applies the "Adopt" rows and updates the decision record — no access to the reference repository is needed.
 - `config.local.json` keys are the camelCase names of the settings (`port`, `logLevel`, `allowLiveOrders`, `kalshiPrivateKeyPath`, …); unknown keys are rejected. `CONFIG_LOCAL_PATH` (env) selects another file; default `./config.local.json` in `kalshi-trader/app`. Empty environment variables count as unset (`run.sh` exports blank options). `LOG_LEVEL` accepts `debug|info|warn|error` as in `config.yaml`.
 - `npm run dev` (`scripts/dev.ts`) validates the configuration before starting `tsx watch`, so an invalid setting exits non-zero instead of leaving a watcher running. `kalshi-trader/app/.npmrc` sets `loglevel=silent` so npm's script banner does not break "every stdout line is JSON"; CI passes `--loglevel=warn` to `npm ci` / `npm audit`.
 - `lefthook.yml` and `.gitleaks.toml` live at the repository root (the git root); the hook is installed by the app's `prepare` script. `.gitleaks.toml` extends the default rules with a rule for a bare PEM private-key header (the built-in rule needs a full key body) and allow-lists `SPEC.md`, which quotes such a header. The hook also refuses force-added key/PEM/`config.local.json`/database/`.env` files, and falls back to a built-in private-key check (with a warning) if `gitleaks` is not installed. `.env` / `.env.*` are git-ignored as well.
@@ -1049,7 +1076,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Goal:** the complete §7 schema under Drizzle, with typed repositories the rest of the app uses instead of raw SQL.
 
 **Scope**
-- `better-sqlite3` connection helper: WAL, `foreign_keys=ON`, `busy_timeout=5000`, creates the `DB_PATH` directory if missing (same approach as `family-dashboard`).
+- `better-sqlite3` connection helper: WAL, `foreign_keys=ON`, `busy_timeout=5000`, creates the `DB_PATH` directory if missing (`run.sh` also creates it; the helper must not rely on that, so local runs work too).
 - Drizzle schema for every table in §7 (including `trade_attempts`, `bankroll_snapshots`, `settings`, `hist_*`, `backtests`, `backtest_trades`); initial migration; migrations on start-up; `npm run db:migrate`, `db:migrate:down`, `db:studio`.
 - Repositories with typed methods for every table; `settings` typed `get`/`set` with the §7 defaults (`global_kill_switch=false`, `global_dry_run=true`, `dry_run_bankroll_micros=100000000`, `dry_run_initial_bankroll_micros=100000000`, `fee_balance_precision_micros=100`, `order_group_contract_limit=200`).
 - Money/price/count columns validated as safe integers in the repository layer.
@@ -1135,7 +1162,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Goal:** the repository is a valid Home Assistant app repository whose image builds for `aarch64` and `amd64`, runs Node as non-root, keeps the DB in `/share/kalshi-trader`, and never exposes the private key through the environment. **Deployment to HAOS is manual, after T14.**
 
 **Scope**
-- `repository.yaml`, `kalshi-trader/config.yaml`, `Dockerfile`, `run.sh`, `translations/en.yaml`, `DOCS.md`, `icon.png`, `logo.png`, `CHANGELOG.md` exactly per §11, following `family-dashboard` where §11 is silent. Pin the base image tag and digest (verify that the tag exists for both arches and that its Alpine ships `nodejs` ≥ 22; record the choice in `docs/decisions/`).
+- `repository.yaml`, `kalshi-trader/config.yaml`, `Dockerfile`, `run.sh`, `translations/en.yaml`, `DOCS.md`, `icon.png`, `logo.png`, `CHANGELOG.md` exactly per §11, applying the "Adopt" rows of §14 Reference app facts where §11 is silent. Pin the base image tag and digest (verify that the tag exists for both arches and that its Alpine ships `nodejs` ≥ 22; record the choice in `docs/decisions/`).
 - Private key hand-over on fd 3 (`KALSHI_PRIVATE_KEY_FD`); Node reads and closes it at boot.
 - `docker-compose.yml` for local runs mapping `./.local/share:/share`, `./.local/data:/data`, `read_only: true`, `tmpfs: /tmp`, and `/data/options.json` generated by `npm run compose:options` from `config.local.json`.
 - CI `image.yml`: `docker buildx build --platform linux/arm64,linux/amd64`; optional GHCR publish workflow present but disabled.
@@ -1450,6 +1477,7 @@ Changes relative to the living copy (rev 37), for traceability:
 9. **Data gaps:** finished games archived into `hist_games` before snapshot pruning; price model joins `hist_games`; settled-event backfill; Kalshi play-by-play as a candidate free source; derived soccer minute fallback (§3, §9).
 10. **Schema additions:** `trade_attempts`, `games.blocked/competition/timeline_archived/…`, `markets.price_ranges/settlement_value_bp`, session timestamps and channel, recovery-code hashes, `audit_log.ip/channel/mode`, `trades.reconcile_warning`, `backtest_trades.price_source`, autoincrement ids for snapshot tables (§7).
 11. **T15:** `hassio_api` removed (only `homeassistant_api` needed); notifications state the mode.
+12. **Reference app inlined (after T01):** everything needed from the owner's Family Dashboard app is recorded in §14 Reference app facts, so agents no longer read that repository. It corrected an earlier assumption (Family Dashboard keeps its DB in `/data`, not `/share`) and added the `url` key, OCI labels, the host-port-8099 clash note and the `--builder` rule (§11, §14).
 
 ## Sources
 
