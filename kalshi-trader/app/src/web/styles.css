@@ -1,0 +1,579 @@
+/* Kalshi Sports Trader — one dark/light-aware, phone-first layout (SPEC.md §8). */
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #16181d;
+  --muted: #5f6673;
+  --border: #d9dde3;
+  --accent: #2563eb;
+  --accent-text: #ffffff;
+  --live: #2563eb;
+  --dry-run: #6b7280;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --ok: #15803d;
+  --radius: 10px;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --surface: #181b21;
+    --text: #e7e9ee;
+    --muted: #9aa2b1;
+    --border: #2c313a;
+    --accent: #3b82f6;
+    --live: #60a5fa;
+    --dry-run: #9ca3af;
+    --danger: #f87171;
+    --danger-soft: #3a1618;
+    --ok: #4ade80;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.75rem;
+}
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.75rem;
+}
+h3 {
+  font-size: 1.05rem;
+  margin: 1rem 0 0.5rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+button.small {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+input,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  max-width: 100%;
+}
+
+.error {
+  color: var(--danger);
+}
+.success {
+  color: var(--ok);
+}
+.hint {
+  color: var(--muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+.form,
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.form label,
+.auth-card label {
+  margin-top: 0.4rem;
+  font-weight: 500;
+}
+.form button,
+.auth-card button {
+  margin-top: 0.8rem;
+  align-self: flex-start;
+}
+
+/* Login / setup */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+.auth-card {
+  width: 100%;
+  max-width: 24rem;
+}
+.lockout {
+  font-weight: 600;
+}
+
+/* App header */
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  font-weight: 700;
+}
+.main-nav,
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.main-nav a,
+.subnav a {
+  text-decoration: none;
+  color: var(--text);
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+}
+.main-nav a[aria-current='page'],
+.subnav a[aria-current='page'] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.subnav {
+  margin-bottom: 1rem;
+}
+.header-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.content {
+  padding: 1rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+.loading {
+  padding: 2rem;
+}
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.live-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.live-indicator--connected .live-dot,
+.live-indicator--reconnected .live-dot {
+  background: var(--ok);
+}
+.live-indicator--reconnecting .live-dot {
+  background: var(--danger);
+}
+
+/* Mode badges: live solid accent, dry run outlined neutral */
+.mode-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.mode-badge--live {
+  background: var(--live);
+  color: #fff;
+}
+.mode-badge--dry_run {
+  border-color: var(--dry-run);
+  color: var(--dry-run);
+}
+.mode-badge--downgraded {
+  border-style: dashed;
+}
+.mode-badge--none {
+  color: var(--muted);
+}
+
+/* Status strip */
+.status-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.status-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.status-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.status-value {
+  font-weight: 600;
+}
+.status-item--danger .status-value {
+  color: var(--danger);
+}
+.status-item--ok .status-value {
+  color: var(--ok);
+}
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.filter-group > label,
+.filter-group > legend {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0;
+}
+.chips,
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.chip,
+.segmented label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.segmented label.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+/* Settings */
+.settings-section {
+  max-width: 48rem;
+}
+.switch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+.switch-card.kill {
+  border: 2px solid var(--danger);
+}
+.switch-card.kill.on {
+  background: var(--danger-soft);
+}
+.switch-card p {
+  margin: 0.5rem 0 0;
+}
+.switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+/* The real checkbox covers the whole row (invisible), so every click and tap lands on it. */
+.switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+.switch .track {
+  flex: none;
+  width: 2.6rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--border);
+  position: relative;
+  transition: background 0.15s;
+}
+.switch .track::after {
+  content: '';
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.switch input:checked + .track {
+  background: var(--accent);
+}
+.switch input:checked + .track::after {
+  transform: translateX(1.1rem);
+}
+.switch input:focus-visible + .track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.switch.big .track {
+  width: 3.4rem;
+  height: 2rem;
+}
+.switch.big .track::after {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+.switch.big input:checked + .track {
+  background: var(--danger);
+}
+.switch.big input:checked + .track::after {
+  transform: translateX(1.4rem);
+}
+
+.readonly-list {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.readonly-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  min-width: 0;
+}
+.readonly-item dt {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.readonly-item dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.readonly-item.locked {
+  border-style: dashed;
+}
+
+.qr {
+  background: #fff;
+  padding: 0.5rem;
+  border-radius: 8px;
+  align-self: flex-start;
+}
+.recovery-codes ul {
+  columns: 2;
+  padding-left: 1.2rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.ua {
+  display: inline-block;
+  max-width: 16rem;
+  overflow-wrap: anywhere;
+}
+
+.log-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.log-header h3 {
+  margin: 0 auto 0 0;
+}
+.log-tail {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  max-height: 28rem;
+  overflow: auto;
+}
+.log-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+.log-msg {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.log-level {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.level-warn .log-level {
+  color: #b45309;
+}
+.level-error .log-level,
+.level-fatal .log-level {
+  color: var(--danger);
+}
+
+/* Step-up dialog */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 10;
+}
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.modal .actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.placeholder p {
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .content {
+    padding: 1.5rem;
+  }
+}

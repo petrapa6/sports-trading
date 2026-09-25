@@ -18,7 +18,9 @@ built-in private-key check; CI always runs gitleaks.
 git clone https://github.com/petrapa6/sports-trading.git
 cd sports-trading/kalshi-trader/app
 npm install          # also installs the lefthook pre-commit hook
-npm run dev          # API on http://localhost:8099
+npm run build        # compiles the server and builds the web app into dist/web
+npm run dev          # app + API on http://localhost:8099 (serves the last web build)
+npm run dev:web      # optional: UI with hot reload on http://localhost:5173, proxying the API to :8099
 curl -s localhost:8099/healthz   # {"ok":true} (503 {"ok":false,"db":"…"} if the database cannot be opened)
 ```
 
@@ -31,10 +33,11 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 
 | Script | What it does |
 | --- | --- |
-| `npm run dev` | API on `:8099` with reload (the Vite UI on `:5173` arrives with T04) |
-| `npm run build` / `npm start` | Compile to `dist/` and run `dist/server/main.js` |
+| `npm run dev` | App + API on `:8099` with reload; serves the React build from `dist/web` (without one, minimal server-rendered login/setup pages) |
+| `npm run dev:web` | Vite dev server for the React app on `:5173` with hot reload; `/api`, `/auth`, `/healthz` and the login/setup posts are proxied to `:8099` |
+| `npm run build` / `npm start` | Compile the server to `dist/` and the web app to `dist/web` (`build:web` builds only the UI); run `dist/server/main.js` |
 | `npm test` | Vitest unit and security tests |
-| `npm run e2e` | Playwright (headless Chromium) at 1280 px and 390 px; first run `npx playwright install chromium` |
+| `npm run e2e` | Builds the web app, then Playwright (headless Chromium) at 1280 px and 390 px against a fresh database in `.local/e2e` and a local stand-in for the ingress proxy; first run `npx playwright install chromium` |
 | `npm run lint` / `npm run typecheck` | ESLint + Prettier check / `tsc --noEmit` (strict) |
 | `npm run audit:security` | Security tests + `npm audit --audit-level=high` |
 | `npm run db:migrate` | Apply pending migrations to `DB_PATH` (`-- --status` lists them); the app also migrates on start-up |
@@ -44,11 +47,13 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 | `npm run verify:T01` | T01 acceptance checks, PASS/FAIL per item (`--quick` skips the fresh-clone run) |
 | `npm run verify:T02` | T02 acceptance checks (database, migrations, repositories, maintenance, `/healthz`) |
 | `npm run verify:T03` | T03 acceptance checks (request classes, login, sessions, CSRF, step-up, headers, rate limits) |
+| `npm run verify:T04` | T04 acceptance checks (web build, e2e shell, filter bar, SSE, switches, account, ingress, diagnostics) |
 
 ### Signing in (SPEC.md §10)
 
-Every route except `/login`, `/setup` (first run), `/healthz` and `/assets/*` needs a session. On a fresh
-database open <http://localhost:8099/setup> once (`npm run dev` treats loopback requests as class `dev`, which
+Every route except `/login`, `/setup` (first run), `/healthz` and `/assets/*` needs a session (the web app's
+HTML shell carries no data; a browser without a session is sent to `/login`). On a fresh database open
+<http://localhost:8099/setup> once (`npm run dev` treats loopback requests as class `dev`, which
 may run setup; in Home Assistant only the sidebar/ingress may) to create the single user, then sign in at
 `/login`. API clients send the token from `GET /api/csrf` as `x-csrf-token` on every state-changing request.
 `${DATA_DIR}/secret.key` (generated on first start, mode 600) signs session cookies and encrypts secret

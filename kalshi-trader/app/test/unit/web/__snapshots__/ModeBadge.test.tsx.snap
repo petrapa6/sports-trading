@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ModeBadge > renders DRY RUN 1`] = `"<span class="mode-badge mode-badge--dry_run" data-mode="dry_run">DRY RUN</span>"`;
+
+exports[`ModeBadge > renders LIVE 1`] = `"<span class="mode-badge mode-badge--live" data-mode="live">LIVE</span>"`;
+
+exports[`ModeBadge > renders LIVE → DRY RUN (add-on lock) 1`] = `"<span class="mode-badge mode-badge--dry_run mode-badge--downgraded" data-mode="dry_run" title="Configured live, running as dry run">LIVE → DRY RUN (add-on lock)</span>"`;
+
+exports[`ModeBadge > renders LIVE → DRY RUN (global) 1`] = `"<span class="mode-badge mode-badge--dry_run mode-badge--downgraded" data-mode="dry_run" title="Configured live, running as dry run">LIVE → DRY RUN (global)</span>"`;

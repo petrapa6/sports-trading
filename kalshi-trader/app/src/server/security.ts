@@ -36,6 +36,8 @@ declare module 'fastify' {
     /** Step-up: a preHandler rejecting with `403 reauth_required` unless the session authenticated recently. */
     requireRecentAuth(maxAgeMs?: number): preHandlerAsyncHookHandler;
     issueSession(req: FastifyRequest, reply: FastifyReply, user: User): void;
+    /** The request's session on a public route (where the session hook does not run), if valid. */
+    optionalAuth(req: FastifyRequest): AuthState | undefined;
     clearSession(req: FastifyRequest, reply: FastifyReply): void;
     csrfToken(req: FastifyRequest, reply: FastifyReply): string;
   }
@@ -176,6 +178,17 @@ export async function registerSecurity(app: FastifyInstance, options: SecurityOp
       signed: true,
       maxAge: ABSOLUTE_LIFETIME_MS / 1000,
     });
+  });
+
+  app.decorate('optionalAuth', (req: FastifyRequest): AuthState | undefined => {
+    if (req.auth) return req.auth;
+    const id = readSessionId(req);
+    if (id === undefined) return undefined;
+    try {
+      return auth.resolveSession(id, req.client.class);
+    } catch {
+      return undefined; // database unavailable: treated as signed out
+    }
   });
 
   app.decorate('clearSession', (req: FastifyRequest, reply: FastifyReply) => {

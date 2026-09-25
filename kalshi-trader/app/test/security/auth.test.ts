@@ -340,10 +340,10 @@ describe('CSRF', () => {
     expect(ok.json()).toMatchObject({ order_group_contract_limit: 150 });
     expect(t.manager.repositories.settings.get('order_group_contract_limit')).toBe(150);
     expect(t.manager.repositories.auditLog.list().some((r) => r.action === 'settings_change')).toBe(true);
-    // Unknown fields are rejected.
+    // Unknown (and secret) fields are rejected.
     const unknown = await c.post(
       '/api/settings',
-      { global_dry_run: false },
+      { api_football_key_enc: 'x' },
       { headers: { 'x-csrf-token': token } },
     );
     expect(unknown.statusCode).toBe(400);

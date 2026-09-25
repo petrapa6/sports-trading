@@ -56,7 +56,14 @@ export async function createTestApp(overrides: Partial<AppOptions> = {}, dir?: s
   const logger: Logger = pino({ level: 'info' }, sink);
   const manager = new DatabaseManager(join(root, 'db', 'trader.db'), logger);
   manager.open();
-  const app = await buildApp({ logger, database: manager, ...TEST_APP_OPTIONS, ...overrides });
+  // No web build by default (the minimal server-rendered pages), so results do not depend on `npm run build`.
+  const app = await buildApp({
+    logger,
+    database: manager,
+    ...TEST_APP_OPTIONS,
+    webDir: join(root, 'no-web-build'),
+    ...overrides,
+  });
   return {
     app,
     manager,

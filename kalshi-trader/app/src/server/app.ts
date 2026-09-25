@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
-import fastifyStatic from '@fastify/static';
 import Fastify, {
   LogController,
   type FastifyBaseLogger,
@@ -11,12 +9,20 @@ import { DatabaseUnavailableError, type DbHealth } from '../db/database.js';
 import type { Repositories } from '../db/repositories.js';
 import { AuthService, type Argon2Params } from './auth/service.js';
 import { HttpError } from './http.js';
+import { LiveHub, registerLiveRoutes, type RuntimeInfo } from './live.js';
+import { LogRing } from './logRing.js';
 import { registerApiRoutes } from './routes/api.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
+import { registerWeb, WEB_DIR } from './web.js';
 
-/** Static assets served under `/assets/` (outside `src/`, so `src/server` and `dist/server` resolve it alike). */
-export const PUBLIC_DIR = resolve(import.meta.dirname, '../../public');
+const DEFAULT_RUNTIME: RuntimeInfo = {
+  version: '0.0.0',
+  allowLiveOrders: false,
+  kalshiEnv: 'demo',
+  kalshiSubaccount: 0,
+  dbPath: '',
+};
 
 export interface AppOptions {
   logger: FastifyBaseLogger;
@@ -35,6 +41,14 @@ export interface AppOptions {
   /** argon2id cost (tests); defaults to m = 64 MiB, t = 3. */
   argon2?: Argon2Params;
   rateLimits?: RateLimits;
+  /** Read-only process facts shown in the UI (version, add-on lock, Kalshi env/subaccount, DB path). */
+  runtime?: Partial<RuntimeInfo>;
+  /** Ring buffer the logger also writes to (`createLogger(level, ring)`); the SSE log tail reads it. */
+  logRing?: LogRing;
+  /** The Vite build of the React app; defaults to `dist/web`. */
+  webDir?: string;
+  /** SSE heartbeat interval (tests); defaults to 10 s. */
+  heartbeatMs?: number;
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -107,17 +121,20 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     return { ok: true };
   });
 
-  await app.register(fastifyStatic, {
-    root: resolve(PUBLIC_DIR, 'assets'),
-    prefix: '/assets/',
-    index: false,
-    list: false,
-    dotfiles: 'deny',
-    decorateReply: false,
-  });
+  const repos = () => database.repositories;
+  const hub = new LiveHub(
+    options.logRing ?? new LogRing(),
+    { ...DEFAULT_RUNTIME, ...options.runtime },
+    repos,
+  );
 
+  await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
-  registerApiRoutes(app, database);
+  registerApiRoutes(app, database, hub);
+  registerLiveRoutes(app, hub, repos, {
+    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+    ...(options.now ? { now: options.now } : {}),
+  });
 
   // Everything else: a session is required first (so unknown paths reveal nothing), then 404.
   app.all('/*', async () => {

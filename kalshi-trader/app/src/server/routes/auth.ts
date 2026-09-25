@@ -1,8 +1,8 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { normaliseUsername, type LoginResult } from '../auth/service.js';
 import { HttpError, isFormPost, parseBody, sendHtml } from '../http.js';
-import { homePage, loginPage, setupPage } from '../pages.js';
+import { loginPage, setupPage } from '../pages.js';
 import { authOf, clientContext, cookieAttributes, sessionCookieName, type RateLimits } from '../security.js';
 
 /** Form fields arrive as empty strings when left blank. */
@@ -41,7 +41,13 @@ const LOGIN_MESSAGES: Record<Exclude<LoginResult, { ok: true }>['error'], string
   locked_out: 'Too many failed attempts. Try again later.',
 };
 
-/** `/login`, `/setup`, `/`, and the `/auth/*` session, step-up, password and TOTP endpoints. */
+/** First-run setup: only while `users` is empty, only via ingress (or dev). */
+export function setupGate(app: FastifyInstance, req: FastifyRequest): void {
+  if (req.client.class !== 'ingress' && req.client.class !== 'dev') throw new HttpError(403, 'forbidden');
+  if (app.authService.userCount() > 0) throw new HttpError(410, 'gone');
+}
+
+/** `POST /login`, `POST /setup` and the `/auth/*` session, step-up, password and TOTP endpoints. */
 export function registerAuthRoutes(app: FastifyInstance, limits: RateLimits): void {
   const auth = app.authService;
   const loginConfig = { public: true, rateLimit: { max: limits.login, timeWindow: 60_000 } };
@@ -70,9 +76,11 @@ export function registerAuthRoutes(app: FastifyInstance, limits: RateLimits): vo
       );
   };
 
-  app.get('/login', { config: loginConfig }, async (_req, reply) =>
-    sendHtml(reply, 200, loginPage({ noUser: auth.userCount() === 0 })),
-  );
+  /** What the login page needs to know before anyone signs in: whether first-run setup is due and possible here. */
+  app.get('/auth/state', { config: { public: true } }, async (req) => ({
+    needsSetup: auth.userCount() === 0,
+    setupAllowed: req.client.class === 'ingress' || req.client.class === 'dev',
+  }));
 
   app.post('/login', { config: loginConfig }, async (req, reply) => {
     const form = isFormPost(req);
@@ -84,19 +92,8 @@ export function registerAuthRoutes(app: FastifyInstance, limits: RateLimits): vo
     return { ok: true, username: result.user.username };
   });
 
-  // First-run setup: only while `users` is empty, only via ingress (or dev).
-  const setupGate = (req: { client: { class: string } }) => {
-    if (req.client.class !== 'ingress' && req.client.class !== 'dev') throw new HttpError(403, 'forbidden');
-    if (auth.userCount() > 0) throw new HttpError(410, 'gone');
-  };
-
-  app.get('/setup', { config: { public: true } }, async (req, reply) => {
-    setupGate(req);
-    return sendHtml(reply, 200, setupPage({}));
-  });
-
   app.post('/setup', { config: { public: true } }, async (req, reply) => {
-    setupGate(req);
+    setupGate(app, req);
     const form = isFormPost(req);
     const parsed = SetupBody.safeParse(req.body ?? {});
     if (!parsed.success) {
@@ -118,12 +115,6 @@ export function registerAuthRoutes(app: FastifyInstance, limits: RateLimits): vo
     app.issueSession(req, reply, user);
     if (form) return reply.redirect('./', 303);
     return reply.code(201).send({ ok: true, username: user.username });
-  });
-
-  // Signed-in placeholder until the React shell (T04).
-  app.get('/', async (req, reply) => {
-    const { user } = authOf(req);
-    return sendHtml(reply, 200, homePage({ username: user.username, csrfToken: app.csrfToken(req, reply) }));
   });
 
   app.post('/auth/logout', async (req, reply) => {

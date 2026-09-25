@@ -16,5 +16,9 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    files: ['src/web/**', 'test/unit/web/**'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
   prettier,
 );

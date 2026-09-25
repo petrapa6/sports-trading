@@ -1,15 +1,28 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
 import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
 import { buildApp } from './app.js';
 import { loadConfigOrExit } from './boot.js';
 import { createLogger } from './logger.js';
+import { LogRing } from './logRing.js';
 import { loadOrCreateSecretKey, type LoadedSecret } from './secrets.js';
 
 const { config, configLocalPath } = loadConfigOrExit();
 if (config.tz !== undefined) process.env['TZ'] = config.tz;
 
-const log = createLogger(config.logLevel);
+const logRing = new LogRing();
+const log = createLogger(config.logLevel, logRing);
+
+const version = (
+  JSON.parse(readFileSync(resolve(import.meta.dirname, '../../package.json'), 'utf8')) as { version: string }
+).version;
+
+// `KST_E2E=1` (Playwright only, never in production): loopback counts as the ingress proxy, so the
+// e2e suite can drive the ingress channel through a local prefix-stripping proxy, and the /login
+// and global rate limits are raised so the suite's many sign-ins and page loads do not trip them.
+const e2e = process.env['KST_E2E'] === '1' && process.env['NODE_ENV'] !== 'production';
 
 let privateKey: string | undefined;
 try {
@@ -95,6 +108,15 @@ const app = await buildApp({
   secretKey: secret.key,
   trustedProxies: config.trustedProxies,
   nodeEnv: process.env['NODE_ENV'],
+  logRing,
+  runtime: {
+    version,
+    allowLiveOrders: config.allowLiveOrders,
+    kalshiEnv: config.kalshiEnv,
+    kalshiSubaccount: config.kalshiSubaccount,
+    dbPath: resolve(config.dbPath),
+  },
+  ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
 
 let shuttingDown = false;

@@ -1,0 +1,101 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { api, type LogEntry, type Status, type SwitchStates } from './api';
+import { endpoint } from './base';
+
+export type LiveStatus = 'connecting' | 'connected' | 'reconnecting' | 'reconnected';
+
+export interface LiveState {
+  status: LiveStatus;
+  switches: SwitchStates | null;
+  logs: LogEntry[];
+  lastHeartbeat: string | null;
+}
+
+const KEEP_LOGS = 200;
+const INITIAL: LiveState = { status: 'connecting', switches: null, logs: [], lastHeartbeat: null };
+const LiveContext = createContext<LiveState>(INITIAL);
+
+/**
+ * One `GET /api/live` stream for the signed-in app. `EventSource` reconnects by itself (the server
+ * sends `retry: 2000`); when the browser gives up (a non-200 answer while the server restarts) a
+ * new stream is opened after 3 s. After any interruption the status reads `reconnected`.
+ */
+export function LiveProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<LiveState>(INITIAL);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let source: EventSource | undefined;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let interrupted = false;
+    let stopped = false;
+
+    const onSwitches = (switches: SwitchStates) => {
+      setState((s) => ({ ...s, switches }));
+      queryClient.setQueryData<Status>(['status'], (old) => (old ? { ...old, ...switches } : old));
+    };
+
+    const connect = () => {
+      const es = new EventSource(endpoint('api/live'));
+      source = es;
+      es.onopen = () => setState((s) => ({ ...s, status: interrupted ? 'reconnected' : 'connected' }));
+      es.onerror = () => {
+        interrupted = true;
+        setState((s) => ({ ...s, status: 'reconnecting' }));
+        if (es.readyState === EventSource.CLOSED && !stopped) {
+          es.close();
+          // A 401 here means the session is gone: this request lets the app redirect to the login page.
+          void api.get('auth/me').catch(() => undefined);
+          retryTimer = setTimeout(connect, 3000);
+        }
+      };
+      es.addEventListener('switches', (e) => onSwitches(JSON.parse((e as MessageEvent<string>).data)));
+      es.addEventListener('logs', (e) => {
+        const logs = JSON.parse((e as MessageEvent<string>).data) as LogEntry[];
+        setState((s) => ({ ...s, logs }));
+      });
+      es.addEventListener('log', (e) => {
+        const line = JSON.parse((e as MessageEvent<string>).data) as LogEntry;
+        setState((s) => ({ ...s, logs: [...s.logs, line].slice(-KEEP_LOGS) }));
+      });
+      es.addEventListener('heartbeat', (e) => {
+        const beat = JSON.parse((e as MessageEvent<string>).data) as {
+          at: string;
+          switches: SwitchStates | null;
+        };
+        setState((s) => ({ ...s, lastHeartbeat: beat.at }));
+        if (beat.switches) onSwitches(beat.switches);
+      });
+    };
+
+    connect();
+    return () => {
+      stopped = true;
+      clearTimeout(retryTimer);
+      source?.close();
+    };
+  }, [queryClient]);
+
+  return <LiveContext.Provider value={state}>{children}</LiveContext.Provider>;
+}
+
+export const useLive = (): LiveState => useContext(LiveContext);
+
+const STATUS_TEXT: Record<LiveStatus, string> = {
+  connecting: 'connecting…',
+  connected: 'connected',
+  reconnecting: 'reconnecting…',
+  reconnected: 'reconnected',
+};
+
+/** Small live-stream indicator for the header. */
+export function LiveIndicator() {
+  const { status } = useLive();
+  return (
+    <span className={`live-indicator live-indicator--${status}`} role="status" data-testid="live-status">
+      <span className="live-dot" aria-hidden="true" />
+      Live: {STATUS_TEXT[status]}
+    </span>
+  );
+}

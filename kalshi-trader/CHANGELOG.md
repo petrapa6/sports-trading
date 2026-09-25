@@ -55,3 +55,29 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
 - Error handler: `{"error":"internal","correlationId":"…"}` with the id logged; no stack traces in responses.
 - Minimal server-rendered login/setup pages (`public/assets/auth.css`); `npm run verify:T03`;
   `docs/verification/T03.md`.
+
+### T04 — Web UI shell, filter bar, switches, Settings skeleton, SSE
+
+- React 19 + Vite app in `src/web` (TanStack Query, TanStack Table, Recharts), built into `dist/web` by
+  `npm run build` and served by Fastify: hashed assets under `/assets/` with
+  `cache-control: public, max-age=31536000, immutable`; the HTML shell (no inline script or style) for `/`,
+  `/strategies`, `/trades`, `/backtest`, `/settings/*`, `/login`, `/setup`, with `<base href>` and asset URLs
+  rewritten to the `X-Ingress-Path` prefix. `npm run dev:web` (Vite on :5173, proxy to :8099).
+- Phone-first, dark/light-aware layout with navigation to Dashboard, Strategies, Trades, Backtest, Settings
+  (placeholder pages); React login (optional TOTP, generic error, lockout notice) and first-run setup pages;
+  `GET /auth/state`.
+- Shared filter bar (sport, leagues, strategies, mode live / dry run / both, Kalshi environment, 7d / 30d /
+  season / all) whose state lives in the URL; `GET /api/leagues`, `GET /api/strategies`.
+- `ModeBadge` (`LIVE`, `DRY RUN`, `LIVE → DRY RUN (global)`, `LIVE → DRY RUN (add-on lock)`) and the shared
+  chart style tokens (live solid, dry run dashed / hatched).
+- `GET /api/live` (SSE): switch states, the last 50 log lines from an in-memory ring fed by Pino (each with
+  `mode`), new lines as they are logged, switch changes, a heartbeat every 10 s; the session is re-checked at
+  every heartbeat. React hook with automatic reconnect and a "Live: reconnected" indicator.
+- Settings → Trading: global kill switch and global dry run (`POST /api/settings`; turning either off needs
+  step-up, the React prompt asks for the password; audit rows `global_kill_switch_on/off`,
+  `global_dry_run_on/off`), read-only `allow_live_orders`, Kalshi environment and subaccount
+  (`GET /api/status`). Settings → Account: password change, TOTP enrol with QR code / disable, sessions with
+  revoke. Settings → Diagnostics: version, DB path and size (`GET /api/diagnostics`), live log tail with a mode
+  filter.
+- Playwright suite `test/e2e/shell.spec.ts` at 1280 px and 390 px (zero CSP console messages, no sideways
+  scrolling, ingress through a local prefix-stripping proxy); `npm run verify:T04`; `docs/verification/T04.md`.
