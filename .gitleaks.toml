@@ -1,0 +1,19 @@
+# gitleaks configuration (pre-commit hook via lefthook, and CI).
+title = "kalshi-sports-trader"
+
+[extend]
+# Keep every built-in gitleaks rule.
+useDefault = true
+
+# The built-in private-key rule needs a full PEM body; this one also catches a bare header
+# (a truncated or partially pasted key is still a leak).
+[[rules]]
+id = "private-key-header"
+description = "PEM private key header"
+regex = '''-----BEGIN[ A-Z0-9_-]{0,100}PRIVATE KEY( BLOCK)?-----'''
+keywords = ["private key"]
+tags = ["key", "pem"]
+
+[[allowlists]]
+description = "The specification quotes a PEM header in prose (T01 acceptance criteria)."
+paths = ['''^SPEC\.md$''']

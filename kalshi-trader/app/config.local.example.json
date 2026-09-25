@@ -1,0 +1,13 @@
+{
+  "kalshiEnv": "",
+  "kalshiKeyId": "",
+  "kalshiPrivateKeyPath": "",
+  "kalshiSubaccount": "",
+  "allowLiveOrders": "",
+  "logLevel": "",
+  "dataDir": "",
+  "dbPath": "",
+  "port": "",
+  "trustedProxies": "",
+  "tz": ""
+}

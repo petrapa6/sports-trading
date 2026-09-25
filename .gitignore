@@ -1,0 +1,17 @@
+# Secrets — never commit keys, local config or databases (SPEC.md §10 Secrets)
+*.key
+*.pem
+config.local.json
+*.db*
+.local/
+.env
+.env.*
+
+# Build and tooling output
+node_modules
+dist
+coverage
+playwright-report
+test-results
+*.tsbuildinfo
+.DS_Store

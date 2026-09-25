@@ -1,0 +1,5 @@
+# Git hooks (installed by `npm install` / `npm ci` in kalshi-trader/app via its `prepare` script).
+pre-commit:
+  commands:
+    secret-scan:
+      run: node kalshi-trader/app/scripts/secret-scan.mjs
