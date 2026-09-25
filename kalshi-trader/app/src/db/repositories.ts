@@ -2,11 +2,14 @@ import {
   and,
   asc,
   count,
+  desc,
   eq,
+  gte,
   getTableColumns,
   getTableName,
   inArray,
   lt,
+  ne,
   type InferInsertModel,
   type InferSelectModel,
   type SQL,
@@ -288,6 +291,75 @@ export class UsersRepository extends Repository<typeof s.users, 'id'> {
   }
 }
 
+export class SessionsRepository extends Repository<typeof s.sessions, 'id_hash'> {
+  constructor(orm: Orm) {
+    super(orm, s.sessions, ['id_hash']);
+  }
+  listForUser(userId: number): s.Session[] {
+    return this.orm
+      .select()
+      .from(s.sessions)
+      .where(eq(s.sessions.user_id, userId))
+      .orderBy(desc(s.sessions.last_seen_at))
+      .all();
+  }
+  /** Deletes every session of a user except `keepIdHash`; returns the number deleted. */
+  deleteForUser(userId: number, keepIdHash?: string): number {
+    const where =
+      keepIdHash === undefined
+        ? eq(s.sessions.user_id, userId)
+        : and(eq(s.sessions.user_id, userId), ne(s.sessions.id_hash, keepIdHash));
+    return this.orm.delete(s.sessions).where(where).run().changes;
+  }
+  deleteAll(): number {
+    return this.orm.delete(s.sessions).run().changes;
+  }
+}
+
+export class LoginAttemptsRepository extends Repository<typeof s.login_attempts, 'id'> {
+  constructor(orm: Orm) {
+    super(orm, s.login_attempts, ['id']);
+  }
+  /** Failed attempts (`ok = 0`) on the given channels at or after `sinceIso`, by client IP or username. */
+  countFailures(
+    by: { ip: string } | { username: string },
+    channels: readonly string[],
+    sinceIso: string,
+  ): number {
+    const match = 'ip' in by ? eq(s.login_attempts.ip, by.ip) : eq(s.login_attempts.username, by.username);
+    return this.count(
+      and(
+        match,
+        eq(s.login_attempts.ok, 0),
+        inArray(s.login_attempts.channel, [...channels]),
+        gte(s.login_attempts.at, sinceIso),
+      ),
+    );
+  }
+}
+
+export class AuditLogRepository extends Repository<typeof s.audit_log, 'id'> {
+  constructor(orm: Orm) {
+    super(orm, s.audit_log, ['id']);
+  }
+  /** Rows for one action and entity, newest first. */
+  listFor(action: string, entity: string, entityId: string, sinceIso?: string): s.AuditLogEntry[] {
+    return this.orm
+      .select()
+      .from(s.audit_log)
+      .where(
+        and(
+          eq(s.audit_log.action, action),
+          eq(s.audit_log.entity, entity),
+          eq(s.audit_log.entity_id, entityId),
+          sinceIso === undefined ? undefined : gte(s.audit_log.at, sinceIso),
+        ),
+      )
+      .orderBy(desc(s.audit_log.id))
+      .all();
+  }
+}
+
 /** Every repository, one per §7 table, plus typed settings. */
 export function createRepositories(orm: Orm, now: () => number = Date.now) {
   return {
@@ -302,10 +374,10 @@ export function createRepositories(orm: Orm, now: () => number = Date.now) {
     tradeAttempts: new TradeAttemptsRepository(orm),
     balanceSnapshots: new Repository(orm, s.balance_snapshots, ['id']),
     bankrollSnapshots: new Repository(orm, s.bankroll_snapshots, ['id']),
-    auditLog: new Repository(orm, s.audit_log, ['id']),
+    auditLog: new AuditLogRepository(orm),
     users: new UsersRepository(orm),
-    sessions: new Repository(orm, s.sessions, ['id_hash']),
-    loginAttempts: new Repository(orm, s.login_attempts, ['id']),
+    sessions: new SessionsRepository(orm),
+    loginAttempts: new LoginAttemptsRepository(orm),
     settings: new SettingsRepository(orm, now),
     histGames: new Repository(orm, s.hist_games, ['id']),
     histPrices: new Repository(orm, s.hist_prices, ['market_ticker', 'minute_ts']),

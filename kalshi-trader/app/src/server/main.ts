@@ -4,6 +4,7 @@ import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
 import { buildApp } from './app.js';
 import { loadConfigOrExit } from './boot.js';
 import { createLogger } from './logger.js';
+import { loadOrCreateSecretKey, type LoadedSecret } from './secrets.js';
 
 const { config, configLocalPath } = loadConfigOrExit();
 if (config.tz !== undefined) process.env['TZ'] = config.tz;
@@ -59,9 +60,42 @@ try {
   }
 }
 
+// Session/encryption secret (§10): generated on first start; without it the app cannot run safely.
+let secret: LoadedSecret;
+try {
+  secret = loadOrCreateSecretKey(config.dataDir);
+} catch (err) {
+  log.fatal({ err, dataDir: config.dataDir }, 'Cannot read or create secret.key');
+  process.exit(1);
+}
+if (secret.generated) {
+  log.info(
+    { path: secret.path },
+    'Generated a new secret.key; existing sessions and encrypted settings are invalid',
+  );
+  // Cookies signed with the old key no longer verify; drop the stale rows too.
+  if (database.current) {
+    const repos = database.repositories;
+    const removed = repos.sessions.deleteAll();
+    repos.auditLog.insert({
+      at: new Date().toISOString(),
+      actor: 'system',
+      action: 'secret_key_generated',
+      entity: 'secret_key',
+      detail: JSON.stringify({ sessionsRemoved: removed }),
+    });
+  }
+}
+
 const maintenance = startMaintenance({ getDb: () => database.current, log });
 
-const app = buildApp({ logger: log, database });
+const app = await buildApp({
+  logger: log,
+  database,
+  secretKey: secret.key,
+  trustedProxies: config.trustedProxies,
+  nodeEnv: process.env['NODE_ENV'],
+});
 
 let shuttingDown = false;
 async function shutdown(signal: string): Promise<void> {

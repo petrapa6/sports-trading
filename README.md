@@ -43,6 +43,16 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 | `npm run db:studio` | Drizzle Studio on the database at `DB_PATH` |
 | `npm run verify:T01` | T01 acceptance checks, PASS/FAIL per item (`--quick` skips the fresh-clone run) |
 | `npm run verify:T02` | T02 acceptance checks (database, migrations, repositories, maintenance, `/healthz`) |
+| `npm run verify:T03` | T03 acceptance checks (request classes, login, sessions, CSRF, step-up, headers, rate limits) |
+
+### Signing in (SPEC.md §10)
+
+Every route except `/login`, `/setup` (first run), `/healthz` and `/assets/*` needs a session. On a fresh
+database open <http://localhost:8099/setup> once (`npm run dev` treats loopback requests as class `dev`, which
+may run setup; in Home Assistant only the sidebar/ingress may) to create the single user, then sign in at
+`/login`. API clients send the token from `GET /api/csrf` as `x-csrf-token` on every state-changing request.
+`${DATA_DIR}/secret.key` (generated on first start, mode 600) signs session cookies and encrypts secret
+settings; deleting it logs everyone out.
 
 ### Configuration
 

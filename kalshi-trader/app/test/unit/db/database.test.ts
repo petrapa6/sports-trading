@@ -5,6 +5,7 @@ import { pino } from 'pino';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DatabaseManager, DatabaseUnavailableError } from '../../../src/db/database.js';
 import { buildApp } from '../../../src/server/app.js';
+import { TEST_APP_OPTIONS } from '../../helpers/app.js';
 
 const log = pino({ level: 'silent' });
 const isRoot = process.getuid?.() === 0;
@@ -27,7 +28,7 @@ describe('DatabaseManager and /healthz', () => {
     manager = new DatabaseManager(join(dir, 'data', 'db', 'trader.db'), log);
     manager.open();
     expect(manager.repositories.leagues.count()).toBe(6);
-    const app = buildApp({ logger: log, database: manager });
+    const app = await buildApp({ logger: log, database: manager, ...TEST_APP_OPTIONS });
     const res = await app.inject({ method: 'GET', url: '/healthz' });
     expect(res.statusCode).toBe(200);
     expect(res.body).toBe('{"ok":true}');
@@ -43,7 +44,7 @@ describe('DatabaseManager and /healthz', () => {
       chmodSync(ro, 0o555);
       manager = new DatabaseManager(join(ro, 'trader.db'), log);
       expect(() => manager?.open()).toThrow(DatabaseUnavailableError);
-      const app = buildApp({ logger: log, database: manager });
+      const app = await buildApp({ logger: log, database: manager, ...TEST_APP_OPTIONS });
       const res = await app.inject({ method: 'GET', url: '/healthz' });
       expect(res.statusCode).toBe(503);
       expect(res.json()).toEqual({ ok: false, db: 'SQLITE_CANTOPEN' });
@@ -57,7 +58,7 @@ describe('DatabaseManager and /healthz', () => {
     const blocker = join(dir, 'db');
     writeFileSync(blocker, '');
     manager = new DatabaseManager(join(blocker, 'trader.db'), log);
-    const app = buildApp({ logger: log, database: manager });
+    const app = await buildApp({ logger: log, database: manager, ...TEST_APP_OPTIONS });
     let res = await app.inject({ method: 'GET', url: '/healthz' });
     expect(res.statusCode).toBe(503);
     expect(res.json()).toEqual({ ok: false, db: expect.stringMatching(/^(ENOTDIR|EEXIST)$/) });

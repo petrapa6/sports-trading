@@ -44,6 +44,7 @@ export default defineConfig({
       LOG_LEVEL: 'warn',
       CONFIG_LOCAL_PATH: '/nonexistent/config.local.json',
       DB_PATH: './.local/e2e/trader.db',
+      DATA_DIR: './.local/e2e/data',
     },
   },
 });

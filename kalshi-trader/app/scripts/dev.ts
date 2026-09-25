@@ -12,8 +12,10 @@ loadConfigOrExit();
 const require = createRequire(import.meta.url);
 const tsxCli = require.resolve('tsx/cli');
 
+// Local development: loopback requests are class `dev` (SPEC.md §10), which allows first-run /setup.
 const child = spawn(process.execPath, [tsxCli, 'watch', '--clear-screen=false', 'src/server/main.ts'], {
   stdio: 'inherit',
+  env: { ...process.env, NODE_ENV: process.env['NODE_ENV'] || 'development' },
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

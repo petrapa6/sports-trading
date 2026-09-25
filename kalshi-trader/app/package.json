@@ -23,12 +23,20 @@
     "db:studio": "drizzle-kit studio",
     "verify:T01": "tsx scripts/verify-T01.ts",
     "verify:T02": "tsx scripts/verify-T02.ts",
+    "verify:T03": "tsx scripts/verify-T03.ts",
     "prepare": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/csrf-protection": "^8.0.1",
+    "@fastify/helmet": "^13.1.1",
+    "@fastify/rate-limit": "^11.2.0",
+    "@fastify/static": "^10.1.4",
+    "argon2": "^0.45.1",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.3",
     "fastify": "^5.12.5",
+    "otplib": "^13.5.0",
     "pino": "^10.3.1",
     "zod": "^4.6.5"
   },
