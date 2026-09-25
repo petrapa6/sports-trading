@@ -18,9 +18,9 @@ and in `kalshi-trader/CHANGELOG.md`.
 | Topic | Convention | Source |
 | --- | --- | --- |
 | Slug | `kalshi-trader` (lower-case, hyphenated); app directory `kalshi-trader/` at the repository root; tunnel hostname `<repo-prefix>-kalshi-trader` | §11 `config.yaml`, §10 Tunnel |
-| `map` entries | exactly one: `type: share`, `read_only: false` (the SQLite DB lives in `/share/kalshi-trader`, backed up nightly). No `config`, `ssl`, `addons` or `homeassistant_config` maps. | §11 `config.yaml` |
+| `map` entries | none: everything lives in the app's own `/data` (always mounted, included in HA backups), like the reference app. No `share`, `config`, `ssl`, `addons` or `homeassistant_config` maps. | §11 `config.yaml`, §14 Reference app facts |
 | Base image tag | `ghcr.io/home-assistant/base:<PINNED_TAG>@sha256:<DIGEST>`, the **same** pinned tag + digest for the build and runtime stages; the concrete tag/digest is chosen in T05 (it could not be copied from `family-dashboard`). Node comes from the base image's `nodejs` package and must be ≥ 22. | §11 `Dockerfile`, §4 Stack |
-| DB path handling | `DB_PATH=/share/kalshi-trader/trader.db`, `DATA_DIR=/data/app`; `run.sh` (root) runs `mkdir -p /share/kalshi-trader /data/app`, `chown -R trader:trader` both, `chmod 700 /data/app`; the connection helper (T02) also creates the `DB_PATH` directory if missing. Local development: `./.local/trader.db` and `./.local/data` (git-ignored). | §11 `run.sh`, §12, T02 |
+| DB path handling | `DB_PATH=/data/db/trader.db`, `DATA_DIR=/data/app`; `run.sh` (root) runs `mkdir -p /data/db /data/app`, `chown -R trader:trader` both, `chmod 700` both (`/data` and `options.json` stay root-owned); the connection helper (T02) also creates the `DB_PATH` directory if missing. Local development: `./.local/trader.db` and `./.local/data` (git-ignored). | §11 `run.sh`, §12, T02 |
 | Translations | `kalshi-trader/translations/en.yaml` with option labels and descriptions (T05) | §11 layout |
 | Labels | `io.hass.version`, `io.hass.type="app"`, `io.hass.arch="aarch64\|amd64"` in the Dockerfile (T05) | §11 `Dockerfile` |
 | Workflows | `.github/workflows/ci.yml` (T01: lint, typecheck, test, e2e, `npm audit --audit-level=high`, gitleaks); `image.yml` (arm64 + amd64 build, T05); optional disabled `publish.yml` | §11 layout, §12 |
@@ -30,3 +30,8 @@ and in `kalshi-trader/CHANGELOG.md`.
 
 - Nothing here conflicts with SPEC.md, so there is no difference to note in `CHANGELOG.md` yet.
 - T05 re-reads `family-dashboard` and may refine the base image tag, translations style, labels and workflows.
+
+## Update (after T01)
+
+- The reference app's facts are now inlined in SPEC.md §14 (Reference app facts); its repository no longer needs to be read, so T05 applies that table instead of re-checking the repository.
+- Storage moved from `/share/kalshi-trader` to `/data/db` (SPEC.md §11), matching the reference app.

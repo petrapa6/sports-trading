@@ -25,7 +25,7 @@ The app is a single Node.js service, packaged as a Home Assistant app (formerly 
 - Polls the score feeds every few seconds while games in the enabled leagues are in progress.
 - For each running strategy, checks its trigger against the current game state; enters at most once per strategy per game, retrying within the trigger window when a soft guard (price, depth, stale feed, unfilled order) blocks the first attempt.
 - Sizes the order as a percentage of the current Kalshi cash balance (dry run: of a shared virtual bankroll), finds the Kalshi market for that game, and places an immediate-or-cancel limit order (live) or records a virtual fill (dry run).
-- Settles every trade when its market settles, records realized P&L, and keeps a full audit log in SQLite under `/share` so Home Assistant's Google Drive backup captures it.
+- Settles every trade when its market settles, records realized P&L, and keeps a full audit log in SQLite under the app's own `/data` so Home Assistant's Google Drive backup captures it.
 - Serves a password-protected web UI (login, dashboard with Recharts, strategy editor, trade history with filters, backtesting, settings), reachable from the Home Assistant sidebar (ingress) and through your Cloudflare Tunnel.
 - Labels every trade, log line, metric, chart series and export as **live** or **dry run**, and never aggregates the two together.
 
@@ -229,7 +229,7 @@ flowchart LR
     GT --> SE[StrategyEngine]
     SE --> EX[Executor<br/>dry run / live]
     EX --> ST[Settler]
-    GT & SE & EX & ST --> DB[(SQLite<br/>/share/kalshi-trader)]
+    GT & SE & EX & ST --> DB[(SQLite<br/>/data/db)]
     API[Fastify API + auth] --> DB
     UI[React + Recharts] --> API
   end
@@ -436,7 +436,7 @@ Live and dry-run metrics are always computed and returned **separately**; no met
 
 ## 7. Database schema (SQLite)
 
-One file, `/share/kalshi-trader/trader.db`, WAL mode, `PRAGMA foreign_keys=ON`, `busy_timeout=5000`, migrated by Drizzle on start-up. Units follow the conventions table at the top: `*_micros` money, `*_bp` prices, `*_cc` contract counts, ISO-8601 UTC text times. Every money, price and count column is `INTEGER` and validated as an integer before insert.
+One file, `/data/db/trader.db`, WAL mode, `PRAGMA foreign_keys=ON`, `busy_timeout=5000`, migrated by Drizzle on start-up. Units follow the conventions table at the top: `*_micros` money, `*_bp` prices, `*_cc` contract counts, ISO-8601 UTC text times. Every money, price and count column is `INTEGER` and validated as an integer before insert.
 
 ```sql
 CREATE TABLE leagues (
@@ -687,7 +687,7 @@ A season of EPL (380 games) replays in well under a second on the Pi; five leagu
 
 ## 10. Security
 
-Threat model: the app is reachable from the internet through a Cloudflare Tunnel, it holds a key that can spend real money, and it runs on the same host as your home automation. Design goals in order: **no secret ever lands in the repository, an image or the backed-up share**; **nobody without the password gets a single byte of app data**; **a compromise of the web app cannot place real orders unless you enabled that in Home Assistant, and a compromise of the whole app cannot spend more than the subaccount holds**.
+Threat model: the app is reachable from the internet through a Cloudflare Tunnel, it holds a key that can spend real money, and it runs on the same host as your home automation. Design goals in order: **no secret ever lands in the repository, an image or the database**; **nobody without the password gets a single byte of app data**; **a compromise of the web app cannot place real orders unless you enabled that in Home Assistant, and a compromise of the whole app cannot spend more than the subaccount holds**.
 
 ### Request classes
 
@@ -704,7 +704,7 @@ Every request is classified once, by the socket peer and headers, before any rou
 
 | Secret | Where it lives | How it gets there | Never |
 | --- | --- | --- | --- |
-| Kalshi API key id + RSA private key (PEM) | Home Assistant app options (`/data/options.json`, root-only) as `kalshi_key_id` and `kalshi_private_key_b64` (schema type `password`) | Pasted once in the app's **Configuration** tab | In git, in the image, in `/share` (backed up to Google Drive), in logs, in environment variables |
+| Kalshi API key id + RSA private key (PEM) | Home Assistant app options (`/data/options.json`, root-only) as `kalshi_key_id` and `kalshi_private_key_b64` (schema type `password`) | Pasted once in the app's **Configuration** tab | In git, in the image, in the database or any app-written file under `/data` (backed up to Google Drive; only the Supervisor-written `options.json` holds it, protected by the backup password), in logs, in environment variables |
 | Private key at runtime | Node process memory only | `run.sh` (root) decodes it and hands it to Node on **file descriptor 3**; Node reads fd 3 once at boot and closes it | `process.env`, `/proc/<pid>/environ`, disk |
 | Session/encryption secret | `/data/app/secret.key` (mode 600, owned by the app user), 32 random bytes generated on first start | Automatic | Regenerated unless deleted (which logs everyone out and makes encrypted settings unreadable) |
 | API-Football key (T15) | `settings.api_football_key_enc`, AES-256-GCM under a key derived from `secret.key` | Settings page | Plaintext in the DB |
@@ -796,12 +796,10 @@ ports:
   8099/tcp: null              # unmapped: reached only via ingress and the cloudflared app
 ports_description:
   8099/tcp: Web UI (map only if cloudflared runs outside Home Assistant)
-map:
-  - type: share
-    read_only: false          # SQLite lives in /share/kalshi-trader (backed up nightly)
+# no `map`: everything lives in the app's own /data (always mounted, included in HA backups)
 backup: hot
 backup_exclude:
-  - "/data/cache/**"
+  - "/data/app/cache/**"
 watchdog: http://[HOST]:[PORT:8099]/healthz
 tmpfs: true
 options:
@@ -869,21 +867,21 @@ export ALLOW_LIVE_ORDERS="$(bashio::config 'allow_live_orders')"
 export LOG_LEVEL="$(bashio::config 'log_level')"
 export TRUSTED_PROXIES="$(bashio::config 'trusted_proxies')"
 if bashio::config.has_value 'timezone'; then export TZ="$(bashio::config 'timezone')"; fi
-export DATA_DIR=/data/app DB_PATH=/share/kalshi-trader/trader.db PORT=8099 KALSHI_PRIVATE_KEY_FD=3
-mkdir -p /share/kalshi-trader /data/app
-chown -R trader:trader /share/kalshi-trader /data/app
-chmod 700 /data/app
+export DATA_DIR=/data/app DB_PATH=/data/db/trader.db PORT=8099 KALSHI_PRIVATE_KEY_FD=3
+mkdir -p /data/db /data/app
+chown -R trader:trader /data/db /data/app
+chmod 700 /data/db /data/app
 exec su-exec trader:trader node /app/dist/server/main.js \
   3< <(bashio::config 'kalshi_private_key_b64' | base64 -d)
 ```
 
-Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor, and keeps the key only in memory. Nothing is written to `/share` except the database.
+Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor, and keeps the key only in memory. The app writes only `/data/db` (database, WAL, SHM) and `/data/app` (`secret.key`, `cache/`); `/data` itself and `options.json` stay root-owned, which is why the database has its own subdirectory instead of sitting directly in `/data`.
 
 ### Behaviour inside Home Assistant
 
 - **Ingress:** the UI is in the HA sidebar; requests come from `172.30.32.2` with `X-Ingress-Path`, and the app serves assets and cookies under that path (§10).
 - **Health:** `/healthz` returns `200 {"ok":true,"loop":"running"|"idle"|"paused"}` if the DB opens and the trading loop has ticked within 2 minutes or is intentionally paused by the global kill switch; otherwise `503`. The Supervisor watchdog restarts the container on `503`.
-- **Backups:** the DB is under `/share`, captured by the Google Drive Backup app; `PRAGMA wal_checkpoint(TRUNCATE)` runs nightly at 02:30 local time (`TZ`); WAL keeps hot backups consistent.
+- **Backups:** the DB is under `/data`, which Home Assistant includes in every backup of the app, so the Google Drive Backup app captures it; `PRAGMA wal_checkpoint(TRUNCATE)` runs nightly at 02:30 local time (`TZ`); WAL keeps hot backups consistent.
 - **Logs:** Pino JSON lines in the app's Log tab; `log_level` is an option; trading lines carry `mode`.
 - **Updates:** bump `version` in `config.yaml` (it must equal `package.json`); migrations run on start and stay backward-compatible for one version so a rollback is possible.
 - **Resources:** ~150 MB RAM idle, ~250 MB during a backtest; CPU negligible except during the first native build.
@@ -901,7 +899,7 @@ Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor, and
 | `demo` | Kalshi demo | Live feeds | End-to-end including real order placement with paper money (`allow_live_orders` true in `config.local.json`) |
 | `prod` | Kalshi production | Live feeds | The Pi |
 
-`docker compose up --build` builds the same Dockerfile locally (amd64) with `./.local/share` and `./.local/data` mounted as `/share` and `/data`, `read_only: true`, `tmpfs: /tmp`, and an `options.json` generated from `config.local.json` by `npm run compose:options`. `docker buildx build --platform linux/arm64` verifies the Pi build under QEMU.
+`docker compose up --build` builds the same Dockerfile locally (amd64) with `./.local/data` mounted as `/data`, `read_only: true`, `tmpfs: /tmp`, and an `options.json` generated from `config.local.json` by `npm run compose:options`. `docker buildx build --platform linux/arm64` verifies the Pi build under QEMU.
 
 ### Test plan
 
@@ -977,8 +975,8 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 | `config.yaml` style | String values quoted (`name: "Family Dashboard"`, `version: "1.0.37"`); has a `url` key; `arch: [aarch64, amd64]`; `startup: application`; `boot: auto`; secrets as `password`, optional keys as `str?` | Adopted into §11: the `url` key. Quoting is optional (YAML-equivalent) |
 | Slug | `family_dashboard` (underscore) | Differs: `kalshi-trader` (§11 is explicit; hyphens are valid) |
 | Ports / ingress | No ingress; `ports: 8099/tcp: 8099` — **host port 8099 on the Pi is taken by Family Dashboard** | Differs: ingress on 8099, `ports: 8099/tcp: null`. If the port is ever mapped (cloudflared outside HA), it must use another host port (e.g. 8100) — `DOCS.md` says so |
-| Storage | `map: [data:rw]` (legacy string syntax); DB at `/data/dashboard.db` (`DATABASE_URL=file:/data/dashboard.db` exported in `run.sh`; dev fallback `file:./data/dashboard.db`); uploads in `/data/uploads`; nothing under `/share` | Differs: DB in `/share/kalshi-trader/trader.db`, map in object syntax (§11). The connection helper creates the directory itself (T02) because Prisma/`better-sqlite3` do not |
-| Backups | Relies on HA backups (which include the app's `/data`) plus the **Google Drive Backup** app (`sabeechen/hassio-google-drive-backup`) for nightly off-site copies; no custom backup scripts | Same Google Drive Backup app; it must back up the **Share** folder too (default for full backups) — T14 checklist item 5 verifies it |
+| Storage | `map: [data:rw]` (legacy string syntax); DB at `/data/dashboard.db` (`DATABASE_URL=file:/data/dashboard.db` exported in `run.sh`; dev fallback `file:./data/dashboard.db`); uploads in `/data/uploads`; nothing under `/share` | Adopt: everything in the app's own `/data`, no `map` entry; DB at `/data/db/trader.db` (subdirectory so `/data` and `options.json` stay root-owned, §11). The connection helper creates the directory itself (T02) because `better-sqlite3` does not |
+| Backups | Relies on HA backups (which include the app's `/data`) plus the **Google Drive Backup** app (`sabeechen/hassio-google-drive-backup`) for nightly off-site copies; no custom backup scripts | Adopt: same — HA backups of the app plus the Google Drive Backup app; T14 checklist item 5 verifies it |
 | Base image | `node:20-alpine`, 3 stages (`builder`, `prisma-deps`, `runner`); `apk add python3 make g++` in build stages to compile `better-sqlite3`/`bcrypt`; runtime adds `bash sqlite jq tini`; `ENTRYPOINT ["/sbin/tini","--"]`; runs as root; `EXPOSE 8099`; no `HEALTHCHECK`, no `io.hass.*` labels | Differs: pinned `ghcr.io/home-assistant/base` for both stages, Docker `init: true`, non-root (§11). No tag to copy — T05 picks it. Adopt: the same native-build toolchain (`python3 make g++`) in the build stage only |
 | `build.yaml` | Present but legacy: `build_from: aarch64: ghcr.io/home-assistant/aarch64-base:3.19` (ignored, the Dockerfile has an explicit `FROM`) and labels `org.opencontainers.image.title` / `org.opencontainers.image.source` | Differs: no `build.yaml` (§11). Adopt: the two OCI labels, moved into the Dockerfile `LABEL` (§11) |
 | `run.sh` | `#!/usr/bin/env bash`, `set -euo pipefail`; reads `/data/options.json` with `jq -r '.key // empty'`; exports env; fails fast (`exit 1`, message on stderr prefixed `[dashboard] ERROR:`) when a required secret is empty; `mkdir -p` data dirs; runs DB migrations before start (a failed migration exits 1, so the app never starts on a half-migrated DB); `exec node server.js` | Differs: `bashio` + fd-3 key hand-over (§11). Adopt: `set -e`-style fail-fast, prefixed stderr messages (`[kalshi-trader] ERROR: …`), migrations before the server listens (done in Node, T02), `exec` so Node receives signals |
@@ -997,7 +995,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 | `npm test` (Vitest) | Unit and integration tests; `msw` mocks every external HTTP call with recorded fixtures under `test/fixtures/` |
 | `npm run dev` + `curl` | HTTP-level checks against the running app on `:8099` |
 | `npm run e2e` (Playwright, headless Chromium) | Browser checks in `test/e2e/` at 1280 px and 390 px, asserting zero CSP violations in the console |
-| `docker compose up --build` | The production image on amd64 with `./.local/share` and `./.local/data` mounted, read-only root |
+| `docker compose up --build` | The production image on amd64 with `./.local/data` mounted as `/data`, read-only root |
 | `docker buildx build --platform linux/arm64` | Proves the Pi image (incl. native `better-sqlite3`) builds; QEMU is enough |
 | `npm run verify:TXX` | One script per ticket running that ticket's automatable acceptance checks, printing PASS/FAIL per item; manual items are listed in `docs/verification/TXX.md` with exact steps and observed results |
 | Kalshi **demo** environment | Optional: with a demo key path in `config.local.json` (never committed), smoke scripts run against demo; without it every Kalshi test runs on fixtures and smoke scripts print `SKIPPED (no demo key)` |
@@ -1008,6 +1006,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 
 - Everything under **Scope** is implemented as described in the referenced sections; nothing under **Out of scope** is started.
 - Every **Acceptance** item passes; `npm run verify:TXX` is green and `docs/verification/TXX.md` exists with manual steps and observed results.
+- **Acceptance boxes are ticked in `SPEC.md`:** the implementing agent changes `- [ ]` to `- [x]` for every Acceptance item it actually ran and saw pass, in the same branch as the ticket's code. An item that was not run, failed, or could not be verified on the agent's machine stays `- [ ]`, with a one-line reason in the ticket's **Implementation notes**. Never tick an item on the strength of reasoning alone.
 - `npm run lint && npm run typecheck && npm test && npm run e2e` pass locally and in CI on the pushed branch.
 - No secret, `.env` file, key or database lands in git (`gitleaks` clean); `npm audit --audit-level=high` clean.
 - Money, prices and counts use the integer units from the conventions table; no floating point in money paths (lint rule or test).
@@ -1087,7 +1086,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** business logic.
 
 **Acceptance (verify locally)**
-- [ ] `rm -rf .local && DB_PATH=./.local/share/kalshi-trader/trader.db npm run dev` creates the directory, `trader.db` and `trader.db-wal`; `PRAGMA journal_mode` is `wal`; `PRAGMA foreign_keys` in the app connection is 1 (test).
+- [ ] `rm -rf .local && DB_PATH=./.local/data/db/trader.db npm run dev` creates the directory, `trader.db` and `trader.db-wal`; `PRAGMA journal_mode` is `wal`; `PRAGMA foreign_keys` in the app connection is 1 (test).
 - [ ] `.tables` lists exactly: `leagues teams games markets game_snapshots strategies strategy_versions trades trade_attempts balance_snapshots bankroll_snapshots audit_log users sessions login_attempts settings hist_games hist_prices backtests backtest_trades` plus Drizzle's migration table.
 - [ ] Restarting against the same file applies no migration and logs no error; `SELECT count(*) FROM leagues` = 6, all with a non-empty `kalshi_series` and `enabled=1`.
 - [ ] Repository tests: two `trades` rows with the same `(strategy_id, game_id)` → `UNIQUE` error; two `trade_attempts` with the same `client_order_id` → `UNIQUE` error; `settings.get('global_dry_run')` → `true` and `settings.get('global_kill_switch')` → `false` on an empty table; `set`/`get` round-trips JSON; every repository has at least one CRUD test.
@@ -1159,22 +1158,22 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 
 ### T05 — Home Assistant app packaging (local verification only)
 
-**Goal:** the repository is a valid Home Assistant app repository whose image builds for `aarch64` and `amd64`, runs Node as non-root, keeps the DB in `/share/kalshi-trader`, and never exposes the private key through the environment. **Deployment to HAOS is manual, after T14.**
+**Goal:** the repository is a valid Home Assistant app repository whose image builds for `aarch64` and `amd64`, runs Node as non-root, keeps the DB in `/data/db`, and never exposes the private key through the environment. **Deployment to HAOS is manual, after T14.**
 
 **Scope**
 - `repository.yaml`, `kalshi-trader/config.yaml`, `Dockerfile`, `run.sh`, `translations/en.yaml`, `DOCS.md`, `icon.png`, `logo.png`, `CHANGELOG.md` exactly per §11, applying the "Adopt" rows of §14 Reference app facts where §11 is silent. Pin the base image tag and digest (verify that the tag exists for both arches and that its Alpine ships `nodejs` ≥ 22; record the choice in `docs/decisions/`).
 - Private key hand-over on fd 3 (`KALSHI_PRIVATE_KEY_FD`); Node reads and closes it at boot.
-- `docker-compose.yml` for local runs mapping `./.local/share:/share`, `./.local/data:/data`, `read_only: true`, `tmpfs: /tmp`, and `/data/options.json` generated by `npm run compose:options` from `config.local.json`.
+- `docker-compose.yml` for local runs mapping `./.local/data:/data`, `read_only: true`, `tmpfs: /tmp`, and `/data/options.json` generated by `npm run compose:options` from `config.local.json`.
 - CI `image.yml`: `docker buildx build --platform linux/arm64,linux/amd64`; optional GHCR publish workflow present but disabled.
-- `scripts/check-addon-config.ts` (`npm run check:addon`): required keys, `schema` ↔ `options` parity (optional `?` keys may be absent from `options`), `ingress_port` = `PORT`, `ports` 8099 = `null`, `init: true`, `map` contains `share` rw, none of `host_network`/`privileged`/`full_access`/`hassio_api`, `version` = `package.json` version.
+- `scripts/check-addon-config.ts` (`npm run check:addon`): required keys, `schema` ↔ `options` parity (optional `?` keys may be absent from `options`), `ingress_port` = `PORT`, `ports` 8099 = `null`, `init: true`, no `map` key (or an empty one), none of `host_network`/`privileged`/`full_access`/`hassio_api`, `version` = `package.json` version.
 - `DOCS.md`: install steps; Kalshi key generation and `base64 -w0 key.pem`; every option including `allow_live_orders` and `kalshi_subaccount`; dedicated subaccount + restricted key walkthrough (incl. the Advanced tier upgrade call); `cloudflared` app target hostname; Cloudflare Access; backup password.
 
 **Out of scope:** anything trading related; HAOS installation.
 
 **Acceptance (verify locally)**
 - [ ] `npm run check:addon` exits 0; removing `slug`, adding an option without a schema entry, or setting `ports: 8099/tcp: 8099` makes it exit 1 naming the key.
-- [ ] `docker compose up --build -d` → health `healthy` within 90 s; `curl localhost:8099/healthz` (compose maps the port for local testing only) → `{"ok":true,…}`; `.local/share/kalshi-trader/trader.db` exists and is owned by uid 1000.
-- [ ] `docker compose exec kalshi-trader sh -c 'stat -c %u /proc/$(pgrep -f dist/server/main.js)'` → `1000`; `touch /app/x` fails with `Read-only file system`; the app writes `/share/kalshi-trader` and `/data/app`.
+- [ ] `docker compose up --build -d` → health `healthy` within 90 s; `curl localhost:8099/healthz` (compose maps the port for local testing only) → `{"ok":true,…}`; `.local/data/db/trader.db` exists and is owned by uid 1000; `.local/data/options.json` is still owned by root.
+- [ ] `docker compose exec kalshi-trader sh -c 'stat -c %u /proc/$(pgrep -f dist/server/main.js)'` → `1000`; `touch /app/x` fails with `Read-only file system`; the app writes `/data/db` and `/data/app` and cannot write `/data/options.json`.
 - [ ] Key never in the environment: `tr '\0' '\n' < /proc/<node pid>/environ | grep -c -e KALSHI_PRIVATE -e 'BEGIN .*PRIVATE KEY'` → `0`; `ls -l /proc/<node pid>/fd/3` → no such fd after boot; a development-only endpoint returns the loaded key's SHA-256 public-key fingerprint, equal to `openssl pkey -in key.pem -pubout | sha256sum` of the fixture key.
 - [ ] `run.sh` test (container with a fixture `/data/options.json`): exported `KALSHI_ENV`, `KALSHI_KEY_ID`, `KALSHI_SUBACCOUNT`, `ALLOW_LIVE_ORDERS`, `LOG_LEVEL`, `TRUSTED_PROXIES` match the options; `timezone` absent → `TZ` unchanged, present → exported.
 - [ ] `docker buildx build --platform linux/arm64 -t kalshi-trader:arm64 --load kalshi-trader/` succeeds and `docker run --rm --platform linux/arm64 --entrypoint node kalshi-trader:arm64 -e "require('/app/node_modules/better-sqlite3')(':memory:').prepare('select 1').get()"` exits 0.
@@ -1434,7 +1433,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
   2. Add `https://github.com/petrapa6/sports-trading` under Settings → Apps → Repositories; install *Kalshi Sports Trader*.
   3. Configuration: `kalshi_key_id`, base64 PEM, `kalshi_env: demo`, `kalshi_subaccount`, `allow_live_orders: false`; start; the Log tab shows `listening on 8099` and `migrations applied`.
   4. Open via the sidebar (ingress); complete first-run setup; log in; Settings → Trading shows global dry run on, kill switch off, add-on lock "live orders disabled".
-  5. `/share/kalshi-trader/trader.db` exists (Samba/SSH); the next Google Drive backup lists it; a backup password is set.
+  5. The app's backup (Settings → System → Backups, or the next Google Drive backup) contains `db/trader.db` in the Kalshi Sports Trader app's data; a backup password is set.
   6. In the `cloudflared` app, point the hostname at the service shown on this app's Info page (`http://<prefix>-kalshi-trader:8099`); the hostname shows the login page; Cloudflare Access enabled; `/setup` over the tunnel returns 403.
   7. Settings → Diagnostics → Test Kalshi connection succeeds; Leagues → Run discovery lists upcoming games (no preseason).
   8. On the next NHL evening the Dashboard cards update live; a dry-run strategy fires and settles with `DRY RUN` badges everywhere; RAM from the Info tab is recorded.
@@ -1478,6 +1477,7 @@ Changes relative to the living copy (rev 37), for traceability:
 10. **Schema additions:** `trade_attempts`, `games.blocked/competition/timeline_archived/…`, `markets.price_ranges/settlement_value_bp`, session timestamps and channel, recovery-code hashes, `audit_log.ip/channel/mode`, `trades.reconcile_warning`, `backtest_trades.price_source`, autoincrement ids for snapshot tables (§7).
 11. **T15:** `hassio_api` removed (only `homeassistant_api` needed); notifications state the mode.
 12. **Reference app inlined (after T01):** everything needed from the owner's Family Dashboard app is recorded in §14 Reference app facts, so agents no longer read that repository. It corrected an earlier assumption (Family Dashboard keeps its DB in `/data`, not `/share`) and added the `url` key, OCI labels, the host-port-8099 clash note and the `--builder` rule (§11, §14).
+13. **Storage moved to `/data` (after T01):** the database lives at `/data/db/trader.db` in the app's own data directory, like the reference app; the `share` map entry is gone. Definition of done now requires ticking every verified Acceptance box in `SPEC.md` (§14).
 
 ## Sources
 

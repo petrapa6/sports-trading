@@ -63,7 +63,7 @@ describe('loadConfig parsing', () => {
       ALLOW_LIVE_ORDERS: 'true',
       LOG_LEVEL: 'debug',
       DATA_DIR: '/data/app',
-      DB_PATH: '/share/kalshi-trader/trader.db',
+      DB_PATH: '/data/db/trader.db',
       PORT: '8099',
       TRUSTED_PROXIES: '172.30.32.0/23, 10.0.0.1',
       TZ: 'Europe/Prague',
