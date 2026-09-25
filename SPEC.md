@@ -1093,7 +1093,7 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 - [x] Inserting `stake_micros: 12.5` or `fill_cc: "200"` fails validation.
 - [x] Maintenance (fake timers): 100 snapshots aged 91 days of an archived game, 50 aged 91 days of a non-archived game, 10 aged 89 days → after the 02:30 tick 60 remain; `wal_checkpoint` is called once per day (spy).
 - [x] `db:migrate:down` then `db:migrate` on a seeded DB succeeds with unchanged row counts.
-- [ ] `/healthz` returns `503 {"ok":false,"db":"…"}` when `DB_PATH` points to an unwritable directory.
+- [x] `/healthz` returns `503 {"ok":false,"db":"…"}` when `DB_PATH` points to an unwritable directory.
 
 **Implementation notes (T02, deviations and clarifications)**
 - Migrations live in `kalshi-trader/app/migrations/` (drizzle-kit output: `0000_initial_schema.sql`, `0001_seed_leagues.sql`, `meta/`), outside `src/` so `src/db` and `dist/db` resolve them the same way; T05's Dockerfile must copy this folder into the image. Drizzle has no down migrations, so each migration has a hand-written `migrations/down/<tag>.sql`; `db:migrate:down` runs it and removes the row from `__drizzle_migrations` in one transaction (default one step; `-- --steps N`, `-- --all`). `npm run db:generate` (drizzle-kit) was added for future schema changes.
