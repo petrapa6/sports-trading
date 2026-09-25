@@ -1027,15 +1027,15 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** DB, auth, UI, Docker.
 
 **Acceptance (verify locally)**
-- [ ] Fresh clone on Node 22: `npm ci && npm run lint && npm run typecheck && npm test && npm run e2e` all exit 0.
-- [ ] `npm run dev` then `curl -s localhost:8099/healthz` returns exactly `{"ok":true}` within 5 s; every stdout line is valid JSON (`| jq -e . >/dev/null`).
-- [ ] `PORT=abc npm run dev` exits non-zero within 2 s with a message containing `PORT`; `LOG_LEVEL=nope` likewise names `LOG_LEVEL`; `ALLOW_LIVE_ORDERS=maybe` names `ALLOW_LIVE_ORDERS`.
-- [ ] With no `config.local.json` and no Kalshi settings the app starts and logs exactly one `warn` about missing Kalshi credentials; `ALLOW_LIVE_ORDERS` defaults to `false`.
-- [ ] `config.local.json` `{"port": 8123}` is honoured; env `PORT=8124` overrides it.
-- [ ] Decimal tests: the examples above pass; `dollarsToBp("0.93005")` throws; `fpToCc("1.555")` throws; round-trip of 1 000 random values is exact.
-- [ ] Secret hook: on a scratch branch, committing a file containing `-----BEGIN RSA PRIVATE KEY-----` is rejected; `config.local.json` and `foo.db` are ignored by `git status`.
-- [ ] `docs/decisions/0001-conventions.md` lists at least slug convention, `map` entries, base image tag, DB path handling taken from `family-dashboard` (or states the repo was not reachable); `SPEC.md` exists at the root.
-- [ ] Branch pushed; the GitHub Actions run is green (URL recorded in the verification doc).
+- [x] Fresh clone on Node 22: `npm ci && npm run lint && npm run typecheck && npm test && npm run e2e` all exit 0.
+- [x] `npm run dev` then `curl -s localhost:8099/healthz` returns exactly `{"ok":true}` within 5 s; every stdout line is valid JSON (`| jq -e . >/dev/null`).
+- [x] `PORT=abc npm run dev` exits non-zero within 2 s with a message containing `PORT`; `LOG_LEVEL=nope` likewise names `LOG_LEVEL`; `ALLOW_LIVE_ORDERS=maybe` names `ALLOW_LIVE_ORDERS`.
+- [x] With no `config.local.json` and no Kalshi settings the app starts and logs exactly one `warn` about missing Kalshi credentials; `ALLOW_LIVE_ORDERS` defaults to `false`.
+- [x] `config.local.json` `{"port": 8123}` is honoured; env `PORT=8124` overrides it.
+- [x] Decimal tests: the examples above pass; `dollarsToBp("0.93005")` throws; `fpToCc("1.555")` throws; round-trip of 1 000 random values is exact.
+- [x] Secret hook: on a scratch branch, committing a file containing `-----BEGIN RSA PRIVATE KEY-----` is rejected; `config.local.json` and `foo.db` are ignored by `git status`.
+- [x] `docs/decisions/0001-conventions.md` lists at least slug convention, `map` entries, base image tag, DB path handling taken from `family-dashboard` (or states the repo was not reachable); `SPEC.md` exists at the root.
+- [x] Branch pushed; the GitHub Actions run is green (URL recorded in the verification doc).
 
 **Implementation notes (T01, deviations and clarifications)**
 - `petrapa6/family-dashboard` could not be read in the T01 session (clone refused by the session's permission policy); conventions come from §11 alone (`docs/decisions/0001-conventions.md`). T05 re-checks it.
