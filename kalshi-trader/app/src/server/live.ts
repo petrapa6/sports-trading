@@ -3,6 +3,7 @@ import type { ServerResponse } from 'node:http';
 import type { FastifyInstance } from 'fastify';
 import type { KalshiEnv } from '../config.js';
 import type { Repositories } from '../db/repositories.js';
+import type { BacktestProgress } from '../backtest/runner.js';
 import type { Signal } from '../core/engine.js';
 import type { LoopStatus } from '../core/scheduler.js';
 import {
@@ -73,6 +74,7 @@ export class LiveHub extends EventEmitter<{
   strategies: [StrategyView[]];
   signal: [Signal];
   trade: [TradeChange];
+  backtest: [BacktestProgress];
 }> {
   private source: LiveSource = NO_SOURCE;
   private gamesPending = false;
@@ -143,6 +145,11 @@ export class LiveHub extends EventEmitter<{
     if (change.status === 'filled' || change.status.startsWith('settled_')) this.strategiesChanged();
   }
 
+  /** A backtest progressed or finished (SSE `backtest`). */
+  backtestProgress(progress: BacktestProgress): void {
+    this.emit('backtest', progress);
+  }
+
   loop(): LoopStatus | null {
     return this.source.loop();
   }
@@ -191,7 +198,8 @@ export function sseEvent(event: string, data: unknown): string {
  * strategies), `loop` (loop state, last poll, feed status, Kalshi balance), `strategies`
  * (`{strategies: StrategyView[]}` with effective modes) and `signals` (`{signals: Signal[]}`, the recent
  * ones); then a `log` event per new line, `switches` / `games` / `loop` / `strategies` on every change, a
- * `signal` event per new signal, a `trade` event (`{id, status}`) per trade state change (T09) and a `heartbeat` (with the switch states) every 10 s.
+ * `signal` event per new signal, a `trade` event (`{id, status}`) per trade state change (T09), a `backtest` event
+ * (`{id, status, done, total}`) per backtest progress step (T12) and a `heartbeat` (with the switch states) every 10 s.
  * Each heartbeat re-checks the session, so a revoked or expired session stops receiving data within
  * one interval.
  */
@@ -238,6 +246,7 @@ export function registerLiveRoutes(
     const onStrategies = (strategies: StrategyView[]) => send('strategies', { strategies });
     const onSignal = (signal: Signal) => send('signal', signal);
     const onTrade = (trade: TradeChange) => send('trade', trade);
+    const onBacktest = (progress: BacktestProgress) => send('backtest', progress);
 
     const sessionActive = (): boolean => {
       try {
@@ -257,6 +266,7 @@ export function registerLiveRoutes(
       hub.off('strategies', onStrategies);
       hub.off('signal', onSignal);
       hub.off('trade', onTrade);
+      hub.off('backtest', onBacktest);
       open.delete(res);
     };
 
@@ -292,6 +302,7 @@ export function registerLiveRoutes(
     hub.on('strategies', onStrategies);
     hub.on('signal', onSignal);
     hub.on('trade', onTrade);
+    hub.on('backtest', onBacktest);
     req.raw.on('close', cleanup);
     res.on('close', cleanup);
   });

@@ -23,6 +23,7 @@ import { FilterBar, useFilters } from '../components/FilterBar';
 import { ModeBadge } from '../components/ModeBadge';
 import { downloadCsv, toCsv } from '../csv';
 import { useStepUp } from '../reauth';
+import { navigate } from '../router';
 
 // ---- badges and small helpers --------------------------------------------------------------------
 
@@ -382,6 +383,25 @@ function EditorForm({
     }
   };
 
+  /** Quick exact backtest of the saved version over the last 30 days (T12), shown on the Backtest page. */
+  const test30d = async () => {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      const { id } = await api.post<{ id: string }>('api/backtests', {
+        strategyId: detail.id,
+        lastDays: 30,
+        priceMode: 'exact',
+        quick: true,
+      });
+      navigate(`/backtest?run=${id}`);
+    } catch (err) {
+      setErrors({ '(body)': errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const sportLeagues = leagues.filter((l) => l.sport === form.sport);
   const numberField = (
     key: keyof FormState,
@@ -513,14 +533,26 @@ function EditorForm({
           <button type="submit" disabled={busy}>
             {isNew ? 'Create strategy' : 'Save'}
           </button>
-          <span className="tooltip-wrap" title="available after backtesting (T12)">
-            <button type="button" className="secondary" disabled aria-describedby="test-30d-note">
+          {isNew ? (
+            <span className="tooltip-wrap" title="save the strategy first">
+              <button type="button" className="secondary" disabled aria-describedby="test-30d-note">
+                Test against last 30 days
+              </button>
+              <span id="test-30d-note" className="visually-hidden">
+                save the strategy first
+              </span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              title="Quick exact backtest over the games collected in the strategy's leagues in the last 30 days"
+              onClick={() => void test30d()}
+            >
               Test against last 30 days
             </button>
-            <span id="test-30d-note" className="visually-hidden">
-              available after backtesting (T12)
-            </span>
-          </span>
+          )}
           {!isNew && (
             <button type="button" className="secondary danger" disabled={busy} onClick={() => void remove()}>
               Delete strategy

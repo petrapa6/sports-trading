@@ -1022,3 +1022,67 @@ table.trades-table {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Backtest page (T12): its own category, no live / dry-run styling */
+.backtest-run {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.backtest-run h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.modelled-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border: 1px dashed #d97706;
+  border-radius: 999px;
+  color: #b45309;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  .modelled-badge {
+    border-color: #fbbf24;
+    color: #fbbf24;
+  }
+}
+.backtest-run progress {
+  width: 100%;
+}
+.backtest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.backtest-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-wrap: anywhere;
+}
+.backtest-list li.selected {
+  font-weight: 600;
+}
+.backtest-actions .field {
+  max-width: 28rem;
+}
+.backtest-form fieldset .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+.stat-value--backtest {
+  border-left: 3px solid #0d9488;
+}
+@media (prefers-color-scheme: dark) {
+  .stat-value--backtest {
+    border-left-color: #2dd4bf;
+  }
+}

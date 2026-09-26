@@ -58,9 +58,9 @@ test('Strategies: create (inline error first), kill switch off with password, ed
   expect(strategyRow(name)).toBeUndefined();
   await expect(
     drawer.getByRole('button', { name: 'Test against last 30 days' }),
-    'backtest button present but disabled',
+    'backtest button disabled until the strategy is saved',
   ).toBeDisabled();
-  await expect(drawer.locator('[title="available after backtesting (T12)"]')).toHaveCount(1);
+  await expect(drawer.locator('[title="save the strategy first"]')).toHaveCount(1);
 
   await drawer.getByLabel('Stake (% of balance)').fill('2');
   await expect(percentError).toBeHidden();
@@ -86,6 +86,7 @@ test('Strategies: create (inline error first), kill switch off with password, ed
   await page.getByRole('button', { name, exact: true }).click();
   const editor = page.getByRole('dialog', { name: `Edit “${name}”` });
   await expect(editor.getByLabel('Minimum lead (goals)')).toHaveValue('2');
+  await expect(editor.getByRole('button', { name: 'Test against last 30 days' })).toBeEnabled();
   await editor.getByLabel('Minimum lead (goals)').fill('3');
   await editor.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByTestId('version-history').locator('li')).toHaveCount(2);
