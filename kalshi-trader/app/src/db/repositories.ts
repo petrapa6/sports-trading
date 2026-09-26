@@ -19,6 +19,7 @@ import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import type { Orm } from './connection.js';
 import * as s from './schema.js';
 import { SettingsRepository } from './settings.js';
+import { StatsRepository } from './stats.js';
 
 /** A value that failed repository validation; `column` names the offending column. */
 export class ValidationError extends Error {
@@ -484,6 +485,8 @@ export function createRepositories(orm: Orm, now: () => number = Date.now) {
     histPrices: new Repository(orm, s.hist_prices, ['market_ticker', 'minute_ts']),
     backtests: new Repository(orm, s.backtests, ['id']),
     backtestTrades: new Repository(orm, s.backtest_trades, ['id']),
+    /** Read-only aggregates for `GET /api/stats` (T10). */
+    stats: new StatsRepository(orm),
   };
 }
 

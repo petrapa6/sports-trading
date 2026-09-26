@@ -17,6 +17,7 @@ import { OnceSet } from '../feeds/gameState.js';
 import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
 import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
 import { registerKalshiRoutes, type KalshiServices } from './routes/kalshi.js';
+import { registerStatsRoutes } from './routes/stats.js';
 import { registerStrategyRoutes } from './routes/strategies.js';
 import { registerTradeRoutes } from './routes/trades.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
@@ -177,6 +178,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   registerApiRoutes(app, database, hub, options.now);
   registerStrategyRoutes(app, database, hub, options.now);
   registerTradeRoutes(app, database, hub, options.now);
+  registerStatsRoutes(app, database, hub, options.now);
   registerKalshiRoutes(
     app,
     database,

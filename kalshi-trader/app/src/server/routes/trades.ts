@@ -6,7 +6,8 @@ import { HttpError } from '../http.js';
 import type { LiveHub } from '../live.js';
 
 const ID = /^[A-Za-z0-9_.-]{1,64}$/;
-const idList = z
+/** A comma-separated id list (`leagues=epl,nhl`); malformed ids are dropped. */
+export const idList = z
   .string()
   .max(2000)
   .transform((v) => [...new Set(v.split(',').filter((x) => ID.test(x)))]);

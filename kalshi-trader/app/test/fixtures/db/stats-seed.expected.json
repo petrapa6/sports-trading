@@ -1,0 +1,3928 @@
+{
+  "now": "2026-09-20T12:00:00.000Z",
+  "kalshiEnv": "demo",
+  "cases": {
+    "unfiltered": {
+      "query": "",
+      "response": {
+        "live": {
+          "tiles": {
+            "trades": 8,
+            "won": 6,
+            "lost": 2,
+            "void": 0,
+            "winRate": 0.75,
+            "netPnlMicros": -1298100,
+            "investedMicros": 11298100,
+            "roi": -0.1149,
+            "maxDrawdownMicros": 1646200,
+            "filled": 9,
+            "avgPriceBp": 9389,
+            "avgFeeMicros": 5678,
+            "impliedVsActual": {
+              "impliedBp": 9375,
+              "actualWinRate": 0.75,
+              "n": 8
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-03T17:00:00.000Z",
+                  "cumMicros": 311100
+                },
+                {
+                  "t": "2026-09-04T17:00:00.000Z",
+                  "cumMicros": 348100
+                },
+                {
+                  "t": "2026-09-05T18:00:00.000Z",
+                  "cumMicros": -605900
+                },
+                {
+                  "t": "2026-09-08T17:00:00.000Z",
+                  "cumMicros": -521900
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -428900
+                },
+                {
+                  "t": "2026-09-15T16:00:00.000Z",
+                  "cumMicros": -372900
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -1298100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-03T17:00:00.000Z",
+                      "cumMicros": 311100
+                    },
+                    {
+                      "t": "2026-09-05T18:00:00.000Z",
+                      "cumMicros": -642900
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -549900
+                    },
+                    {
+                      "t": "2026-09-15T16:00:00.000Z",
+                      "cumMicros": -493900
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -1419100
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-04T17:00:00.000Z",
+                      "cumMicros": 37000
+                    },
+                    {
+                      "t": "2026-09-08T17:00:00.000Z",
+                      "cumMicros": 121000
+                    }
+                  ]
+                }
+              ]
+            },
+            "balance": [
+              {
+                "t": "2026-09-01T12:00:00.000Z",
+                "cashMicros": 50000000,
+                "portfolioMicros": 50000000
+              },
+              {
+                "t": "2026-09-05T12:00:00.000Z",
+                "cashMicros": 51000000,
+                "portfolioMicros": 51900000
+              },
+              {
+                "t": "2026-09-12T12:00:00.000Z",
+                "cashMicros": 52000000,
+                "portfolioMicros": 52000000
+              },
+              {
+                "t": "2026-09-15T12:00:00.000Z",
+                "cashMicros": 52500000,
+                "portfolioMicros": 53400000
+              },
+              {
+                "t": "2026-09-19T12:00:00.000Z",
+                "cashMicros": 53000000,
+                "portfolioMicros": 54000000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-03",
+                "pnlMicros": 199000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 199000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-04",
+                "pnlMicros": 37000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 37000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-05",
+                "pnlMicros": -954000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -954000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-08",
+                "pnlMicros": 84000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 84000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 93000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 93000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -869200,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -869200
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-03T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-04T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-05T18:00:00.000Z",
+                "drawdownMicros": 954000
+              },
+              {
+                "t": "2026-09-08T17:00:00.000Z",
+                "drawdownMicros": 870000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 777000
+              },
+              {
+                "t": "2026-09-15T16:00:00.000Z",
+                "drawdownMicros": 721000
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 1646200
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.945,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.925,
+                "y": 0.5,
+                "n": 2
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.96,
+                "y": 1,
+                "n": 1
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "laliga",
+                "x": 0.91,
+                "y": 1,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 1
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 1
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 3
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 61,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 75,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              },
+              {
+                "minute": 78,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 4
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        },
+        "dry_run": {
+          "tiles": {
+            "trades": 11,
+            "won": 8,
+            "lost": 2,
+            "void": 1,
+            "winRate": 0.8,
+            "netPnlMicros": -3000100,
+            "investedMicros": 16000100,
+            "roi": -0.1875,
+            "maxDrawdownMicros": 3421000,
+            "filled": 12,
+            "avgPriceBp": 9400,
+            "avgFeeMicros": 6092,
+            "impliedVsActual": {
+              "impliedBp": 9430,
+              "actualWinRate": 0.8,
+              "n": 10
+            },
+            "forcedDryRun": {
+              "forced": 2,
+              "total": 17,
+              "share": 0.1176
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-02T17:00:00.000Z",
+                  "cumMicros": 186900
+                },
+                {
+                  "t": "2026-09-03T17:05:00.000Z",
+                  "cumMicros": -1720100
+                },
+                {
+                  "t": "2026-09-04T17:00:00.000Z",
+                  "cumMicros": -1692100
+                },
+                {
+                  "t": "2026-09-05T17:00:00.000Z",
+                  "cumMicros": -2505100
+                },
+                {
+                  "t": "2026-09-09T17:00:00.000Z",
+                  "cumMicros": -2439100
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -2271100
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -3234100
+                },
+                {
+                  "t": "2026-09-16T17:00:00.000Z",
+                  "cumMicros": -3187100
+                },
+                {
+                  "t": "2026-09-16T17:30:00.000Z",
+                  "cumMicros": -3056100
+                },
+                {
+                  "t": "2026-09-17T17:00:00.000Z",
+                  "cumMicros": -3000100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-02T17:00:00.000Z",
+                      "cumMicros": 186900
+                    },
+                    {
+                      "t": "2026-09-03T17:05:00.000Z",
+                      "cumMicros": -1720100
+                    },
+                    {
+                      "t": "2026-09-09T17:00:00.000Z",
+                      "cumMicros": -1654100
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -1486100
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -2449100
+                    },
+                    {
+                      "t": "2026-09-16T17:00:00.000Z",
+                      "cumMicros": -2402100
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-04T17:00:00.000Z",
+                      "cumMicros": 28000
+                    },
+                    {
+                      "t": "2026-09-05T17:00:00.000Z",
+                      "cumMicros": -785000
+                    },
+                    {
+                      "t": "2026-09-16T17:30:00.000Z",
+                      "cumMicros": -654000
+                    },
+                    {
+                      "t": "2026-09-17T17:00:00.000Z",
+                      "cumMicros": -598000
+                    }
+                  ]
+                }
+              ]
+            },
+            "bankroll": [
+              {
+                "t": "2026-09-01T15:05:00.000Z",
+                "micros": 98112100
+              },
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "micros": 100112100
+              },
+              {
+                "t": "2026-09-05T17:00:00.000Z",
+                "micros": 99000000
+              },
+              {
+                "t": "2026-09-10T00:00:00.000Z",
+                "micros": 100000000
+              },
+              {
+                "t": "2026-09-14T15:00:00.000Z",
+                "micros": 97168000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "micros": 100168000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "micros": 100200000
+              },
+              {
+                "t": "2026-09-18T15:00:00.000Z",
+                "micros": 99250000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-02",
+                "pnlMicros": 74800,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 74800
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-03",
+                "pnlMicros": -1907000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -1907000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-04",
+                "pnlMicros": 28000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 28000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-05",
+                "pnlMicros": -813000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": -813000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-09",
+                "pnlMicros": 66000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 66000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 168000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 168000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -963000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -963000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-16",
+                "pnlMicros": 178000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 47000
+                  },
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 131000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-17",
+                "pnlMicros": 56000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 56000
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-02T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-03T17:05:00.000Z",
+                "drawdownMicros": 1907000
+              },
+              {
+                "t": "2026-09-04T17:00:00.000Z",
+                "drawdownMicros": 1879000
+              },
+              {
+                "t": "2026-09-05T17:00:00.000Z",
+                "drawdownMicros": 2692000
+              },
+              {
+                "t": "2026-09-09T17:00:00.000Z",
+                "drawdownMicros": 2626000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 2458000
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 3421000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "drawdownMicros": 3374000
+              },
+              {
+                "t": "2026-09-16T17:30:00.000Z",
+                "drawdownMicros": 3243000
+              },
+              {
+                "t": "2026-09-17T17:00:00.000Z",
+                "drawdownMicros": 3187000
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.94,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.9433,
+                "y": 0.6667,
+                "n": 3
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.95,
+                "y": 1,
+                "n": 2
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "laliga",
+                "x": 0.94,
+                "y": 1,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 1
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 2
+                },
+                {
+                  "bp": 9400,
+                  "count": 3
+                },
+                {
+                  "bp": 9500,
+                  "count": 3
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 1
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 65,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 66,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 76,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 77,
+                "won": 0,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              },
+              {
+                "minute": 80,
+                "won": 2,
+                "lost": 0,
+                "void": 1,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                },
+                {
+                  "reason": "too_small",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 2
+                },
+                {
+                  "reason": "error",
+                  "count": 1
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "stale_feed",
+                  "count": 1
+                },
+                {
+                  "reason": "too_small",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "strategies=A": {
+      "query": "strategies=A",
+      "response": {
+        "live": {
+          "tiles": {
+            "trades": 6,
+            "won": 4,
+            "lost": 2,
+            "void": 0,
+            "winRate": 0.6667,
+            "netPnlMicros": -1419100,
+            "investedMicros": 9419100,
+            "roi": -0.1507,
+            "maxDrawdownMicros": 1730200,
+            "filled": 6,
+            "avgPriceBp": 9383,
+            "avgFeeMicros": 6517,
+            "impliedVsActual": {
+              "impliedBp": 9383,
+              "actualWinRate": 0.6667,
+              "n": 6
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-03T17:00:00.000Z",
+                  "cumMicros": 311100
+                },
+                {
+                  "t": "2026-09-05T18:00:00.000Z",
+                  "cumMicros": -642900
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -549900
+                },
+                {
+                  "t": "2026-09-15T16:00:00.000Z",
+                  "cumMicros": -493900
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -1419100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-03T17:00:00.000Z",
+                      "cumMicros": 311100
+                    },
+                    {
+                      "t": "2026-09-05T18:00:00.000Z",
+                      "cumMicros": -642900
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -549900
+                    },
+                    {
+                      "t": "2026-09-15T16:00:00.000Z",
+                      "cumMicros": -493900
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -1419100
+                    }
+                  ]
+                }
+              ]
+            },
+            "balance": [
+              {
+                "t": "2026-09-01T12:00:00.000Z",
+                "cashMicros": 50000000,
+                "portfolioMicros": 50000000
+              },
+              {
+                "t": "2026-09-05T12:00:00.000Z",
+                "cashMicros": 51000000,
+                "portfolioMicros": 51900000
+              },
+              {
+                "t": "2026-09-12T12:00:00.000Z",
+                "cashMicros": 52000000,
+                "portfolioMicros": 52000000
+              },
+              {
+                "t": "2026-09-15T12:00:00.000Z",
+                "cashMicros": 52500000,
+                "portfolioMicros": 53400000
+              },
+              {
+                "t": "2026-09-19T12:00:00.000Z",
+                "cashMicros": 53000000,
+                "portfolioMicros": 54000000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-03",
+                "pnlMicros": 199000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 199000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-05",
+                "pnlMicros": -954000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -954000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 93000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 93000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -869200,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -869200
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-03T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-05T18:00:00.000Z",
+                "drawdownMicros": 954000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 861000
+              },
+              {
+                "t": "2026-09-15T16:00:00.000Z",
+                "drawdownMicros": 805000
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 1730200
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.945,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.925,
+                "y": 0.5,
+                "n": 2
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 1
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 2
+                },
+                {
+                  "bp": 9600,
+                  "count": 0
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 61,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        },
+        "dry_run": {
+          "tiles": {
+            "trades": 7,
+            "won": 5,
+            "lost": 2,
+            "void": 0,
+            "winRate": 0.7143,
+            "netPnlMicros": -2402100,
+            "investedMicros": 10402100,
+            "roi": -0.2309,
+            "maxDrawdownMicros": 2636000,
+            "filled": 7,
+            "avgPriceBp": 9414,
+            "avgFeeMicros": 6014,
+            "impliedVsActual": {
+              "impliedBp": 9414,
+              "actualWinRate": 0.7143,
+              "n": 7
+            },
+            "forcedDryRun": {
+              "forced": 1,
+              "total": 9,
+              "share": 0.1111
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-02T17:00:00.000Z",
+                  "cumMicros": 186900
+                },
+                {
+                  "t": "2026-09-03T17:05:00.000Z",
+                  "cumMicros": -1720100
+                },
+                {
+                  "t": "2026-09-09T17:00:00.000Z",
+                  "cumMicros": -1654100
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -1486100
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -2449100
+                },
+                {
+                  "t": "2026-09-16T17:00:00.000Z",
+                  "cumMicros": -2402100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-02T17:00:00.000Z",
+                      "cumMicros": 186900
+                    },
+                    {
+                      "t": "2026-09-03T17:05:00.000Z",
+                      "cumMicros": -1720100
+                    },
+                    {
+                      "t": "2026-09-09T17:00:00.000Z",
+                      "cumMicros": -1654100
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -1486100
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -2449100
+                    },
+                    {
+                      "t": "2026-09-16T17:00:00.000Z",
+                      "cumMicros": -2402100
+                    }
+                  ]
+                }
+              ]
+            },
+            "bankroll": [
+              {
+                "t": "2026-09-01T15:05:00.000Z",
+                "micros": 98112100
+              },
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "micros": 100112100
+              },
+              {
+                "t": "2026-09-05T17:00:00.000Z",
+                "micros": 99000000
+              },
+              {
+                "t": "2026-09-10T00:00:00.000Z",
+                "micros": 100000000
+              },
+              {
+                "t": "2026-09-14T15:00:00.000Z",
+                "micros": 97168000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "micros": 100168000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "micros": 100200000
+              },
+              {
+                "t": "2026-09-18T15:00:00.000Z",
+                "micros": 99250000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-02",
+                "pnlMicros": 74800,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 74800
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-03",
+                "pnlMicros": -1907000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -1907000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-09",
+                "pnlMicros": 66000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 66000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 168000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 168000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -963000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -963000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-16",
+                "pnlMicros": 47000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 47000
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-02T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-03T17:05:00.000Z",
+                "drawdownMicros": 1907000
+              },
+              {
+                "t": "2026-09-09T17:00:00.000Z",
+                "drawdownMicros": 1841000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 1673000
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 2636000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "drawdownMicros": 2589000
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.94,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.9433,
+                "y": 0.6667,
+                "n": 3
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 1
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 2
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 65,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 66,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 2
+                },
+                {
+                  "reason": "error",
+                  "count": 1
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "leagues=epl": {
+      "query": "leagues=epl",
+      "response": {
+        "live": {
+          "tiles": {
+            "trades": 5,
+            "won": 4,
+            "lost": 1,
+            "void": 0,
+            "winRate": 0.8,
+            "netPnlMicros": -655900,
+            "investedMicros": 6655900,
+            "roi": -0.0985,
+            "maxDrawdownMicros": 954000,
+            "filled": 6,
+            "avgPriceBp": 9483,
+            "avgFeeMicros": 4817,
+            "impliedVsActual": {
+              "impliedBp": 9480,
+              "actualWinRate": 0.8,
+              "n": 5
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-04T17:00:00.000Z",
+                  "cumMicros": 149100
+                },
+                {
+                  "t": "2026-09-05T18:00:00.000Z",
+                  "cumMicros": -804900
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -711900
+                },
+                {
+                  "t": "2026-09-15T16:00:00.000Z",
+                  "cumMicros": -655900
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-05T18:00:00.000Z",
+                      "cumMicros": -841900
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -748900
+                    },
+                    {
+                      "t": "2026-09-15T16:00:00.000Z",
+                      "cumMicros": -692900
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-04T17:00:00.000Z",
+                      "cumMicros": 37000
+                    }
+                  ]
+                }
+              ]
+            },
+            "balance": [
+              {
+                "t": "2026-09-01T12:00:00.000Z",
+                "cashMicros": 50000000,
+                "portfolioMicros": 50000000
+              },
+              {
+                "t": "2026-09-05T12:00:00.000Z",
+                "cashMicros": 51000000,
+                "portfolioMicros": 51900000
+              },
+              {
+                "t": "2026-09-12T12:00:00.000Z",
+                "cashMicros": 52000000,
+                "portfolioMicros": 52000000
+              },
+              {
+                "t": "2026-09-15T12:00:00.000Z",
+                "cashMicros": 52500000,
+                "portfolioMicros": 53400000
+              },
+              {
+                "t": "2026-09-19T12:00:00.000Z",
+                "cashMicros": 53000000,
+                "portfolioMicros": 54000000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-04",
+                "pnlMicros": 37000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 37000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-05",
+                "pnlMicros": -954000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -954000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 93000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 93000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": 56000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 56000
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-04T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-05T18:00:00.000Z",
+                "drawdownMicros": 954000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 861000
+              },
+              {
+                "t": "2026-09-15T16:00:00.000Z",
+                "drawdownMicros": 805000
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.945,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.96,
+                "y": 1,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 0
+                },
+                {
+                  "bp": 9300,
+                  "count": 0
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 3
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 61,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 75,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        },
+        "dry_run": {
+          "tiles": {
+            "trades": 6,
+            "won": 5,
+            "lost": 1,
+            "void": 0,
+            "winRate": 0.8333,
+            "netPnlMicros": -449100,
+            "investedMicros": 9449100,
+            "roi": -0.0475,
+            "maxDrawdownMicros": 963000,
+            "filled": 7,
+            "avgPriceBp": 9443,
+            "avgFeeMicros": 6014,
+            "impliedVsActual": {
+              "impliedBp": 9433,
+              "actualWinRate": 0.8333,
+              "n": 6
+            },
+            "forcedDryRun": {
+              "forced": 2,
+              "total": 10,
+              "share": 0.2
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-02T17:00:00.000Z",
+                  "cumMicros": 186900
+                },
+                {
+                  "t": "2026-09-04T17:00:00.000Z",
+                  "cumMicros": 214900
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": 382900
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -580100
+                },
+                {
+                  "t": "2026-09-16T17:30:00.000Z",
+                  "cumMicros": -449100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-02T17:00:00.000Z",
+                      "cumMicros": 186900
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": 354900
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -608100
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-04T17:00:00.000Z",
+                      "cumMicros": 28000
+                    },
+                    {
+                      "t": "2026-09-16T17:30:00.000Z",
+                      "cumMicros": 159000
+                    }
+                  ]
+                }
+              ]
+            },
+            "bankroll": [
+              {
+                "t": "2026-09-01T15:05:00.000Z",
+                "micros": 98112100
+              },
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "micros": 100112100
+              },
+              {
+                "t": "2026-09-05T17:00:00.000Z",
+                "micros": 99000000
+              },
+              {
+                "t": "2026-09-10T00:00:00.000Z",
+                "micros": 100000000
+              },
+              {
+                "t": "2026-09-14T15:00:00.000Z",
+                "micros": 97168000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "micros": 100168000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "micros": 100200000
+              },
+              {
+                "t": "2026-09-18T15:00:00.000Z",
+                "micros": 99250000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-02",
+                "pnlMicros": 74800,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 74800
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-04",
+                "pnlMicros": 28000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 28000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 168000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 168000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -963000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -963000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-16",
+                "pnlMicros": 131000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 131000
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-02T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-04T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 963000
+              },
+              {
+                "t": "2026-09-16T17:30:00.000Z",
+                "drawdownMicros": 832000
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.94,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.95,
+                "y": 1,
+                "n": 2
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 1
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 1
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 1
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 65,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 76,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 77,
+                "won": 0,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              },
+              {
+                "minute": 80,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "too_small",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "error",
+                  "count": 1
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "too_small",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "mode=dry_run": {
+      "query": "mode=dry_run",
+      "response": {
+        "dry_run": {
+          "tiles": {
+            "trades": 11,
+            "won": 8,
+            "lost": 2,
+            "void": 1,
+            "winRate": 0.8,
+            "netPnlMicros": -3000100,
+            "investedMicros": 16000100,
+            "roi": -0.1875,
+            "maxDrawdownMicros": 3421000,
+            "filled": 12,
+            "avgPriceBp": 9400,
+            "avgFeeMicros": 6092,
+            "impliedVsActual": {
+              "impliedBp": 9430,
+              "actualWinRate": 0.8,
+              "n": 10
+            },
+            "forcedDryRun": {
+              "forced": 2,
+              "total": 17,
+              "share": 0.1176
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-02T17:00:00.000Z",
+                  "cumMicros": 186900
+                },
+                {
+                  "t": "2026-09-03T17:05:00.000Z",
+                  "cumMicros": -1720100
+                },
+                {
+                  "t": "2026-09-04T17:00:00.000Z",
+                  "cumMicros": -1692100
+                },
+                {
+                  "t": "2026-09-05T17:00:00.000Z",
+                  "cumMicros": -2505100
+                },
+                {
+                  "t": "2026-09-09T17:00:00.000Z",
+                  "cumMicros": -2439100
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -2271100
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -3234100
+                },
+                {
+                  "t": "2026-09-16T17:00:00.000Z",
+                  "cumMicros": -3187100
+                },
+                {
+                  "t": "2026-09-16T17:30:00.000Z",
+                  "cumMicros": -3056100
+                },
+                {
+                  "t": "2026-09-17T17:00:00.000Z",
+                  "cumMicros": -3000100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-02T17:00:00.000Z",
+                      "cumMicros": 186900
+                    },
+                    {
+                      "t": "2026-09-03T17:05:00.000Z",
+                      "cumMicros": -1720100
+                    },
+                    {
+                      "t": "2026-09-09T17:00:00.000Z",
+                      "cumMicros": -1654100
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -1486100
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -2449100
+                    },
+                    {
+                      "t": "2026-09-16T17:00:00.000Z",
+                      "cumMicros": -2402100
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-04T17:00:00.000Z",
+                      "cumMicros": 28000
+                    },
+                    {
+                      "t": "2026-09-05T17:00:00.000Z",
+                      "cumMicros": -785000
+                    },
+                    {
+                      "t": "2026-09-16T17:30:00.000Z",
+                      "cumMicros": -654000
+                    },
+                    {
+                      "t": "2026-09-17T17:00:00.000Z",
+                      "cumMicros": -598000
+                    }
+                  ]
+                }
+              ]
+            },
+            "bankroll": [
+              {
+                "t": "2026-09-01T15:05:00.000Z",
+                "micros": 98112100
+              },
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "micros": 100112100
+              },
+              {
+                "t": "2026-09-05T17:00:00.000Z",
+                "micros": 99000000
+              },
+              {
+                "t": "2026-09-10T00:00:00.000Z",
+                "micros": 100000000
+              },
+              {
+                "t": "2026-09-14T15:00:00.000Z",
+                "micros": 97168000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "micros": 100168000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "micros": 100200000
+              },
+              {
+                "t": "2026-09-18T15:00:00.000Z",
+                "micros": 99250000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-02",
+                "pnlMicros": 74800,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 74800
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-03",
+                "pnlMicros": -1907000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -1907000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-04",
+                "pnlMicros": 28000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 28000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-05",
+                "pnlMicros": -813000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": -813000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-09",
+                "pnlMicros": 66000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 66000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 168000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 168000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -963000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -963000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-16",
+                "pnlMicros": 178000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 47000
+                  },
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 131000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-17",
+                "pnlMicros": 56000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 56000
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-02T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-03T17:05:00.000Z",
+                "drawdownMicros": 1907000
+              },
+              {
+                "t": "2026-09-04T17:00:00.000Z",
+                "drawdownMicros": 1879000
+              },
+              {
+                "t": "2026-09-05T17:00:00.000Z",
+                "drawdownMicros": 2692000
+              },
+              {
+                "t": "2026-09-09T17:00:00.000Z",
+                "drawdownMicros": 2626000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 2458000
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 3421000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "drawdownMicros": 3374000
+              },
+              {
+                "t": "2026-09-16T17:30:00.000Z",
+                "drawdownMicros": 3243000
+              },
+              {
+                "t": "2026-09-17T17:00:00.000Z",
+                "drawdownMicros": 3187000
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.94,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.9433,
+                "y": 0.6667,
+                "n": 3
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.95,
+                "y": 1,
+                "n": 2
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "laliga",
+                "x": 0.94,
+                "y": 1,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 1
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 2
+                },
+                {
+                  "bp": 9400,
+                  "count": 3
+                },
+                {
+                  "bp": 9500,
+                  "count": 3
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 1
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 65,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 66,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 76,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 77,
+                "won": 0,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              },
+              {
+                "minute": 80,
+                "won": 2,
+                "lost": 0,
+                "void": 1,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                },
+                {
+                  "reason": "too_small",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 2
+                },
+                {
+                  "reason": "error",
+                  "count": 1
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "stale_feed",
+                  "count": 1
+                },
+                {
+                  "reason": "too_small",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "mode=live": {
+      "query": "mode=live",
+      "response": {
+        "live": {
+          "tiles": {
+            "trades": 8,
+            "won": 6,
+            "lost": 2,
+            "void": 0,
+            "winRate": 0.75,
+            "netPnlMicros": -1298100,
+            "investedMicros": 11298100,
+            "roi": -0.1149,
+            "maxDrawdownMicros": 1646200,
+            "filled": 9,
+            "avgPriceBp": 9389,
+            "avgFeeMicros": 5678,
+            "impliedVsActual": {
+              "impliedBp": 9375,
+              "actualWinRate": 0.75,
+              "n": 8
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-01T17:00:00.000Z",
+                  "cumMicros": 112100
+                },
+                {
+                  "t": "2026-09-03T17:00:00.000Z",
+                  "cumMicros": 311100
+                },
+                {
+                  "t": "2026-09-04T17:00:00.000Z",
+                  "cumMicros": 348100
+                },
+                {
+                  "t": "2026-09-05T18:00:00.000Z",
+                  "cumMicros": -605900
+                },
+                {
+                  "t": "2026-09-08T17:00:00.000Z",
+                  "cumMicros": -521900
+                },
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": -428900
+                },
+                {
+                  "t": "2026-09-15T16:00:00.000Z",
+                  "cumMicros": -372900
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -1298100
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-01T17:00:00.000Z",
+                      "cumMicros": 112100
+                    },
+                    {
+                      "t": "2026-09-03T17:00:00.000Z",
+                      "cumMicros": 311100
+                    },
+                    {
+                      "t": "2026-09-05T18:00:00.000Z",
+                      "cumMicros": -642900
+                    },
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": -549900
+                    },
+                    {
+                      "t": "2026-09-15T16:00:00.000Z",
+                      "cumMicros": -493900
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -1419100
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-04T17:00:00.000Z",
+                      "cumMicros": 37000
+                    },
+                    {
+                      "t": "2026-09-08T17:00:00.000Z",
+                      "cumMicros": 121000
+                    }
+                  ]
+                }
+              ]
+            },
+            "balance": [
+              {
+                "t": "2026-09-01T12:00:00.000Z",
+                "cashMicros": 50000000,
+                "portfolioMicros": 50000000
+              },
+              {
+                "t": "2026-09-05T12:00:00.000Z",
+                "cashMicros": 51000000,
+                "portfolioMicros": 51900000
+              },
+              {
+                "t": "2026-09-12T12:00:00.000Z",
+                "cashMicros": 52000000,
+                "portfolioMicros": 52000000
+              },
+              {
+                "t": "2026-09-15T12:00:00.000Z",
+                "cashMicros": 52500000,
+                "portfolioMicros": 53400000
+              },
+              {
+                "t": "2026-09-19T12:00:00.000Z",
+                "cashMicros": 53000000,
+                "portfolioMicros": 54000000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-01",
+                "pnlMicros": 112100,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 112100
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-03",
+                "pnlMicros": 199000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 199000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-04",
+                "pnlMicros": 37000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 37000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-05",
+                "pnlMicros": -954000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -954000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-08",
+                "pnlMicros": 84000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 84000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 93000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 93000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -869200,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -869200
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-01T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-03T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-04T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-05T18:00:00.000Z",
+                "drawdownMicros": 954000
+              },
+              {
+                "t": "2026-09-08T17:00:00.000Z",
+                "drawdownMicros": 870000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 777000
+              },
+              {
+                "t": "2026-09-15T16:00:00.000Z",
+                "drawdownMicros": 721000
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 1646200
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.945,
+                "y": 0.75,
+                "n": 4
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.925,
+                "y": 0.5,
+                "n": 2
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.96,
+                "y": 1,
+                "n": 1
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "laliga",
+                "x": 0.91,
+                "y": 1,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 1
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 1
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 3
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 2,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 61,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 75,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              },
+              {
+                "minute": 78,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 4
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "range=7d": {
+      "query": "range=7d",
+      "response": {
+        "live": {
+          "tiles": {
+            "trades": 3,
+            "won": 2,
+            "lost": 1,
+            "void": 0,
+            "winRate": 0.6667,
+            "netPnlMicros": -776200,
+            "investedMicros": 3776200,
+            "roi": -0.2056,
+            "maxDrawdownMicros": 925200,
+            "filled": 4,
+            "avgPriceBp": 9400,
+            "avgFeeMicros": 4800,
+            "impliedVsActual": {
+              "impliedBp": 9367,
+              "actualWinRate": 0.6667,
+              "n": 3
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": 93000
+                },
+                {
+                  "t": "2026-09-15T16:00:00.000Z",
+                  "cumMicros": 149000
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -776200
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": 93000
+                    },
+                    {
+                      "t": "2026-09-15T16:00:00.000Z",
+                      "cumMicros": 149000
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -776200
+                    }
+                  ]
+                }
+              ]
+            },
+            "balance": [
+              {
+                "t": "2026-09-15T12:00:00.000Z",
+                "cashMicros": 52500000,
+                "portfolioMicros": 53400000
+              },
+              {
+                "t": "2026-09-19T12:00:00.000Z",
+                "cashMicros": 53000000,
+                "portfolioMicros": 54000000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 93000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 93000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -869200,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -869200
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-15T16:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 925200
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.945,
+                "y": 1,
+                "n": 2
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.92,
+                "y": 0,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 1
+                },
+                {
+                  "bp": 9300,
+                  "count": 0
+                },
+                {
+                  "bp": 9400,
+                  "count": 1
+                },
+                {
+                  "bp": 9500,
+                  "count": 2
+                },
+                {
+                  "bp": 9600,
+                  "count": 0
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 61,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 75,
+                "won": 0,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 2
+                },
+                {
+                  "reason": "liquidity",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        },
+        "dry_run": {
+          "tiles": {
+            "trades": 5,
+            "won": 4,
+            "lost": 1,
+            "void": 0,
+            "winRate": 0.8,
+            "netPnlMicros": -561000,
+            "investedMicros": 7561000,
+            "roi": -0.0742,
+            "maxDrawdownMicros": 963000,
+            "filled": 6,
+            "avgPriceBp": 9450,
+            "avgFeeMicros": 5667,
+            "impliedVsActual": {
+              "impliedBp": 9440,
+              "actualWinRate": 0.8,
+              "n": 5
+            },
+            "forcedDryRun": {
+              "forced": 1,
+              "total": 9,
+              "share": 0.1111
+            }
+          },
+          "series": {
+            "equity": {
+              "total": [
+                {
+                  "t": "2026-09-14T17:00:00.000Z",
+                  "cumMicros": 168000
+                },
+                {
+                  "t": "2026-09-15T17:00:00.000Z",
+                  "cumMicros": -795000
+                },
+                {
+                  "t": "2026-09-16T17:00:00.000Z",
+                  "cumMicros": -748000
+                },
+                {
+                  "t": "2026-09-16T17:30:00.000Z",
+                  "cumMicros": -617000
+                },
+                {
+                  "t": "2026-09-17T17:00:00.000Z",
+                  "cumMicros": -561000
+                }
+              ],
+              "byStrategy": [
+                {
+                  "strategyId": "A",
+                  "strategyName": "Stats A",
+                  "points": [
+                    {
+                      "t": "2026-09-14T17:00:00.000Z",
+                      "cumMicros": 168000
+                    },
+                    {
+                      "t": "2026-09-15T17:00:00.000Z",
+                      "cumMicros": -795000
+                    },
+                    {
+                      "t": "2026-09-16T17:00:00.000Z",
+                      "cumMicros": -748000
+                    }
+                  ]
+                },
+                {
+                  "strategyId": "B",
+                  "strategyName": "Stats B",
+                  "points": [
+                    {
+                      "t": "2026-09-16T17:30:00.000Z",
+                      "cumMicros": 131000
+                    },
+                    {
+                      "t": "2026-09-17T17:00:00.000Z",
+                      "cumMicros": 187000
+                    }
+                  ]
+                }
+              ]
+            },
+            "bankroll": [
+              {
+                "t": "2026-09-14T15:00:00.000Z",
+                "micros": 97168000
+              },
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "micros": 100168000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "micros": 100200000
+              },
+              {
+                "t": "2026-09-18T15:00:00.000Z",
+                "micros": 99250000
+              }
+            ],
+            "dailyPnl": [
+              {
+                "day": "2026-09-14",
+                "pnlMicros": 168000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 168000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-15",
+                "pnlMicros": -963000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": -963000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-16",
+                "pnlMicros": 178000,
+                "byStrategy": [
+                  {
+                    "strategyId": "A",
+                    "pnlMicros": 47000
+                  },
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 131000
+                  }
+                ]
+              },
+              {
+                "day": "2026-09-17",
+                "pnlMicros": 56000,
+                "byStrategy": [
+                  {
+                    "strategyId": "B",
+                    "pnlMicros": 56000
+                  }
+                ]
+              }
+            ],
+            "drawdown": [
+              {
+                "t": "2026-09-14T17:00:00.000Z",
+                "drawdownMicros": 0
+              },
+              {
+                "t": "2026-09-15T17:00:00.000Z",
+                "drawdownMicros": 963000
+              },
+              {
+                "t": "2026-09-16T17:00:00.000Z",
+                "drawdownMicros": 916000
+              },
+              {
+                "t": "2026-09-16T17:30:00.000Z",
+                "drawdownMicros": 785000
+              },
+              {
+                "t": "2026-09-17T17:00:00.000Z",
+                "drawdownMicros": 729000
+              }
+            ],
+            "impliedVsActual": [
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "epl",
+                "x": 0.95,
+                "y": 0.5,
+                "n": 2
+              },
+              {
+                "strategyId": "A",
+                "strategyName": "Stats A",
+                "leagueId": "laliga",
+                "x": 0.95,
+                "y": 1,
+                "n": 1
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "epl",
+                "x": 0.93,
+                "y": 1,
+                "n": 1
+              },
+              {
+                "strategyId": "B",
+                "strategyName": "Stats B",
+                "leagueId": "laliga",
+                "x": 0.94,
+                "y": 1,
+                "n": 1
+              }
+            ],
+            "priceHistogram": {
+              "minBp": 8200,
+              "maxBp": 9700,
+              "below": 0,
+              "above": 0,
+              "bins": [
+                {
+                  "bp": 8200,
+                  "count": 0
+                },
+                {
+                  "bp": 8300,
+                  "count": 0
+                },
+                {
+                  "bp": 8400,
+                  "count": 0
+                },
+                {
+                  "bp": 8500,
+                  "count": 0
+                },
+                {
+                  "bp": 8600,
+                  "count": 0
+                },
+                {
+                  "bp": 8700,
+                  "count": 0
+                },
+                {
+                  "bp": 8800,
+                  "count": 0
+                },
+                {
+                  "bp": 8900,
+                  "count": 0
+                },
+                {
+                  "bp": 9000,
+                  "count": 0
+                },
+                {
+                  "bp": 9100,
+                  "count": 0
+                },
+                {
+                  "bp": 9200,
+                  "count": 0
+                },
+                {
+                  "bp": 9300,
+                  "count": 1
+                },
+                {
+                  "bp": 9400,
+                  "count": 2
+                },
+                {
+                  "bp": 9500,
+                  "count": 2
+                },
+                {
+                  "bp": 9600,
+                  "count": 1
+                },
+                {
+                  "bp": 9700,
+                  "count": 0
+                }
+              ]
+            },
+            "tradesPerMinute": [
+              {
+                "minute": 60,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 62,
+                "won": 0,
+                "lost": 1,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 70,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 76,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              },
+              {
+                "minute": 77,
+                "won": 0,
+                "lost": 0,
+                "void": 0,
+                "open": 1
+              },
+              {
+                "minute": 80,
+                "won": 1,
+                "lost": 0,
+                "void": 0,
+                "open": 0
+              }
+            ],
+            "skipReasons": {
+              "final": [
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "price",
+                  "count": 1
+                }
+              ],
+              "perAttempt": [
+                {
+                  "reason": "price",
+                  "count": 2
+                },
+                {
+                  "reason": "error",
+                  "count": 1
+                },
+                {
+                  "reason": "market_closed",
+                  "count": 1
+                },
+                {
+                  "reason": "stale_feed",
+                  "count": 1
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
