@@ -9,7 +9,9 @@ COPY app/package*.json ./
 COPY app/scripts/install-hooks.mjs ./scripts/
 RUN npm ci
 COPY app/ .
-RUN npm run build && npm prune --omit=dev
+# `npm prune` leaves empty scope directories (e.g. `@vitest`) behind; remove them too.
+RUN npm run build && npm prune --omit=dev \
+ && find node_modules -mindepth 1 -maxdepth 1 -type d -empty -delete
 
 FROM ghcr.io/home-assistant/base:3.22-2026.08.0@sha256:0eda502b4d16e0433ace512d857ec3e86497d4214091ee459078ee4df6373f63
 RUN apk add --no-cache nodejs su-exec \

@@ -230,7 +230,10 @@ if (want('key')) {
         if (r.code !== 0 && /No such file/.test(fd3)) break;
         await sleep(1000); // a transient socket (e.g. the health probe) may briefly hold the lowest free fd
       }
-      assert(/No such file/.test(fd3), `fd 3 after boot: ${fd3}`);
+      // Link targets of another user's fds need ptrace rights, so the diagnostic listing runs as uid 1000.
+      if (!/No such file/.test(fd3)) {
+        throw new Error(`fd 3 after boot: ${fd3}\n${exec(`ls -l /proc/${pid}/fd`, '1000').out}`);
+      }
       const cmdline = exec(`tr '\\0' ' ' < /proc/${pid}/cmdline`).stdout.trim();
 
       const expected = sh(`openssl pkey -in '${fixtureKey}' -pubout | sha256sum`).stdout.split(' ')[0] ?? '';
