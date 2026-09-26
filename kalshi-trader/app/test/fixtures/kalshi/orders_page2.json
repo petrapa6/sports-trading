@@ -1,0 +1,21 @@
+{
+  "orders": [
+    {
+      "order_id": "ord-2",
+      "client_order_id": "trade-2-1",
+      "ticker": "KXNHLGAME-26OCT10UTAVGK-VGK",
+      "status": "executed",
+      "side": "yes",
+      "action": "buy",
+      "created_time": "2026-10-11T03:10:00Z",
+      "last_update_time": "2026-10-11T03:10:00Z",
+      "fill_count_fp": "2.00",
+      "remaining_count_fp": "0.00",
+      "yes_price_dollars": "0.9400",
+      "taker_fill_cost_dollars": "1.860000",
+      "taker_fees_dollars": "0.009200",
+      "order_group_id": "grp-1"
+    }
+  ],
+  "cursor": ""
+}

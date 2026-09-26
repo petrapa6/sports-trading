@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 import { closePrivateKeyFd, ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
 import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
+import { KalshiClient } from '../feeds/kalshi/client.js';
+import { DiscoveryService } from '../feeds/kalshi/discovery.js';
+import { createNetworkGate } from '../feeds/network.js';
 import { buildApp } from './app.js';
 import { loadConfigOrExit } from './boot.js';
 import { publicKeyFingerprint } from './routes/dev.js';
@@ -114,6 +117,45 @@ if (privateKey !== undefined && process.env['NODE_ENV'] === 'development') {
 
 const maintenance = startMaintenance({ getDb: () => database.current, log });
 
+// Kalshi (T06): every request passes the network gate, which reads the global kill switch from the
+// database on each call. Without credentials there is no client and Kalshi access stays disabled.
+const gate = createNetworkGate(() => database.repositories.settings.get('global_kill_switch'));
+let kalshiClient: KalshiClient | undefined;
+if (config.kalshiKeyId !== undefined && privateKey !== undefined) {
+  // `KST_E2E_KALSHI_URL`: the Playwright stand-in for Kalshi; honoured only with KST_E2E=1 outside production.
+  const e2eBaseUrl = e2e ? process.env['KST_E2E_KALSHI_URL'] : undefined;
+  try {
+    kalshiClient = new KalshiClient({
+      env: config.kalshiEnv,
+      keyId: config.kalshiKeyId,
+      privateKey,
+      subaccount: config.kalshiSubaccount,
+      gate,
+      log,
+      ...(e2eBaseUrl ? { baseUrl: e2eBaseUrl } : {}),
+    });
+  } catch (err) {
+    log.error(
+      { err: { message: (err as Error).message } },
+      'The Kalshi private key cannot be used; Kalshi access stays disabled',
+    );
+  }
+}
+const discovery = kalshiClient
+  ? new DiscoveryService({
+      deps: () =>
+        database.current && kalshiClient
+          ? {
+              client: kalshiClient,
+              repos: database.repositories,
+              log,
+              transaction: (fn) => database.current?.sqlite.transaction(fn)(),
+            }
+          : undefined,
+      log,
+    })
+  : undefined;
+
 const app = await buildApp({
   logger: log,
   database,
@@ -129,6 +171,12 @@ const app = await buildApp({
     dbPath: resolve(config.dbPath),
   },
   privateKeyFingerprint,
+  kalshi: {
+    env: config.kalshiEnv,
+    subaccount: config.kalshiSubaccount,
+    client: kalshiClient,
+    discovery,
+  },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
 
@@ -139,6 +187,7 @@ async function shutdown(signal: string): Promise<void> {
   log.info({ signal }, 'Shutting down');
   try {
     maintenance.stop();
+    discovery?.stop();
     await app.close();
     database.close();
     process.exit(0);
@@ -157,3 +206,5 @@ try {
   process.exit(1);
 }
 closePrivateKeyFd(config);
+// Discovery at start-up (after the server listens, so a slow Kalshi never delays /healthz), then daily at 05:00.
+discovery?.start();

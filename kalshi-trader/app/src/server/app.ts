@@ -14,6 +14,7 @@ import { LogRing } from './logRing.js';
 import { registerApiRoutes } from './routes/api.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerDevRoutes } from './routes/dev.js';
+import { registerKalshiRoutes, type KalshiServices } from './routes/kalshi.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
 import { registerWeb, WEB_DIR } from './web.js';
 
@@ -52,6 +53,8 @@ export interface AppOptions {
   heartbeatMs?: number;
   /** Fingerprint of the loaded Kalshi key, served by the development-only `/api/dev/key-fingerprint`. */
   privateKeyFingerprint?: string | undefined;
+  /** Kalshi client and discovery (T06); without them every Kalshi action answers `kalshi_not_configured`. */
+  kalshi?: KalshiServices;
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -134,6 +137,11 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
   registerApiRoutes(app, database, hub);
+  registerKalshiRoutes(
+    app,
+    database,
+    options.kalshi ?? { env: hub.runtime.kalshiEnv, subaccount: hub.runtime.kalshiSubaccount },
+  );
   if (options.nodeEnv === 'development') {
     registerDevRoutes(app, { privateKeyFingerprint: options.privateKeyFingerprint });
   }

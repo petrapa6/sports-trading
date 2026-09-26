@@ -1,0 +1,12 @@
+{
+  "series": {
+    "ticker": "KXNHLGAME",
+    "title": "NHL Game",
+    "category": "Sports",
+    "frequency": "custom",
+    "tags": ["Hockey"],
+    "fee_type": "quadratic_with_maker_fees",
+    "fee_multiplier": 1,
+    "settlement_sources": []
+  }
+}

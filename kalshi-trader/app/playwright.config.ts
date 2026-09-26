@@ -3,6 +3,7 @@ import { chromium, defineConfig, devices } from '@playwright/test';
 
 const PORT = Number(process.env['E2E_PORT'] ?? 8198);
 const PROXY_PORT = Number(process.env['E2E_PROXY_PORT'] ?? 8199);
+const KALSHI_PORT = Number(process.env['E2E_KALSHI_PORT'] ?? 8197);
 
 /**
  * Prefer Playwright's own Chromium; when it is not installed but a system/pre-installed
@@ -23,7 +24,8 @@ const executablePath = chromiumExecutable();
 /**
  * `npm run e2e` builds the web app first (`vite build`), then runs the specs against the production
  * server on :8198 (a fresh database in `.local/e2e`) and a local stand-in for the ingress proxy on
- * :8199. The specs share one user and database, so they run in one worker, in file order.
+ * :8199, with a fixture-backed stand-in for the Kalshi API on :8197 (T06) and a per-run key. The specs
+ * share one user and database, so they run in one worker, in file order.
  */
 export default defineConfig({
   testDir: 'test/e2e',
@@ -43,7 +45,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'rm -rf .local/e2e && tsx src/server/main.ts',
+      command: 'tsx test/e2e/fake-kalshi.ts',
+      url: `http://127.0.0.1:${KALSHI_PORT}/healthz`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+      env: { E2E_KALSHI_PORT: String(KALSHI_PORT) },
+    },
+    {
+      command: 'rm -rf .local/e2e && tsx test/e2e/kalshi-setup.ts && tsx src/server/main.ts',
       url: `http://127.0.0.1:${PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 30_000,
@@ -52,10 +61,11 @@ export default defineConfig({
       env: {
         PORT: String(PORT),
         LOG_LEVEL: 'info',
-        CONFIG_LOCAL_PATH: '/nonexistent/config.local.json',
+        CONFIG_LOCAL_PATH: './.local/e2e/config.local.json',
         DB_PATH: './.local/e2e/trader.db',
         DATA_DIR: './.local/e2e/data',
         KST_E2E: '1',
+        KST_E2E_KALSHI_URL: `http://127.0.0.1:${KALSHI_PORT}/trade-api/v2`,
       },
     },
     {

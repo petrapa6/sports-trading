@@ -1,0 +1,45 @@
+{
+  "series": [
+    {
+      "ticker": "KXBUNDESLIGAGAME",
+      "title": "Bundesliga Game",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Soccer"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    },
+    {
+      "ticker": "KXSERIEAGAME",
+      "title": "Serie A Game",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Soccer"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    },
+    {
+      "ticker": "KXLIGUE1GAME",
+      "title": "Ligue 1 Game",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Soccer"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    },
+    {
+      "ticker": "KXEPLSPREAD",
+      "title": "EPL Spread",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Soccer"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    }
+  ],
+  "cursor": ""
+}

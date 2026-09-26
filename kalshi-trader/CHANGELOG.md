@@ -106,3 +106,31 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
 - CI `image.yml`: `docker buildx build --platform linux/arm64,linux/amd64` under QEMU plus the arm64
   `better-sqlite3` check, and the amd64 container checks of `npm run verify:T05`; `publish.yml` (GHCR) present but
   disabled. `docs/verification/T05.md`.
+
+### T06 — Kalshi API client, network gate, market discovery
+
+- `src/feeds/kalshi/client.ts`: hand-written Kalshi Trade API v2 client — RSA-PSS/SHA-256 signing over
+  `timestamp + METHOD + path` (no query; `signing.ts`), base URL by `KALSHI_ENV`, token buckets (reads 200/s ×
+  3 s, writes 100/s × 1 s, 10 tokens per request; `rateLimiter.ts`), backoff on `429`/`5xx` (0.5, 1, 2, 4 s; 5
+  attempts, then `KalshiUnavailable`), typed methods for balance, exchange status/schedule, series, events,
+  milestones, markets (incl. historical), orderbook (YES asks derived from NO bids), candlesticks (incl.
+  historical), historical cutoff, live data (single and batch), game stats, Create Order V2, orders (incl.
+  historical), positions, settlements, fills, order groups and the tier upgrade. Every response is Zod-validated
+  (`schemas.ts`, `.passthrough()`) and converted to `_bp` / `_micros` / `_cc`; cursor pagination; `subaccount`
+  when > 0. Only method + path are logged.
+- `src/feeds/network.ts`: `assertNetworkAllowed()` gate — `NetworkPaused` while the global kill switch is on
+  (read from the database on every call).
+- `src/feeds/kalshi/discovery.ts`: open events → preseason filter → milestones → upsert `teams`, `games`,
+  `markets` (outcomes `home`/`away`/`tie`/`unknown`, `price_ranges`); idempotent; at start-up (after the server
+  listens), daily at 05:00 local, and on demand; never two runs at once.
+- `src/core/pricing.ts`: `feeMicros` / `costMicros` (SPEC.md §2 fee formula, integer).
+- API: `GET /api/leagues` now returns the series and include-preseason flag; `POST /api/leagues/:id` (audited
+  `league_change`); `GET /api/kalshi/series` (Sports series ending in `GAME`); `POST /api/kalshi/discovery`
+  (audited `discovery_run`); `POST /api/diagnostics/kalshi` (environment, subaccount, balance, exchange status or a
+  readable error).
+- UI: Settings → Leagues (enable, series ticker, include preseason, Discover series, Run discovery now);
+  Settings → Diagnostics → Test Kalshi connection.
+- `npm run kalshi:smoke`, `npm run fixtures:record:kalshi`, `npm run verify:T06`; hand-written fixtures in
+  `test/fixtures/kalshi/` served by `msw` (new dev dependency) in unit tests and by `test/e2e/fake-kalshi.ts` in
+  the e2e run. Deviations and unverified field names: SPEC.md §14 T06 implementation notes;
+  `docs/verification/T06.md`.

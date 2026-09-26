@@ -51,6 +51,9 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 | `npm run check:addon` | Static checks of `kalshi-trader/config.yaml` (keys, options ↔ schema, ports, init, privileges, version) |
 | `npm run compose:options` | Write `.local/data/options.json` for `docker compose` from `config.local.json` (`-- --out <file>`) |
 | `npm run verify:T05` | T05 acceptance checks (check:addon, compose health, non-root, read-only, key hand-over, run.sh, image size; `-- --arm64` adds the arm64 build) |
+| `npm run kalshi:smoke` | Read-only checks against Kalshi **demo** (environment, balance, exchange status, open events per enabled series); `SKIPPED (no demo key)` without a key |
+| `npm run fixtures:record:kalshi` | Record raw demo responses of the public market-data endpoints into `test/fixtures/kalshi/recorded/` (needs a demo key) |
+| `npm run verify:T06` | T06 acceptance checks (signing, typed methods, network gate, rate limiter, logs, discovery, team mapping, orders, smoke, e2e Leagues) |
 
 ### Signing in (SPEC.md §10)
 

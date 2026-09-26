@@ -55,6 +55,21 @@ async function request<T>(method: string, path: string, body?: unknown, retried 
   return data as T;
 }
 
+/** Micro-dollars as `$1,234.56` (integer arithmetic; rounds half away from zero to the cent). */
+export function formatUsd(micros: number): string {
+  const negative = micros < 0;
+  const cents = Math.floor((Math.abs(micros) + 5000) / 10_000);
+  const whole = Math.floor(cents / 100).toLocaleString('en-US');
+  return `${negative ? '−' : ''}$${whole}.${String(cents % 100).padStart(2, '0')}`;
+}
+
+/** A readable message for a failed Kalshi action (`{error, message}` from the server). */
+export function kalshiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError && typeof err.body['message'] === 'string') return err.body['message'];
+  if (err instanceof ApiError) return `The request failed (${err.code}).`;
+  return 'The request failed.';
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body: unknown = {}) => request<T>('POST', path, body),
@@ -89,7 +104,42 @@ export interface League {
   id: string;
   sport: string;
   name: string;
+  kalshiSeries: string;
+  includePreseason: boolean;
   enabled: boolean;
+}
+
+export interface KalshiSeries {
+  ticker: string;
+  title: string | null;
+}
+
+export interface LeagueDiscovery {
+  leagueId: string;
+  series: string;
+  events: number;
+  skippedPreseason: number;
+  skippedNoMilestone: number;
+  games: number;
+  markets: number;
+  unknownMarkets: number;
+  error?: string;
+}
+
+export interface DiscoveryResult {
+  startedAt: string;
+  finishedAt: string;
+  leagues: LeagueDiscovery[];
+}
+
+export interface KalshiConnectionTest {
+  env: KalshiEnv;
+  subaccount: number;
+  ok: boolean;
+  balance?: { cashMicros: number; portfolioValueMicros: number | null };
+  exchange?: { exchangeActive: boolean; tradingActive: boolean };
+  error?: string;
+  code?: string;
 }
 
 export interface StrategyRef {

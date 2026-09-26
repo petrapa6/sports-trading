@@ -1,0 +1,45 @@
+{
+  "series": [
+    {
+      "ticker": "KXNHLGAME",
+      "title": "NHL Game",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Hockey"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    },
+    {
+      "ticker": "KXEPLGAME",
+      "title": "English Premier League Game",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Soccer"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    },
+    {
+      "ticker": "KXLALIGAGAME",
+      "title": "La Liga Game",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Soccer"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    },
+    {
+      "ticker": "KXNHLTOTAL",
+      "title": "NHL Total Goals",
+      "category": "Sports",
+      "frequency": "custom",
+      "tags": ["Hockey"],
+      "fee_type": "quadratic_with_maker_fees",
+      "fee_multiplier": 1,
+      "settlement_sources": []
+    }
+  ],
+  "cursor": "cursor-series-2"
+}

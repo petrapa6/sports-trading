@@ -115,16 +115,6 @@ export function registerApiRoutes(
     dbSizeBytes: dbSizeBytes(hub.runtime.dbPath),
   }));
 
-  /** Leagues for the filter bar. */
-  app.get('/api/leagues', async () =>
-    database.repositories.leagues.list().map((l) => ({
-      id: l.id,
-      sport: l.sport,
-      name: l.name,
-      enabled: l.enabled === 1,
-    })),
-  );
-
   /** Strategies for the filter bar (id and name only; the Strategies page arrives in T08). */
   app.get('/api/strategies', async () =>
     database.repositories.strategies

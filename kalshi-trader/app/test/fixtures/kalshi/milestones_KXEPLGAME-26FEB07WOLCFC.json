@@ -1,0 +1,26 @@
+{
+  "milestones": [
+    {
+      "id": "b3f0c1d2-0002-4000-8000-000000000003",
+      "category": "Sports",
+      "type": "soccer_game",
+      "title": "Wolverhampton vs Chelsea",
+      "start_date": "2027-02-07T15:00:00Z",
+      "end_date": null,
+      "details": {
+        "home_team_id": "00000000-0000-4000-8000-000000000003",
+        "away_team_id": "00000000-0000-4000-8000-000000000004",
+        "competition": "Wolverhampton vs Chelsea"
+      },
+      "primary_event_tickers": ["KXEPLGAME-26FEB07WOLCFC"],
+      "related_event_tickers": ["KXEPLGAME-26FEB07WOLCFC", "KXEPLTOTAL-26FEB07WOLCFC"],
+      "source_id": "sr:sport_event:62000003",
+      "source_ids": {
+        "sportradar": "sr:sport_event:62000003"
+      },
+      "notification_message": "",
+      "last_updated_ts": "2026-09-25T10:00:00Z"
+    }
+  ],
+  "cursor": ""
+}

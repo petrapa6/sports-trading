@@ -1,0 +1,131 @@
+{
+  "event": {
+    "event_ticker": "KXEPLGAME-26FEB07WOLCFC",
+    "series_ticker": "KXEPLGAME",
+    "title": "Wolverhampton vs Chelsea",
+    "sub_title": "Regular season",
+    "category": "Sports",
+    "mutually_exclusive": true,
+    "strike_date": null,
+    "product_metadata": {
+      "competition": "English Premier League"
+    },
+    "fee_multiplier": 1
+  },
+  "markets": [
+    {
+      "ticker": "KXEPLGAME-26FEB07WOLCFC-WOL",
+      "event_ticker": "KXEPLGAME-26FEB07WOLCFC",
+      "market_type": "binary",
+      "title": "Wolverhampton wins?",
+      "yes_sub_title": "Wolverhampton",
+      "no_sub_title": "Wolverhampton",
+      "open_time": "2026-10-01T14:00:00Z",
+      "close_time": "2027-02-07T18:00:00Z",
+      "expiration_time": "2027-02-07T18:00:00Z",
+      "status": "active",
+      "yes_bid": 22,
+      "yes_ask": 24,
+      "yes_bid_dollars": "0.2200",
+      "yes_ask_dollars": "0.2400",
+      "last_price_dollars": "0.2200",
+      "volume_fp": "1520.00",
+      "result": "",
+      "can_close_early": true,
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "start": "0.0100",
+          "end": "0.9000",
+          "step": "0.0100"
+        },
+        {
+          "start": "0.9000",
+          "end": "0.9990",
+          "step": "0.0010"
+        }
+      ],
+      "some_future_field": {
+        "nested": true
+      },
+      "custom_strike": {
+        "soccer_team": "00000000-0000-4000-8000-000000000003"
+      }
+    },
+    {
+      "ticker": "KXEPLGAME-26FEB07WOLCFC-TIE",
+      "event_ticker": "KXEPLGAME-26FEB07WOLCFC",
+      "market_type": "binary",
+      "title": "Tie wins?",
+      "yes_sub_title": "Tie",
+      "no_sub_title": "Tie",
+      "open_time": "2026-10-01T14:00:00Z",
+      "close_time": "2027-02-07T18:00:00Z",
+      "expiration_time": "2027-02-07T18:00:00Z",
+      "status": "active",
+      "yes_bid": 26,
+      "yes_ask": 28,
+      "yes_bid_dollars": "0.2600",
+      "yes_ask_dollars": "0.2800",
+      "last_price_dollars": "0.2600",
+      "volume_fp": "1520.00",
+      "result": "",
+      "can_close_early": true,
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "start": "0.0100",
+          "end": "0.9000",
+          "step": "0.0100"
+        },
+        {
+          "start": "0.9000",
+          "end": "0.9990",
+          "step": "0.0010"
+        }
+      ],
+      "some_future_field": {
+        "nested": true
+      }
+    },
+    {
+      "ticker": "KXEPLGAME-26FEB07WOLCFC-CFC",
+      "event_ticker": "KXEPLGAME-26FEB07WOLCFC",
+      "market_type": "binary",
+      "title": "Chelsea wins?",
+      "yes_sub_title": "Chelsea",
+      "no_sub_title": "Chelsea",
+      "open_time": "2026-10-01T14:00:00Z",
+      "close_time": "2027-02-07T18:00:00Z",
+      "expiration_time": "2027-02-07T18:00:00Z",
+      "status": "active",
+      "yes_bid": 49,
+      "yes_ask": 51,
+      "yes_bid_dollars": "0.4900",
+      "yes_ask_dollars": "0.5100",
+      "last_price_dollars": "0.4900",
+      "volume_fp": "1520.00",
+      "result": "",
+      "can_close_early": true,
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "start": "0.0100",
+          "end": "0.9000",
+          "step": "0.0100"
+        },
+        {
+          "start": "0.9000",
+          "end": "0.9990",
+          "step": "0.0010"
+        }
+      ],
+      "some_future_field": {
+        "nested": true
+      },
+      "custom_strike": {
+        "soccer_team": "00000000-0000-4000-8000-000000000004"
+      }
+    }
+  ]
+}

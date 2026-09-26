@@ -30,7 +30,10 @@
     "prepare": "node scripts/install-hooks.mjs",
     "check:addon": "tsx scripts/check-addon-config.ts",
     "compose:options": "tsx scripts/compose-options.ts",
-    "verify:T05": "tsx scripts/verify-T05.ts"
+    "verify:T05": "tsx scripts/verify-T05.ts",
+    "kalshi:smoke": "tsx scripts/kalshi-smoke.ts",
+    "fixtures:record:kalshi": "tsx scripts/record-kalshi-fixtures.ts",
+    "verify:T06": "tsx scripts/verify-T06.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
@@ -62,6 +65,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",
     "lefthook": "^2.1.14",
+    "msw": "^2.15.0",
     "prettier": "^3.9.9",
     "qrcode": "^1.5.4",
     "react": "^19.3.0",

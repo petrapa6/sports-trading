@@ -1,0 +1,17 @@
+{
+  "live_data": {
+    "type": "hockey_game",
+    "milestone_id": "b3f0c1d2-0001-4000-8000-000000000001",
+    "details": {
+      "home_points": 2,
+      "away_points": 1,
+      "status": "live",
+      "round": 3,
+      "final_round_time_left": "05:12",
+      "tileLiveText": "P3 05:12",
+      "widgetLiveText": "3rd 05:12",
+      "home_id": "00000000-0000-4000-8000-000000000002",
+      "away_id": "00000000-0000-4000-8000-000000000001"
+    }
+  }
+}

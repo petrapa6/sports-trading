@@ -1,0 +1,20 @@
+{
+  "pbp": {
+    "periods": [
+      {
+        "number": 1,
+        "events": [
+          {
+            "type": "goal",
+            "team": "home",
+            "clock": "12:34"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "events": []
+      }
+    ]
+  }
+}

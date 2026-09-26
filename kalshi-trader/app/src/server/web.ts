@@ -21,6 +21,7 @@ export const SPA_ROUTES = [
   '/settings',
   '/settings/trading',
   '/settings/account',
+  '/settings/leagues',
   '/settings/diagnostics',
 ] as const;
 

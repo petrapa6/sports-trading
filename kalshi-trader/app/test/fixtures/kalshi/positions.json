@@ -1,0 +1,14 @@
+{
+  "market_positions": [
+    {
+      "ticker": "KXNHLGAME-26OCT10UTAVGK-VGK",
+      "position_fp": "2.00",
+      "market_exposure_dollars": "1.860000",
+      "realized_pnl_dollars": "0.000000",
+      "fees_paid_dollars": "0.009200",
+      "total_traded_dollars": "1.860000"
+    }
+  ],
+  "event_positions": [],
+  "cursor": ""
+}

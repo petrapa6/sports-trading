@@ -1,0 +1,54 @@
+{
+  "ticker": "KXNHLGAME-26OCT10UTAVGK-VGK",
+  "candlesticks": [
+    {
+      "end_period_ts": 1791684060,
+      "yes_bid": {
+        "open_dollars": "0.5600",
+        "high_dollars": "0.5700",
+        "low_dollars": "0.5600",
+        "close_dollars": "0.5700"
+      },
+      "yes_ask": {
+        "open_dollars": "0.5800",
+        "high_dollars": "0.5900",
+        "low_dollars": "0.5800",
+        "close_dollars": "0.5900"
+      },
+      "price": {
+        "open_dollars": "0.5700",
+        "high_dollars": "0.5800",
+        "low_dollars": "0.5700",
+        "close_dollars": "0.5800",
+        "mean_dollars": "0.5750",
+        "previous_dollars": "0.5700"
+      },
+      "volume_fp": "120.00",
+      "open_interest_fp": "5000.00"
+    },
+    {
+      "end_period_ts": 1791684120,
+      "yes_bid": {
+        "open_dollars": "0.5700",
+        "high_dollars": "0.5700",
+        "low_dollars": "0.5700",
+        "close_dollars": "0.5700"
+      },
+      "yes_ask": {
+        "open_dollars": "0.5900",
+        "high_dollars": "0.5900",
+        "low_dollars": "0.5900",
+        "close_dollars": "0.5900"
+      },
+      "price": {
+        "open_dollars": null,
+        "high_dollars": null,
+        "low_dollars": null,
+        "close_dollars": null,
+        "previous_dollars": "0.5800"
+      },
+      "volume_fp": "0.00",
+      "open_interest_fp": "5000.00"
+    }
+  ]
+}
