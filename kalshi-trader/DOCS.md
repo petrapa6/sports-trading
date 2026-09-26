@@ -164,12 +164,28 @@ every attempt, the fill, the settlement and the audit trail. The CSV export carr
 `configured_mode`, `mode_reason` and `kalshi_env`. Live orders arrive in a later version: until then a strategy
 that would run live is skipped (`live_not_implemented`).
 
+## Historical data (Settings → Data)
+
+Backtests (a later version) need goal timelines and Kalshi prices. **Settings → Data** collects them:
+
+| Action | What it does |
+| --- | --- |
+| **Import CSV** | Goal timelines from a file with the columns `league_code, season, date, home, away, home_goals_final, away_goals_final, goal_events` (e.g. `home:23;away:67;home:90+2`). Up to 20 MB; asks for your password; an invalid row is reported with its row number and column and nothing is imported |
+| **Fetch NHL season** | Every finished game of a season from the public NHL API (preseason only when ticked) |
+| **Backfill settled events** | Settled Kalshi games of the enabled leagues in a date range, with their goal timelines from Kalshi's play-by-play. These games are only data: they are never tracked or traded |
+| **Collect candles** | One-minute Kalshi prices of every finished game |
+| **Rebuild price model** | The median ask by sport, lead and minutes left, used by modelled backtests; cells with fewer than 20 observations use a conservative built-in table |
+| **Vacuum database** | Compacts the database file |
+
+Long jobs show their progress and can be cancelled (what they already stored stays). While the global kill switch
+is on they pause without making any request and continue when it is turned off.
+
 ## Data Storage
 
 | Path | Contents |
 | --- | --- |
 | `/data/options.json` | The options above, written by the Supervisor (root-owned; the app process cannot write it) |
-| `/data/db/trader.db` (+ `-wal`, `-shm`) | The SQLite database: strategies, trades, attempts, settings, audit log |
+| `/data/db/trader.db` (+ `-wal`, `-shm`) | The SQLite database: strategies, trades, attempts, settings, audit log, historical goal timelines and prices |
 | `/data/app/secret.key` | 32 random bytes generated on first start; signs session cookies and encrypts secret settings. Deleting it logs everyone out |
 | `/data/app/cache/` | Re-creatable caches, excluded from backups |
 

@@ -1,4 +1,4 @@
-import { candleMinuteMs } from '../../src/backtest/clock.js';
+import { candleMinuteMs, wallMinuteOf } from '../../src/backtest/clock.js';
 import type { SimGame, SimInput } from '../../src/backtest/simulator.js';
 import { StrategyDefinitionSchema, type StrategyDefinitionInput } from '../../src/core/strategy.js';
 import type { GoalEvent } from '../../src/core/tracker.js';
@@ -54,8 +54,6 @@ export function simGame(spec: GameSpec): SimGame {
   return {
     id: spec.id,
     playedAt: spec.playedAt,
-    kickoffMs: Date.parse(spec.playedAt),
-    secondHalfMs: null,
     finalHome: spec.final?.[0] ?? home,
     finalAway: spec.final?.[1] ?? away,
     goals: spec.goals,
@@ -63,7 +61,10 @@ export function simGame(spec: GameSpec): SimGame {
   };
 }
 
-/** A pure simulator input over `games` with exact candles `{ticker: {minute: askBp}}` (game minutes). */
+/**
+ * A pure simulator input over `games` with exact candles `{ticker: {minute: askBp}}` (game minutes, placed at
+ * the wall minute T11's clock model gives them).
+ */
 export function simInput(
   sport: Sport,
   games: GameSpec[],
@@ -78,12 +79,11 @@ export function simInput(
   const sims = games.map(simGame);
   const candles = new Map<string, Map<number, number>>();
   for (const [ticker, byMinute] of Object.entries(opts.candles ?? {})) {
-    const game = sims.find((g) => ticker.startsWith(`${games.find((s) => s.id === g.id)?.event ?? '?'}-`));
-    if (!game) throw new Error(`no game for ${ticker}`);
+    if (!games.some((g) => g.event && ticker.startsWith(`${g.event}-`)))
+      throw new Error(`no game for ${ticker}`);
     const series = new Map<number, number>();
-    for (const [minute, ask] of Object.entries(byMinute)) {
-      series.set(candleMinuteMs(sport, game.kickoffMs, Number(minute), game.secondHalfMs), ask);
-    }
+    for (const [minute, ask] of Object.entries(byMinute))
+      series.set(wallMinuteOf(sport, Number(minute)), ask);
     candles.set(ticker, series);
   }
   const p = params(opts.def, sport === 'soccer' ? SOCCER_DEF : HOCKEY_DEF);

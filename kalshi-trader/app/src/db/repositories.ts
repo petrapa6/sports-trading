@@ -375,6 +375,21 @@ export class TradeAttemptsRepository extends Repository<typeof s.trade_attempts,
   }
 }
 
+export class HistGamesRepository extends Repository<typeof s.hist_games, 'id'> {
+  constructor(orm: Orm) {
+    super(orm, s.hist_games, ['id']);
+  }
+  /** Number of timelines per `source` (Settings → Data). */
+  countBySource(): { source: string; n: number }[] {
+    return this.orm
+      .select({ source: s.hist_games.source, n: count() })
+      .from(s.hist_games)
+      .groupBy(s.hist_games.source)
+      .orderBy(asc(s.hist_games.source))
+      .all();
+  }
+}
+
 export class UsersRepository extends Repository<typeof s.users, 'id'> {
   constructor(orm: Orm) {
     super(orm, s.users, ['id']);
@@ -524,7 +539,7 @@ export function createRepositories(orm: Orm, now: () => number = Date.now) {
     sessions: new SessionsRepository(orm),
     loginAttempts: new LoginAttemptsRepository(orm),
     settings: new SettingsRepository(orm, now),
-    histGames: new Repository(orm, s.hist_games, ['id']),
+    histGames: new HistGamesRepository(orm),
     histPrices: new Repository(orm, s.hist_prices, ['market_ticker', 'minute_ts']),
     backtests: new BacktestsRepository(orm),
     backtestTrades: new BacktestTradesRepository(orm),

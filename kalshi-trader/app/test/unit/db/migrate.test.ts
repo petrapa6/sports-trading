@@ -73,25 +73,34 @@ describe('migrations', () => {
         "INSERT INTO audit_log (at, actor, action) VALUES ('2026-09-25T00:00:00.000Z', 'system', 'test');",
     );
     const before = rowCounts(t.db);
-    expect(migrateDown(t.db)).toEqual(['0001_seed_leagues']);
+    expect(migrateDown(t.db, 2)).toEqual(['0002_games_historical', '0001_seed_leagues']);
     expect(t.db.sqlite.prepare('SELECT count(*) AS n FROM leagues').get()).toEqual({ n: 0 });
-    expect(migrateUp(t.db)).toEqual(['0001_seed_leagues']);
+    expect(migrateUp(t.db)).toEqual(['0001_seed_leagues', '0002_games_historical']);
     expect(rowCounts(t.db)).toEqual(before);
   });
 
   it('roll back everything and re-apply it', () => {
     t = tempDb();
-    expect(migrateDown(t.db, Number.MAX_SAFE_INTEGER)).toEqual(['0001_seed_leagues', '0000_initial_schema']);
+    expect(migrateDown(t.db, Number.MAX_SAFE_INTEGER)).toEqual([
+      '0002_games_historical',
+      '0001_seed_leagues',
+      '0000_initial_schema',
+    ]);
     expect(tableNames(t.db)).toEqual([MIGRATIONS_TABLE]);
-    expect(migrateUp(t.db)).toEqual(['0000_initial_schema', '0001_seed_leagues']);
+    expect(migrateUp(t.db)).toEqual(['0000_initial_schema', '0001_seed_leagues', '0002_games_historical']);
     expect(tableNames(t.db)).toEqual([...EXPECTED_TABLES, MIGRATIONS_TABLE].sort());
   });
 
   it('refuse to remove a seeded league that is still referenced, changing nothing', () => {
     t = tempDb();
     t.db.sqlite.exec("INSERT INTO teams (id, league_id, name) VALUES ('t1', 'epl', 'Wolves')");
+    expect(migrateDown(t.db)).toEqual(['0002_games_historical']);
     expect(() => migrateDown(t?.db as NonNullable<TempDb['db']>)).toThrow(/FOREIGN KEY/);
-    expect(migrationStatus(t.db).every((m) => m.applied)).toBe(true);
+    expect(
+      migrationStatus(t.db)
+        .filter((m) => m.applied)
+        .map((m) => m.tag),
+    ).toEqual(['0000_initial_schema', '0001_seed_leagues']);
     expect(t.db.sqlite.prepare('SELECT count(*) AS n FROM leagues').get()).toEqual({ n: 6 });
   });
 });

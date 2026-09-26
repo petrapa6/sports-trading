@@ -230,6 +230,30 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   `npm run seed:demo -- --trades 500`; `npm run verify:T10`; `docs/verification/T10.md`.
   Deviations: SPEC.md §14 T10 implementation notes.
 
+### T11 — Historical importers, candle collector, backfill, price model
+
+- NHL importer (`src/backtest/nhlImporter.ts`): `/v1/schedule/{date}` week by week over a season +
+  `/v1/gamecenter/{id}/play-by-play` → `hist_games` (`source='nhl'`, id `nhl:<gameId>`); preseason only on
+  request; official final incl. the shootout, shootout attempts never goal events; resumable (`skipped N existing`),
+  4 requests/s, network gate; `npm run import:nhl -- --season 20252026 [--limit N] [--preseason]`.
+- Kalshi backfill (`src/backtest/kalshiBackfill.ts`): settled events of the enabled series within a date range →
+  games with `historical = 1` (new column, migration `0002_games_historical`; never tracked or traded) and their
+  settled markets; then the play-by-play importer (`src/backtest/kalshiPbp.ts`) turns `game_stats` into
+  `hist_games` (`source='kalshi_pbp'`) — soccer and hockey payloads qualify.
+- CSV importer (`src/backtest/csvImporter.ts`): §3 columns, per-row validation naming row and column, 20 MB limit,
+  step-up; idempotent upsert.
+- Candle collector (`src/backtest/candles.ts`): 1-minute candles of every finished / backfilled game's markets →
+  `hist_prices` (`/historical/markets/…` before the historical cutoff, `/series/…` after); links NHL / CSV
+  timelines to their Kalshi event (`kalshi_event_ticker`).
+- Price model (`src/backtest/priceModel.ts`): median ask close by (sport, lead 1/2/3+, 5-minute remaining bucket)
+  from `hist_prices` + `hist_games`, seed table below 20 observations, stored in `settings.price_model`;
+  `priceModelLookup` for T12.
+- Jobs (`src/backtest/jobs.ts`): in-memory data jobs with SSE `job` progress, cancel (`DELETE /api/jobs/:id`),
+  paused while the global kill switch is on. Routes in `src/server/routes/data.ts`.
+- Settings → Data page: import CSV, fetch NHL season, backfill settled Kalshi events, collect candles, rebuild
+  price model (per-sport sample sizes), DB size, vacuum, job list with cancel.
+- `npm run verify:T11`; `docs/verification/T11.md`. Deviations: SPEC.md §14 T11 implementation notes.
+
 ### T12 — Backtest simulator and Backtest page
 
 - `src/backtest/simulator.ts`: pure, deterministic replay of a strategy over `hist_games` goal timelines with the
@@ -237,8 +261,9 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   (`src/backtest/clock.ts`), window retry exactly like the executor, compounding bankroll, settlement from the final
   score (NHL tie $0.50), §6 metrics with equity, drawdown and monthly P&L.
 - Price providers: `exact` (`hist_prices.ask_close_bp` at the candle minute, else the next candle within 3 minutes,
-  else `skipped_no_price`) and `modelled` (`src/backtest/priceModel.ts`: `settings.price_model` cells with ≥ 20
-  observations, else the seed table; the summary reports `minSampleSize`).
+  else `skipped_no_price`; candles placed with the inverse of T11's clock model) and `modelled` (T11's
+  `priceModelLookup` on `settings.price_model`, or T11's seed table before a model is built; the summary reports
+  `minSampleSize`). One timeline per Kalshi event (T11's source ranking).
 - `worker_threads` worker (`src/backtest/worker.ts`) with its own database connection; `BacktestRunner` relays
   progress as SSE `backtest` events on `/api/live`.
 - API: `GET /api/backtests/options`, `POST /api/backtests` (strategy version or ad-hoc, seasons or last N days,

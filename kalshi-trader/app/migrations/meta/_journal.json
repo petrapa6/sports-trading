@@ -15,6 +15,13 @@
       "when": 1790339156953,
       "tag": "0001_seed_leagues",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790411838224,
+      "tag": "0002_games_historical",
+      "breakpoints": true
     }
   ]
 }

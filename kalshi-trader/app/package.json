@@ -42,6 +42,8 @@
     "verify:T09": "tsx scripts/verify-T09.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "verify:T10": "tsx scripts/verify-T10.ts",
+    "import:nhl": "tsx scripts/import-nhl.ts",
+    "verify:T11": "tsx scripts/verify-T11.ts",
     "verify:T12": "tsx scripts/verify-T12.ts"
   },
   "dependencies": {

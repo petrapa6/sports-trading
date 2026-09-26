@@ -43,7 +43,7 @@ type SwitchKey = keyof typeof SWITCHES;
 const isSwitch = (key: string): key is SwitchKey => key in SWITCHES;
 
 /** Size of the database file plus its WAL, in bytes (0 for a missing file). */
-function dbSizeBytes(path: string): number {
+export function dbSizeBytes(path: string): number {
   let total = 0;
   for (const p of [path, `${path}-wal`]) {
     try {

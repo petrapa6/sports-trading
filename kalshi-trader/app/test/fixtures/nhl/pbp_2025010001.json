@@ -1,0 +1,142 @@
+{
+  "id": 2025010001,
+  "season": 20252026,
+  "gameType": 1,
+  "limitedScoring": false,
+  "gameDate": "2025-09-22",
+  "startTimeUTC": "2025-09-22T23:00:00Z",
+  "gameState": "OFF",
+  "gameScheduleState": "OK",
+  "periodDescriptor": {
+    "number": 3,
+    "periodType": "REG",
+    "maxRegulationPeriods": 3
+  },
+  "awayTeam": {
+    "id": 10,
+    "commonName": {
+      "default": "Maple Leafs"
+    },
+    "placeName": {
+      "default": "Toronto"
+    },
+    "abbrev": "TOR",
+    "score": 1,
+    "sog": 30
+  },
+  "homeTeam": {
+    "id": 8,
+    "commonName": {
+      "default": "Canadiens"
+    },
+    "placeName": {
+      "default": "Montr\u00e9al"
+    },
+    "abbrev": "MTL",
+    "score": 2,
+    "sog": 28
+  },
+  "shootoutInUse": true,
+  "otInUse": true,
+  "clock": {
+    "timeRemaining": "00:00",
+    "secondsRemaining": 0,
+    "running": false,
+    "inIntermission": false
+  },
+  "displayPeriod": 1,
+  "maxPeriods": 5,
+  "gameOutcome": {
+    "lastPeriodType": "REG"
+  },
+  "regPeriods": 3,
+  "plays": [
+    {
+      "eventId": 100,
+      "periodDescriptor": {
+        "number": 1,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "00:00",
+      "timeRemaining": "20:00",
+      "typeDescKey": "period-start",
+      "details": {}
+    },
+    {
+      "eventId": 107,
+      "periodDescriptor": {
+        "number": 1,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "05:10",
+      "timeRemaining": "14:50",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 107,
+      "details": {
+        "eventOwnerTeamId": 8,
+        "scoringPlayerId": 8470107,
+        "homeScore": 1,
+        "awayScore": 0,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 114,
+      "periodDescriptor": {
+        "number": 2,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "12:00",
+      "timeRemaining": "08:00",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 114,
+      "details": {
+        "eventOwnerTeamId": 10,
+        "scoringPlayerId": 8470114,
+        "homeScore": 1,
+        "awayScore": 1,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 121,
+      "periodDescriptor": {
+        "number": 3,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "18:45",
+      "timeRemaining": "01:15",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 121,
+      "details": {
+        "eventOwnerTeamId": 8,
+        "scoringPlayerId": 8470121,
+        "homeScore": 2,
+        "awayScore": 1,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 999,
+      "periodDescriptor": {
+        "number": 3,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "20:00",
+      "timeRemaining": "00:00",
+      "typeDescKey": "game-end",
+      "details": {}
+    }
+  ]
+}

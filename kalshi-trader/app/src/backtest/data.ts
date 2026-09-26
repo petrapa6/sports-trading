@@ -4,8 +4,8 @@ import type { PriceRange } from '../core/pricing.js';
 import type { VersionPayload } from '../core/strategy.js';
 import type { GoalEvent } from '../core/tracker.js';
 import type { Sport } from '../feeds/gameState.js';
-import { floorMinute } from './clock.js';
-import { parsePriceModel } from './priceModel.js';
+import { wallMinuteAt } from './clock.js';
+import { SOURCE_RANK, type PriceModel } from './priceModel.js';
 import type { BacktestSummary, PriceMode, SimGame, SimInput, SimMarket, SimResult } from './simulator.js';
 
 /**
@@ -51,6 +51,7 @@ interface HistGameRow {
   final_home: number | null;
   final_away: number | null;
   goal_events: string;
+  source: string;
   kalshi_event_ticker: string | null;
 }
 
@@ -98,8 +99,15 @@ function settingValue(sqlite: Database.Database, key: string): unknown {
   }
 }
 
+/** `settings.price_model` as T11's builder stores it, or `null` (none yet, or an unknown shape → seed table). */
+function storedPriceModel(value: unknown): PriceModel | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Partial<PriceModel>;
+  return v.version === 1 && Array.isArray(v.cells) ? (value as PriceModel) : null;
+}
+
 /** `hist_games` rows of the request, in date order (`played_at`, then id). */
-function selectGames(sqlite: Database.Database, req: ResolvedRequest): HistGameRow[] {
+function selectAllGames(sqlite: Database.Database, req: ResolvedRequest): HistGameRow[] {
   const where: string[] = [`league_id IN (${req.leagueIds.map(() => '?').join(',')})`];
   const args: unknown[] = [...req.leagueIds];
   if (req.seasons.length > 0) {
@@ -112,10 +120,28 @@ function selectGames(sqlite: Database.Database, req: ResolvedRequest): HistGameR
   }
   return sqlite
     .prepare(
-      `SELECT id, played_at, final_home, final_away, goal_events, kalshi_event_ticker FROM hist_games
+      `SELECT id, played_at, final_home, final_away, goal_events, source, kalshi_event_ticker FROM hist_games
        WHERE ${where.join(' AND ')} AND played_at IS NOT NULL ORDER BY played_at, id`,
     )
     .all(...args) as HistGameRow[];
+}
+
+/**
+ * The request's games, one timeline per Kalshi event: when several sources describe the same event (the app's
+ * own `live` archive, Kalshi play-by-play, the NHL API, a CSV), the one the price-model builder trusts most wins.
+ */
+function selectGames(sqlite: Database.Database, req: ResolvedRequest): HistGameRow[] {
+  const rows = selectAllGames(sqlite, req);
+  const best = new Map<string, HistGameRow>();
+  const rank = (r: HistGameRow) => SOURCE_RANK[r.source] ?? 9;
+  for (const r of rows) {
+    if (!r.kalshi_event_ticker) continue;
+    const current = best.get(r.kalshi_event_ticker);
+    if (!current || rank(r) < rank(current) || (rank(r) === rank(current) && r.id < current.id)) {
+      best.set(r.kalshi_event_ticker, r);
+    }
+  }
+  return rows.filter((r) => !r.kalshi_event_ticker || best.get(r.kalshi_event_ticker) === r);
 }
 
 /** Number of games a request replays (for the progress total before the worker starts). */
@@ -129,9 +155,7 @@ export function countGames(sqlite: Database.Database, req: ResolvedRequest): num
  */
 export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): SimInput {
   const marketsOf = sqlite.prepare('SELECT ticker, outcome, price_ranges FROM markets WHERE game_id = ?');
-  const gameRow = sqlite.prepare(
-    'SELECT kickoff_observed_at, second_half_observed_at FROM games WHERE id = ?',
-  );
+  const gameRow = sqlite.prepare('SELECT scheduled_at FROM games WHERE id = ?');
   const candlesOf = sqlite.prepare(
     'SELECT minute_ts, ask_close_bp FROM hist_prices WHERE market_ticker = ? AND ask_close_bp IS NOT NULL',
   );
@@ -142,13 +166,10 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
     const playedMs = ms(row.played_at);
     if (!goals || playedMs === null || row.played_at === null) continue;
     const markets: SimGame['markets'] = {};
-    let kickoffMs = playedMs;
-    let secondHalfMs: number | null = null;
     if (row.kalshi_event_ticker) {
-      const live = gameRow.get(row.kalshi_event_ticker) as
-        { kickoff_observed_at: string | null; second_half_observed_at: string | null } | undefined;
-      kickoffMs = ms(live?.kickoff_observed_at) ?? playedMs;
-      secondHalfMs = ms(live?.second_half_observed_at);
+      // Candles are placed on the match clock from the event's scheduled start, like the price-model builder.
+      const event = gameRow.get(row.kalshi_event_ticker) as { scheduled_at: string | null } | undefined;
+      const startMs = ms(event?.scheduled_at) ?? playedMs;
       if (req.priceMode === 'exact') {
         for (const m of marketsOf.all(row.kalshi_event_ticker) as {
           ticker: string;
@@ -163,7 +184,7 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
             const series = new Map<number, number>();
             for (const c of candlesOf.all(m.ticker) as { minute_ts: string; ask_close_bp: number }[]) {
               const at = ms(c.minute_ts);
-              if (at !== null) series.set(floorMinute(at), c.ask_close_bp);
+              if (at !== null) series.set(wallMinuteAt(startMs, at), c.ask_close_bp);
             }
             candles.set(m.ticker, series);
           }
@@ -173,8 +194,6 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
     games.push({
       id: row.id,
       playedAt: row.played_at,
-      kickoffMs,
-      secondHalfMs,
       finalHome: row.final_home ?? goals.filter((g) => g.side === 'home').length,
       finalAway: row.final_away ?? goals.filter((g) => g.side === 'away').length,
       goals,
@@ -189,7 +208,7 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
     initialBankrollMicros: req.initialBankrollMicros,
     precisionMicros:
       typeof precision === 'number' && Number.isSafeInteger(precision) && precision > 0 ? precision : 100,
-    priceModel: parsePriceModel(settingValue(sqlite, 'price_model') ?? null),
+    priceModel: storedPriceModel(settingValue(sqlite, 'price_model')),
     candles,
     games,
   };
