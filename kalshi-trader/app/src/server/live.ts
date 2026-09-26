@@ -53,6 +53,12 @@ export interface LiveSource {
   signals?(): Signal[];
 }
 
+/** A trade that changed state (SSE `trade`); the Trades page refetches on it. */
+export interface TradeChange {
+  id: string;
+  status: string;
+}
+
 const NO_SOURCE: LiveSource = { games: () => [], loop: () => null };
 
 /**
@@ -66,6 +72,7 @@ export class LiveHub extends EventEmitter<{
   loop: [LoopStatus];
   strategies: [StrategyView[]];
   signal: [Signal];
+  trade: [TradeChange];
 }> {
   private source: LiveSource = NO_SOURCE;
   private gamesPending = false;
@@ -129,6 +136,13 @@ export class LiveHub extends EventEmitter<{
     this.emit('signal', signal);
   }
 
+  /** Called after a trade was created or changed state (executor, settler, recovery). */
+  tradeChanged(change: TradeChange): void {
+    this.emit('trade', change);
+    // 30-day trades / P&L per strategy follow the trades.
+    if (change.status === 'filled' || change.status.startsWith('settled_')) this.strategiesChanged();
+  }
+
   loop(): LoopStatus | null {
     return this.source.loop();
   }
@@ -177,7 +191,7 @@ export function sseEvent(event: string, data: unknown): string {
  * strategies), `loop` (loop state, last poll, feed status, Kalshi balance), `strategies`
  * (`{strategies: StrategyView[]}` with effective modes) and `signals` (`{signals: Signal[]}`, the recent
  * ones); then a `log` event per new line, `switches` / `games` / `loop` / `strategies` on every change, a
- * `signal` event per new signal and a `heartbeat` (with the switch states) every 10 s.
+ * `signal` event per new signal, a `trade` event (`{id, status}`) per trade state change (T09) and a `heartbeat` (with the switch states) every 10 s.
  * Each heartbeat re-checks the session, so a revoked or expired session stops receiving data within
  * one interval.
  */
@@ -223,6 +237,7 @@ export function registerLiveRoutes(
     const onLoop = (loop: LoopStatus) => send('loop', loop);
     const onStrategies = (strategies: StrategyView[]) => send('strategies', { strategies });
     const onSignal = (signal: Signal) => send('signal', signal);
+    const onTrade = (trade: TradeChange) => send('trade', trade);
 
     const sessionActive = (): boolean => {
       try {
@@ -241,6 +256,7 @@ export function registerLiveRoutes(
       hub.off('loop', onLoop);
       hub.off('strategies', onStrategies);
       hub.off('signal', onSignal);
+      hub.off('trade', onTrade);
       open.delete(res);
     };
 
@@ -275,6 +291,7 @@ export function registerLiveRoutes(
     hub.on('loop', onLoop);
     hub.on('strategies', onStrategies);
     hub.on('signal', onSignal);
+    hub.on('trade', onTrade);
     req.raw.on('close', cleanup);
     res.on('close', cleanup);
   });

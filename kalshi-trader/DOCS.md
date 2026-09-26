@@ -139,8 +139,30 @@ v1 has one rule, *lead at time*: the strategy may enter when a team leads by at 
 `atMinute` to `atMinute + windowMinutes` (soccer match minute, stoppage counting as 45 / 90; hockey elapsed minute
 1–59, overtime excluded), never during a break and never while the feeds disagree. Editing the rule, sizing,
 execution or leagues creates a new version (listed in the editor); trades keep the version they fired under.
-Deleting a strategy hides it but keeps its trades in the reports. Until the executor arrives (T09) a match is
-only a **signal**, shown on the Dashboard and in the log with its mode.
+Deleting a strategy hides it but keeps its trades in the reports.
+
+## Trades and the dry-run bankroll
+
+The first match of a strategy on a game inserts a **trade** and makes an attempt: the app re-reads the market,
+the exchange status and the orderbook, then checks the guards in order — paused, market closed, exchange paused,
+stale feed (`maxFeedAgeSec`), feeds disagree, ask above `maxPrice`, ask below `minPrice`, too little depth at or
+below the limit price, stake too small for one contract. A *soft* guard (exchange paused, stale feed, feeds
+disagree, price, min price, depth) leaves the trade **waiting** and it is retried on every score update while the
+rule still matches and the window is open; when the window closes it is **skipped** with the last reason. A *hard*
+guard skips it at once.
+
+In dry run the stake is a percentage of one **shared virtual bankroll** (Settings → Trading, default $100): the
+fill is recorded at the limit price (`min(ask + maxSlippage, maxPrice)` on the market's price grid) for as many
+contracts as the stake buys and the book offers at or below it; cost + fee is debited, and the payout is credited
+when the market settles (checked every minute; a tie or fair-price settlement is **void**). Settings → Trading
+shows the current and initial bankroll; **Reset bankroll** restores the initial value and asks for your password.
+**Fee precision** is $0.0001 by default; $0.01 gives more conservative dry runs.
+
+The **Trades** page lists everything that fired or nearly fired, with the shared filter bar, a status filter
+(waiting, filled, settled, skipped by reason) and a mode badge on every row; a row expands to the trigger snapshot,
+every attempt, the fill, the settlement and the audit trail. The CSV export carries `effective_mode`,
+`configured_mode`, `mode_reason` and `kalshi_env`. Live orders arrive in a later version: until then a strategy
+that would run live is skipped (`live_not_implemented`).
 
 ## Data Storage
 

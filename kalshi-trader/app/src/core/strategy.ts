@@ -198,6 +198,18 @@ export function strategyPriceBp(dollars: number): number {
   return Number.parseInt(whole, 10) * 10_000 + Number.parseInt(frac.padEnd(4, '0').slice(0, 4), 10);
 }
 
+/** A strategy percentage (≤ 2 decimals, validated above) in hundredths of a percent (`2.5` → `250`). */
+export function strategyPercentCenti(percent: number): number {
+  const [whole = '0', frac = ''] = String(percent).split('.');
+  return Number.parseInt(whole, 10) * 100 + Number.parseInt(frac.padEnd(2, '0').slice(0, 2), 10);
+}
+
+/** A strategy dollar amount (≤ 2 decimals, validated above) in integer micro-dollars (`1.5` → `1500000`). */
+export function strategyUsdMicros(usd: number): number {
+  const [whole = '0', frac = ''] = String(usd).split('.');
+  return Number.parseInt(whole, 10) * 1_000_000 + Number.parseInt(frac.padEnd(6, '0').slice(0, 6), 10);
+}
+
 /** Issues as `path: message` lines, e.g. `sizing.percent: percent must be at most 100`. */
 export function formatIssues(error: z.ZodError): string[] {
   return error.issues.map((i) => `${i.path.join('.') || '(body)'}: ${i.message}`);

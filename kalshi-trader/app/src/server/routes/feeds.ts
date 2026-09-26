@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { ZodError, z } from 'zod';
+import type { Executor } from '../../core/executor.js';
+import type { Settler } from '../../core/settler.js';
 import type { StrategyEngine } from '../../core/engine.js';
 import type { Scheduler } from '../../core/scheduler.js';
 import type { GameTracker } from '../../core/tracker.js';
@@ -20,6 +22,9 @@ export interface LiveServices {
   feeds: readonly ScoreFeed[];
   /** The strategy engine (T08): its signals are pushed over `/api/live`. */
   engine?: StrategyEngine;
+  /** Executor and settler (T09): their trade changes are pushed over `/api/live`. */
+  executor?: Pick<Executor, 'on'>;
+  settler?: Pick<Settler, 'on'>;
 }
 
 const FeedPatch = z.object({ enabled: z.boolean() }).strict();

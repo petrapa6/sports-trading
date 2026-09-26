@@ -215,6 +215,17 @@ export class GameSnapshotsRepository extends Repository<typeof s.game_snapshots,
       .orderBy(asc(s.game_snapshots.observed_at), asc(s.game_snapshots.id))
       .all();
   }
+  /** When the newest observation of a game was received (`observed_at`), or `null` without any. */
+  latestObservedAt(gameId: string): string | null {
+    const row = this.orm
+      .select({ at: s.game_snapshots.observed_at })
+      .from(s.game_snapshots)
+      .where(eq(s.game_snapshots.game_id, gameId))
+      .orderBy(desc(s.game_snapshots.observed_at))
+      .limit(1)
+      .get();
+    return row?.at ?? null;
+  }
   /** Deletes every snapshot of a game (replay reset); returns the number deleted. */
   deleteByGame(gameId: string): number {
     return this.orm.delete(s.game_snapshots).where(eq(s.game_snapshots.game_id, gameId)).run().changes;
@@ -308,6 +319,30 @@ export class TradesRepository extends Repository<typeof s.trades, 'id'> {
       .where(and(eq(s.trades.strategy_id, strategyId), eq(s.trades.game_id, gameId)))
       .get();
   }
+  /** Trades matching `where`, newest trigger first. */
+  newestFirst(where: SQL | undefined, limit: number): s.Trade[] {
+    return this.orm
+      .select()
+      .from(s.trades)
+      .where(where)
+      .orderBy(desc(s.trades.triggered_at), desc(s.trades.id))
+      .limit(limit)
+      .all();
+  }
+  /** Trades in any of `statuses`, oldest trigger first (optionally of one game). */
+  listByStatus(statuses: readonly string[], gameId?: string): s.Trade[] {
+    return this.orm
+      .select()
+      .from(s.trades)
+      .where(
+        and(
+          inArray(s.trades.status, [...statuses]),
+          gameId === undefined ? undefined : eq(s.trades.game_id, gameId),
+        ),
+      )
+      .orderBy(asc(s.trades.triggered_at), asc(s.trades.id))
+      .all();
+  }
 }
 
 export class TradeAttemptsRepository extends Repository<typeof s.trade_attempts, 'id'> {
@@ -320,6 +355,14 @@ export class TradeAttemptsRepository extends Repository<typeof s.trade_attempts,
       .from(s.trade_attempts)
       .where(eq(s.trade_attempts.trade_id, tradeId))
       .orderBy(asc(s.trade_attempts.attempt_no))
+      .all();
+  }
+  listByStatus(status: string): s.TradeAttempt[] {
+    return this.orm
+      .select()
+      .from(s.trade_attempts)
+      .where(eq(s.trade_attempts.status, status))
+      .orderBy(asc(s.trade_attempts.id))
       .all();
   }
   findByClientOrderId(clientOrderId: string): s.TradeAttempt | undefined {
@@ -390,6 +433,15 @@ export class LoginAttemptsRepository extends Repository<typeof s.login_attempts,
 export class AuditLogRepository extends Repository<typeof s.audit_log, 'id'> {
   constructor(orm: Orm) {
     super(orm, s.audit_log, ['id']);
+  }
+  /** Every row of one entity, oldest first (a trade's audit trail). */
+  listForEntity(entity: string, entityId: string): s.AuditLogEntry[] {
+    return this.orm
+      .select()
+      .from(s.audit_log)
+      .where(and(eq(s.audit_log.entity, entity), eq(s.audit_log.entity_id, entityId)))
+      .orderBy(asc(s.audit_log.id))
+      .all();
   }
   /** Rows for one action and entity, newest first. */
   listFor(action: string, entity: string, entityId: string, sinceIso?: string): s.AuditLogEntry[] {

@@ -89,6 +89,11 @@ export function LiveProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, games }));
       });
       es.addEventListener('strategies', onStrategies);
+      // A trade changed (executor, settler): the Trades page and the bankroll follow.
+      es.addEventListener('trade', () => {
+        void queryClient.invalidateQueries({ queryKey: ['trades'] });
+        void queryClient.invalidateQueries({ queryKey: ['settings'] });
+      });
       es.addEventListener('signals', (e) => {
         const { signals } = JSON.parse((e as MessageEvent<string>).data) as { signals: Signal[] };
         setState((s) => ({ ...s, signals }));

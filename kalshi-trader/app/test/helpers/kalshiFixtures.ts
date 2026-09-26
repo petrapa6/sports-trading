@@ -5,7 +5,7 @@
  * `routeKalshi` maps a request (path relative to `/trade-api/v2`) to a fixture file under
  * `test/fixtures/kalshi/`. Unknown paths answer `404 {"error":{"code":"not_found"}}`.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export const FIXTURE_DIR = resolve(import.meta.dirname, '../fixtures/kalshi');
@@ -21,7 +21,11 @@ export interface FixtureResponse {
   body: unknown;
 }
 
-const ok = (name: string): FixtureResponse => ({ status: 200, body: fixture(name) });
+/** The fixture, or `404 not_found` when no fixture of that name exists (e.g. an event never recorded). */
+const ok = (name: string): FixtureResponse =>
+  existsSync(resolve(FIXTURE_DIR, `${name}.json`))
+    ? { status: 200, body: fixture(name) }
+    : { status: 404, body: { error: { code: 'not_found', message: `no fixture ${name}` } } };
 
 /** Maps one request to its fixture; `path` is the pathname after `/trade-api/v2`. */
 export function routeKalshi(method: string, path: string, query: URLSearchParams): FixtureResponse {

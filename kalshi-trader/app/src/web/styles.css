@@ -834,3 +834,78 @@ button.danger {
   gap: 0.35rem;
   font-size: 0.9rem;
 }
+
+/* Trades page (T09) */
+.trade-mode {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+.env-tag {
+  font-size: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  text-transform: uppercase;
+}
+.trade-status {
+  white-space: nowrap;
+}
+.neg {
+  color: var(--danger);
+}
+.detail-row > td {
+  background: var(--bg);
+}
+.trade-detail {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+  /* The row spans a table wider than a phone: keep the panel in the visible part of the scroller. */
+  position: sticky;
+  left: 0;
+  max-width: calc(100vw - 4.5rem);
+}
+table.trades-table {
+  min-width: 52rem;
+}
+@media (min-width: 768px) {
+  .trade-detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.trade-detail h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.95rem;
+}
+.trade-detail section {
+  min-width: 0;
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0;
+}
+.kv dt {
+  color: var(--muted);
+}
+.kv dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.audit-trail {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.8rem;
+}
+.bankroll-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.bankroll-form .field {
+  flex: 0 1 12rem;
+}

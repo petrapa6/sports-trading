@@ -4,10 +4,11 @@ import { api, resetCsrf, setUnauthorizedHandler, type Me } from './api';
 import { appPath } from './base';
 import { LiveIndicator, LiveProvider } from './live';
 import { LoginPage } from './pages/Login';
-import { BacktestPage, DashboardPage, NotFoundPage, TradesPage } from './pages/Placeholders';
+import { BacktestPage, DashboardPage, NotFoundPage } from './pages/Placeholders';
 import { SettingsPage } from './pages/Settings';
 import { SetupPage } from './pages/Setup';
 import { StrategiesPage } from './pages/Strategies';
+import { TradesPage } from './pages/Trades';
 import { ReauthProvider } from './reauth';
 import { Link, navigate, useLocation } from './router';
 

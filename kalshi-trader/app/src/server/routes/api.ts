@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatabaseManager } from '../../db/database.js';
 import { SETTINGS } from '../../db/settings.js';
+import { resetBankroll } from '../../core/trades.js';
 import { userActor } from '../audit.js';
 import { parseBody } from '../http.js';
 import { globalMode, type LiveHub } from '../live.js';
@@ -27,6 +28,13 @@ const SettingsPatch = z
     global_kill_switch: SETTINGS.global_kill_switch.schema.optional(),
     global_dry_run: SETTINGS.global_dry_run.schema.optional(),
     order_group_contract_limit: SETTINGS.order_group_contract_limit.schema.optional(),
+    /** Fee rounding (§2 Fees): $0.0001 (100) by default, $0.01 (10000) for conservative dry runs. */
+    fee_balance_precision_micros: SETTINGS.fee_balance_precision_micros.schema.optional(),
+    /** The value a bankroll reset restores (the current bankroll changes only on reset). */
+    dry_run_initial_bankroll_micros: SETTINGS.dry_run_initial_bankroll_micros.schema
+      .refine((n) => n >= 1_000_000, 'must be at least $1')
+      .refine((n) => n <= 10_000_000_000_000, 'must be at most $10,000,000')
+      .optional(),
   })
   .strict();
 
@@ -51,6 +59,7 @@ export function registerApiRoutes(
   app: FastifyInstance,
   database: Pick<DatabaseManager, 'repositories'>,
   hub: LiveHub,
+  now: () => number = Date.now,
 ): void {
   const auth = app.authService;
 
@@ -101,6 +110,31 @@ export function registerApiRoutes(
       auth.audit(actor, { action: 'settings_change', entity: 'settings', detail: other });
     }
     if (Object.keys(changes).some(isSwitch)) hub.switchesChanged();
+    return publicSettings();
+  });
+
+  /**
+   * Resets the shared dry-run bankroll to its initial value (§5 Sizing, §8 Settings → Trading): needs step-up,
+   * writes a `bankroll_snapshots` row (`reset`) and an audit row (`mode = 'dry_run'`).
+   */
+  app.post('/api/settings/bankroll/reset', async (req, reply) => {
+    const { user, session } = authOf(req);
+    if (!auth.isRecentAuth(session)) return reply.code(403).send({ error: 'reauth_required' });
+    const repos = database.repositories;
+    const at = new Date(now()).toISOString();
+    const change = resetBankroll(repos, at);
+    auth.audit(
+      { actor: userActor(user.username), ...clientContext(req) },
+      {
+        action: 'dry_run_bankroll_reset',
+        entity: 'settings',
+        entityId: 'dry_run_bankroll_micros',
+        mode: 'dry_run',
+        detail: { fromMicros: change.from, toMicros: change.to },
+      },
+    );
+    req.log.info({ mode: 'dry_run', ...change }, 'Dry-run bankroll reset to its initial value');
+    hub.strategiesChanged();
     return publicSettings();
   });
 

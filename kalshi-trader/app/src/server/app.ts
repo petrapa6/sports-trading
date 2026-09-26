@@ -18,6 +18,7 @@ import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
 import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
 import { registerKalshiRoutes, type KalshiServices } from './routes/kalshi.js';
 import { registerStrategyRoutes } from './routes/strategies.js';
+import { registerTradeRoutes } from './routes/trades.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
 import { registerWeb, WEB_DIR } from './web.js';
 
@@ -160,6 +161,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       signals: () => engine?.recent() ?? [],
     });
     engine?.on('signal', (signal) => hub.signalEmitted(signal));
+    live.executor?.on('trade', (t) => hub.tradeChanged(t));
+    live.settler?.on('trade', (t) => hub.tradeChanged(t));
     live.tracker.on('stateUpdated', () => hub.gamesChanged());
     live.scheduler.on('status', (status) => {
       hub.loopChanged(status);
@@ -171,8 +174,9 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
-  registerApiRoutes(app, database, hub);
+  registerApiRoutes(app, database, hub, options.now);
   registerStrategyRoutes(app, database, hub, options.now);
+  registerTradeRoutes(app, database, hub, options.now);
   registerKalshiRoutes(
     app,
     database,

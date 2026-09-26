@@ -19,18 +19,6 @@ export function DashboardPage() {
   );
 }
 
-export function TradesPage() {
-  return (
-    <>
-      <h1>Trades</h1>
-      <FilterBar />
-      <section className="card placeholder">
-        <p className="muted">The trade history arrives with the executor.</p>
-      </section>
-    </>
-  );
-}
-
 export function BacktestPage() {
   return (
     <>
