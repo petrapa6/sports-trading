@@ -39,7 +39,7 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 | `npm test` | Vitest unit and security tests |
 | `npm run e2e` | Builds the web app, then Playwright (headless Chromium) at 1280 px and 390 px against a fresh database in `.local/e2e` and a local stand-in for the ingress proxy; first run `npx playwright install chromium` |
 | `npm run lint` / `npm run typecheck` | ESLint + Prettier check / `tsc --noEmit` (strict) |
-| `npm run audit:security` | Security tests + `npm audit --audit-level=high` |
+| `npm run audit:security` | Security tests, `gitleaks` (history), `npm audit --audit-level=high` and headers per request class against a running production build; one line per check and a summary table (`-- --skip-gitleaks`, `-- --no-build`) |
 | `npm run db:migrate` | Apply pending migrations to `DB_PATH` (`-- --status` lists them); the app also migrates on start-up |
 | `npm run db:migrate:down` | Roll back the latest migration (`-- --steps N`, `-- --all`) |
 | `npm run db:generate` | Generate a migration from `src/db/schema.ts` (drizzle-kit); add its down file in `migrations/down/` |
@@ -54,6 +54,10 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 | `npm run kalshi:smoke` | Read-only checks against Kalshi **demo** (environment, balance, exchange status, open events per enabled series); `SKIPPED (no demo key)` without a key |
 | `npm run fixtures:record:kalshi` | Record raw demo responses of the public market-data endpoints into `test/fixtures/kalshi/recorded/` (needs a demo key) |
 | `npm run verify:T06` | T06 acceptance checks (signing, typed methods, network gate, rate limiter, logs, discovery, team mapping, orders, smoke, e2e Leagues) |
+| `npm run seed:season` | One generated season into `DB_PATH` (2 000 games, 60 000 snapshots, 400 trades), then a WAL checkpoint and the file sizes (`-- --clear` removes it) |
+| `npm run lighthouse:a11y` | Lighthouse accessibility of Dashboard and Trades at both widths on a seeded scratch instance (needs network for `npx lighthouse@12.8.2`) |
+| `npx tsx scripts/drills/<name>.ts` | Failure drills: `stall-scheduler` (~2 min), `db-lock`, `kalshi-down`, `kill-switch` |
+| `npm run verify:T14` | T14 acceptance checks (audit + mutations, container, drills, maintenance, migrations, size, e2e + Lighthouse, release, HAOS checklist; `-- --only=…` / `-- --skip=…`) |
 
 ### Signing in (SPEC.md §10)
 

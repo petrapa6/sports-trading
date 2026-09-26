@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   amd64:
-    name: amd64 image — compose, run.sh, key hand-over (verify:T05)
+    name: amd64 image — compose, run.sh, key hand-over, capabilities (verify:T05, verify:T14 container)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -31,6 +31,9 @@ jobs:
       - run: npm run check:addon
         working-directory: kalshi-trader/app
       - run: npm run verify:T05
+        working-directory: kalshi-trader/app
+      # T14: capabilities of the node process, read-only root, no-new-privileges (compose, amd64).
+      - run: npm run verify:T14 -- --only=container
         working-directory: kalshi-trader/app
 
   multiarch:

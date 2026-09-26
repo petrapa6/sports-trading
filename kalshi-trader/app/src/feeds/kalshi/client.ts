@@ -140,6 +140,9 @@ export class KalshiClient {
   private readonly limits: RateLimitOptions;
   private readonly fetchFn: typeof fetch;
   private readonly now: () => number;
+  /** Outage tracking (T14): when the first failed call of the current outage happened, and how many failed. */
+  private unavailableSince: number | null = null;
+  private failedCalls = 0;
 
   constructor(options: KalshiClientOptions) {
     this.env = options.env;
@@ -215,6 +218,8 @@ export class KalshiClient {
         });
       } catch (err) {
         this.log.warn({ method, path: logPath }, 'Kalshi request failed (network)');
+        this.unavailableSince ??= this.now();
+        this.failedCalls++;
         throw new KalshiNetworkError(method, logPath, err);
       }
       this.log.debug(
@@ -223,12 +228,15 @@ export class KalshiClient {
       );
 
       if (res.status === 429 || res.status >= 500) {
-        await res.body?.cancel().catch(() => undefined);
+        // Not awaited: the body is discarded, and a stream whose cancel never settles must not hang the backoff.
+        void res.body?.cancel().catch(() => undefined);
         if (attempt >= MAX_ATTEMPTS) {
           this.log.warn(
             { method, path: logPath, status: res.status, attempts: attempt },
             'Kalshi unavailable',
           );
+          this.unavailableSince ??= this.now();
+          this.failedCalls++;
           throw new KalshiUnavailable(method, logPath, res.status, attempt);
         }
         const delay = BACKOFF_MS[attempt - 1] ?? BACKOFF_MS[BACKOFF_MS.length - 1];
@@ -238,6 +246,21 @@ export class KalshiClient {
         );
         await sleep(delay as number);
         continue;
+      }
+      // Any answer other than 429 / 5xx means Kalshi is reachable again: the end of an outage is logged once.
+      if (this.unavailableSince !== null) {
+        this.log.info(
+          {
+            method,
+            path: logPath,
+            status: res.status,
+            downForMs: this.now() - this.unavailableSince,
+            failedCalls: this.failedCalls,
+          },
+          'Kalshi reachable again',
+        );
+        this.unavailableSince = null;
+        this.failedCalls = 0;
       }
       if (!res.ok) {
         const { code, detail } = await errorInfo(res);

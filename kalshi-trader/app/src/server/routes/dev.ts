@@ -2,6 +2,7 @@ import { createHash, createPublicKey } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { applyReplayLine, ReplayLineSchema, type ReplayContext } from '../../core/replay.js';
+import type { Scheduler } from '../../core/scheduler.js';
 import { HttpError, parseBody } from '../http.js';
 
 /**
@@ -17,6 +18,8 @@ export function publicKeyFingerprint(privateKeyPem: string): string {
 export interface DevRouteOptions {
   /** `publicKeyFingerprint` of the loaded Kalshi key; `undefined` when no key is loaded. */
   privateKeyFingerprint: string | undefined;
+  /** The trading loop, for the stall drill (T14). */
+  scheduler?: Pick<Scheduler, 'stop' | 'resume' | 'status'>;
 }
 
 /**
@@ -34,6 +37,25 @@ export function registerDevRoutes(app: FastifyInstance, options: DevRouteOptions
       sha256: options.privateKeyFingerprint ?? null,
     };
   });
+
+  // Failure drills (T14, `scripts/drills/`): `stall-scheduler` stops the trading loop without marking it
+  // paused, as a hung loop would, so `/healthz` turns 503 two minutes after the last tick; `resume-scheduler`
+  // restarts it. Like every route here they exist only with NODE_ENV=development and answer only class `dev`.
+  const scheduler = options.scheduler;
+  if (scheduler) {
+    app.post('/api/dev/drills/stall-scheduler', { config: { public: true } }, async (req) => {
+      if (req.client.class !== 'dev') throw new HttpError(404, 'not_found');
+      scheduler.stop();
+      req.log.warn('Drill: trading loop stalled');
+      return { ok: true, loop: scheduler.status() };
+    });
+    app.post('/api/dev/drills/resume-scheduler', { config: { public: true } }, async (req) => {
+      if (req.client.class !== 'dev') throw new HttpError(404, 'not_found');
+      scheduler.resume();
+      req.log.info('Drill: trading loop resumed');
+      return { ok: true };
+    });
+  }
 }
 
 export interface ReplayRouteOptions {

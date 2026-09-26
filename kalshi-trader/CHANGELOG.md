@@ -2,7 +2,34 @@
 
 All notable changes to the Kalshi Sports Trader app. Versions follow `config.yaml` / `package.json`.
 
-## 0.1.0 — unreleased
+## 1.0.0 — 2026-09-26
+
+First release. Everything listed under 0.1.0 (T01–T13, developed as 0.1.0 and never released) is part of it.
+
+### T14 — Hardening, operations, v1.0.0, HAOS hand-over checklist
+
+- `npm run audit:security`: the security test suite, `gitleaks` over the git history, `npm audit --audit-level=high`
+  and response headers per request class (ingress, tunnel, dev, other) against a running production build — a
+  strict CSP (no `unsafe-inline` / `unsafe-eval` / wildcards), framing per class, `no-referrer`, `nosniff`, HSTS on
+  tunnel responses, no stack traces — one line per check, a summary table, exit 1 on any failure.
+- A database locked by another process past the 5 s `busy_timeout` answers `503 {"error":"db_busy"}` (with
+  `Retry-After: 1`) instead of a 500.
+- Failure drills in `scripts/drills/` with development-only drill endpoints (`/api/dev/drills/stall-scheduler`,
+  `resume-scheduler`; 404 in production): stalled loop → `/healthz` 503; exclusive SQLite lock → `db_busy` then
+  recovery; Kalshi 503 for 10 minutes → feeds keep polling, attempts `error`; global kill switch → zero requests.
+- The Kalshi client logs `Kalshi reachable again` (outage length, failed calls) on the first successful call after
+  an outage, and no longer waits for the discarded body of a 429 / 5xx answer to be cancelled before backing off.
+- The nightly maintenance line reads `Maintenance done: wal_checkpoint(TRUNCATE), pruned N snapshots`.
+- `npm run seed:season` (2 000 games, 60 000 snapshots, 400 trades; ≈45 MB after a checkpoint), a maintenance test
+  on it, and a migration down/up check that keeps every row count.
+- `npm run lighthouse:a11y`: Lighthouse accessibility for Dashboard and Trades at 1280 px and 390 px (all 100).
+- Local `docker compose` runs add `no-new-privileges`; `npm run verify:T14 -- --only=container` checks the node
+  process's capabilities (CapEff / CapPrm 0), the read-only root and `NoNewPrivs` in CI's Image workflow.
+- Version 1.0.0 in `config.yaml`, `package.json` and the image label; `DOCS.md` completed (outbound hosts, health
+  and maintenance, container hardening, troubleshooting); `docs/verification/HAOS.md` hand-over checklist;
+  `docs/decisions/0003-spec-reconciliation.md`; `npm run verify:T14`, `docs/verification/T14.md`.
+
+## 0.1.0 — development builds (T01–T13, not released)
 
 ### T01 — Repository scaffold, config, tooling, CI
 

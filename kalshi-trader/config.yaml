@@ -1,5 +1,5 @@
 name: Kalshi Sports Trader
-version: "0.1.0"
+version: "1.0.0"
 slug: kalshi-trader
 description: In-game sports strategy trader for Kalshi with dry-run mode and backtesting
 url: https://github.com/petrapa6/sports-trading
