@@ -162,7 +162,7 @@ export function startMaintenance(options: MaintenanceOptions): MaintenanceSchedu
         const result = runMaintenance(db, clock.now());
         log.info(
           { prunedSnapshots: result.prunedSnapshots, checkpoint: result.checkpoint },
-          'Maintenance done',
+          `Maintenance done: wal_checkpoint(TRUNCATE), pruned ${result.prunedSnapshots} snapshots`,
         );
       } catch (err) {
         log.error({ err }, 'Maintenance failed');

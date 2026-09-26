@@ -38,6 +38,9 @@ const DEFAULT_RUNTIME: RuntimeInfo = {
   dbPath: '',
 };
 
+/** SQLite result codes meaning "locked by another connection" (`SQLITE_BUSY`, `SQLITE_LOCKED` and their extended codes). */
+export const isDbBusy = (code: string): boolean => /^SQLITE_(BUSY|LOCKED)(_|$)/.test(code);
+
 export interface AppOptions {
   logger: FastifyBaseLogger;
   /** The database (`DatabaseManager`): health probe and repositories (throws while unavailable). */
@@ -112,6 +115,11 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       return reply.code(503).send({ error: 'unavailable' });
     }
     const code = typeof err.code === 'string' ? err.code : '';
+    // Another process holds the SQLite lock past `busy_timeout` (T14 drill): a retryable 503, not a 500.
+    if (isDbBusy(code)) {
+      req.log.warn({ code }, 'Database busy');
+      return reply.code(503).header('retry-after', '1').send({ error: 'db_busy' });
+    }
     if (code.startsWith('FST_CSRF')) return reply.code(403).send({ error: 'csrf' });
     const status = err.statusCode ?? 500;
     if (status >= 400 && status < 500) {
@@ -238,7 +246,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     options.now,
   );
   if (options.nodeEnv === 'development') {
-    registerDevRoutes(app, { privateKeyFingerprint: options.privateKeyFingerprint });
+    registerDevRoutes(app, {
+      privateKeyFingerprint: options.privateKeyFingerprint,
+      ...(live ? { scheduler: live.scheduler } : {}),
+    });
   }
   if (live && (options.nodeEnv === 'development' || options.replay?.allowLoopback)) {
     registerReplayRoute(app, {

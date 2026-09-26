@@ -18,7 +18,7 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
-    "audit:security": "vitest run test/security && npm audit --audit-level=high",
+    "audit:security": "tsx scripts/audit-security.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts up",
     "db:migrate:down": "tsx scripts/db-migrate.ts down",
@@ -46,7 +46,8 @@
     "verify:T11": "tsx scripts/verify-T11.ts",
     "verify:T12": "tsx scripts/verify-T12.ts",
     "e2e:demo": "tsx scripts/e2e-demo.ts",
-    "verify:T13": "tsx scripts/verify-T13.ts"
+    "verify:T13": "tsx scripts/verify-T13.ts",
+    "seed:season": "tsx scripts/seed-season.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

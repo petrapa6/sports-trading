@@ -130,6 +130,16 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
     this.handle = undefined;
   }
 
+  /**
+   * Restarts a stopped loop (the development-only stall drill, T14): the next tick runs at once, so
+   * `/healthz` recovers as soon as it has ticked.
+   */
+  resume(): void {
+    if (this.state !== 'stopped' || this.startedAt === null) return;
+    this.state = 'starting';
+    this.schedule(0);
+  }
+
   /** Re-evaluates at once (after a switch change), e.g. to leave `paused` without waiting. */
   wake(): void {
     if (this.state === 'stopped' || this.startedAt === null) return;
