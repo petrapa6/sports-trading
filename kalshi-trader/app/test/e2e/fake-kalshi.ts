@@ -25,11 +25,20 @@ createServer((req, res) => {
       res.writeHead(n.status, { 'content-type': 'application/json' }).end(JSON.stringify(n.body));
       return;
     }
+    const path = url.pathname.slice(API_PREFIX.length);
     const r = url.pathname.startsWith(API_PREFIX)
       ? signed
-        ? routeKalshi(req.method ?? 'GET', url.pathname.slice(API_PREFIX.length), url.searchParams)
+        ? routeKalshi(req.method ?? 'GET', path, url.searchParams)
         : { status: 401, body: { error: { code: 'unauthorized', message: 'missing signature' } } }
       : { status: 404, body: { error: { code: 'not_found' } } };
+    // T09: `GET /markets/{ticker}` answers for the requested ticker and stays open for another day, so the
+    // executor's dry-run fills in the e2e replay pass the market guard whatever the date.
+    const market = /^\/markets\/([^/]+)$/.exec(path);
+    if (req.method === 'GET' && market && r.status === 200) {
+      const body = r.body as { market: Record<string, unknown> };
+      body.market['ticker'] = decodeURIComponent(market[1] ?? '');
+      body.market['close_time'] = new Date(Date.now() + 86_400_000).toISOString();
+    }
     res.writeHead(r.status, { 'content-type': 'application/json' }).end(JSON.stringify(r.body));
   });
 }).listen(port, '127.0.0.1');

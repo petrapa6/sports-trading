@@ -193,3 +193,24 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   disabled until T12.
 - Replayed games get `<event>-<ABBR>` markets so replay signals carry a market ticker.
 - `npm run verify:T08`; `docs/verification/T08.md`. Deviations: SPEC.md §14 T08 implementation notes.
+
+### T09 — Executor, guards, retries and Settler in dry run; Trades page
+
+- `src/core/pricing.ts`: `feeMicros` (also `{multiplier}`), `limitPriceBp` snapped down to the market's
+  `price_ranges`, `contractsFor`, `stakeMicros`, `payoutMicros`, `realizedPnlMicros`, `unrealizedPnlMicros`.
+- `src/core/guards.ts`: the §5 guard table with hard / soft classes; `evaluateEntry` runs guards 1–9 and computes
+  best ask, limit, depth, stake and contracts (shared with the backtester in T12).
+- `src/core/executor.ts`: trade row on the signal (`signalled`), serial attempt queue; each attempt inserts its
+  `trade_attempts` row (`pending`, `<trade.id>-<n>`) before any HTTP, recomputes the effective mode, reads market,
+  exchange status and orderbook, runs the guards; soft → `waiting` and retried on every tick while the rule
+  matches, window end → `skipped` / `window_expired`; dry-run virtual fill at the limit price with the bankroll
+  debit and a `bankroll_snapshots` row in one transaction; live effective mode → `hard_skip` /
+  `live_not_implemented`. Start-up recovery of pending dry-run attempts (`unfilled` / `restart`).
+- `src/core/settler.ts`: every 60 s (idle under the global kill switch) settles `filled` trades from
+  `settlement_value_dollars` (`/historical/markets` past the cutoff), credits the dry-run bankroll.
+- Every trade and attempt state change writes an `audit_log` row (`entity = 'trade'`, `mode`); SSE `trade` events.
+- `GET /api/trades` (filter bar + status / reason) and `GET /api/trades/:id`; `POST /api/settings/bankroll/reset`
+  (step-up); `fee_balance_precision_micros` and `dry_run_initial_bankroll_micros` writable.
+- Trades page (TanStack table, status filter, mode badges, expandable snapshot / attempts / fill / settlement /
+  audit trail, CSV with mode columns); Settings → Trading: dry-run bankroll and fee precision.
+- `npm run verify:T09`; `docs/verification/T09.md`. Deviations: SPEC.md §14 T09 implementation notes.

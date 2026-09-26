@@ -346,3 +346,109 @@ export interface FeedTestResult {
   ok: boolean;
   message: string;
 }
+
+// ---- Trades (T09) ------------------------------------------------------------------------------
+
+export type TradeStatus =
+  | 'signalled'
+  | 'waiting'
+  | 'pending'
+  | 'filled'
+  | 'skipped'
+  | 'settled_won'
+  | 'settled_lost'
+  | 'settled_void';
+
+export interface TradeView {
+  id: string;
+  strategyId: string;
+  strategyName: string | null;
+  strategyVersion: number;
+  gameId: string;
+  leagueId: string;
+  sport: string | null;
+  homeTeam: string | null;
+  awayTeam: string | null;
+  marketTicker: string | null;
+  side: 'home' | 'away' | null;
+  kalshiEnv: KalshiEnv;
+  configuredMode: ConfiguredMode;
+  effectiveMode: ConfiguredMode;
+  modeReason: DryRunReason | null;
+  status: TradeStatus;
+  skipReason: string | null;
+  windowExpired: boolean;
+  attempts: number;
+  triggeredAt: string;
+  windowEndsAt: string;
+  minute: number | null;
+  score: string | null;
+  askAtTriggerBp: number | null;
+  balanceMicros: number | null;
+  stakeMicros: number | null;
+  limitPriceBp: number | null;
+  requestedCc: number | null;
+  fillCc: number | null;
+  avgFillPriceBp: number | null;
+  costMicros: number | null;
+  feeMicros: number | null;
+  settledAt: string | null;
+  settlementValueBp: number | null;
+  payoutMicros: number | null;
+  realizedPnlMicros: number | null;
+  reconcileWarning: string | null;
+}
+
+export interface TradeAttemptView {
+  attemptNo: number;
+  at: string;
+  effectiveMode: ConfiguredMode;
+  modeReason: DryRunReason | null;
+  clientOrderId: string;
+  status: string;
+  reason: string | null;
+  bestAskBp: number | null;
+  depthCc: number | null;
+  limitPriceBp: number | null;
+  requestedCc: number | null;
+  fillCc: number | null;
+  avgFillPriceBp: number | null;
+  feeMicros: number | null;
+}
+
+export interface TradeSnapshot {
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  phase: Phase;
+  clock: GameClock;
+  source: string;
+  observedAt: string;
+  feedUpdatedAt: string | null;
+  minute?: number;
+  side?: 'home' | 'away';
+  orderbook?: { at: string; bestAskBp: number | null; bestBidBp: number | null; askDepthCc: number };
+}
+
+export interface TradeDetail extends TradeView {
+  snapshot: TradeSnapshot | null;
+  attemptsList: TradeAttemptView[];
+  audit: {
+    at: string;
+    actor: string;
+    mode: string | null;
+    action: string;
+    detail: Record<string, unknown> | null;
+  }[];
+}
+
+/** `GET /api/settings`. */
+export interface PublicSettings {
+  global_kill_switch: boolean;
+  global_dry_run: boolean;
+  dry_run_bankroll_micros: number;
+  dry_run_initial_bankroll_micros: number;
+  fee_balance_precision_micros: number;
+  order_group_contract_limit: number;
+}

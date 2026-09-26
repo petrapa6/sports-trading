@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { closePrivateKeyFd, ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
 import { StrategyEngine } from '../core/engine.js';
+import { Executor } from '../core/executor.js';
+import { Settler } from '../core/settler.js';
 import { Scheduler } from '../core/scheduler.js';
 import { GameTracker } from '../core/tracker.js';
 import type { ScoreFeed } from '../feeds/gameState.js';
@@ -176,6 +178,22 @@ const engine = new StrategyEngine({
   log,
   allowLiveOrders: config.allowLiveOrders,
 }).attach(tracker);
+// Executor and settler (T09): dry-run fills against the live orderbook, settlement every minute.
+const executor = new Executor({
+  repos: () => database.repositories,
+  log,
+  kalshi: () => kalshiClient,
+  allowLiveOrders: config.allowLiveOrders,
+  kalshiEnv: config.kalshiEnv,
+  transaction,
+}).attach(engine, tracker);
+const settler = new Settler({
+  repos: () => database.repositories,
+  log,
+  kalshi: () => kalshiClient,
+  transaction,
+  beforeRun: () => executor.sweep(),
+});
 const trackedGames = () => tracker.pollTargets();
 const feeds: ScoreFeed[] = [];
 if (kalshiClient) feeds.push(new KalshiLiveFeed({ client: kalshiClient, log, games: trackedGames }));
@@ -213,7 +231,7 @@ const app = await buildApp({
     client: kalshiClient,
     discovery,
   },
-  live: { tracker, scheduler, feeds, engine },
+  live: { tracker, scheduler, feeds, engine, executor, settler },
   replay: { allowLoopback: e2e, transaction },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
@@ -227,6 +245,8 @@ async function shutdown(signal: string): Promise<void> {
     maintenance.stop();
     discovery?.stop();
     scheduler.stop();
+    settler.stop();
+    await executor.idle();
     await app.close();
     database.close();
     process.exit(0);
@@ -247,4 +267,13 @@ try {
 closePrivateKeyFd(config);
 // Discovery at start-up (after the server listens, so a slow Kalshi never delays /healthz), then daily at 05:00.
 discovery?.start();
+// Restart recovery runs before the scheduler starts (§4).
+if (database.current) {
+  try {
+    executor.recoverOnStart();
+  } catch (err) {
+    log.error({ err: { message: (err as Error).message } }, 'Trade recovery at start-up failed');
+  }
+}
 scheduler.start();
+settler.start();
