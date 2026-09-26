@@ -5,6 +5,8 @@ FROM ghcr.io/home-assistant/base:3.22-2026.08.0@sha256:0eda502b4d16e0433ace512d8
 RUN apk add --no-cache nodejs npm python3 make g++
 WORKDIR /app
 COPY app/package*.json ./
+# `npm ci` runs the `prepare` script (git hook installer; a no-op without git), so it must exist first.
+COPY app/scripts/install-hooks.mjs ./scripts/
 RUN npm ci
 COPY app/ .
 RUN npm run build && npm prune --omit=dev

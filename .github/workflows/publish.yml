@@ -1,8 +1,9 @@
 name: Publish image (disabled)
 
 # Optional: publish pre-built images to GHCR so the Supervisor pulls instead of building on the Pi
-# (SPEC.md §11). Disabled: it only runs by hand and its job is switched off. To enable it, remove the
-# `if: false` below and add `image: ghcr.io/petrapa6/{arch}-kalshi-trader` to kalshi-trader/config.yaml.
+# (SPEC.md §11). Disabled: it only runs by hand, and its job runs only when the repository variable
+# PUBLISH_IMAGES is "true" (unset). To enable it, set that variable and add
+# `image: ghcr.io/petrapa6/{arch}-kalshi-trader` to kalshi-trader/config.yaml.
 on:
   workflow_dispatch:
 
@@ -12,7 +13,7 @@ permissions:
 
 jobs:
   publish:
-    if: false
+    if: vars.PUBLISH_IMAGES == 'true'
     name: build and push aarch64 + amd64
     runs-on: ubuntu-24.04
     strategy:
@@ -33,7 +34,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Read version
         id: version
-        run: echo "version=$(sed -n 's/^version: "\(.*\)"/\1/p' kalshi-trader/config.yaml)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(jq -r .version kalshi-trader/app/package.json)" >> "$GITHUB_OUTPUT"
       - name: Build and push
         run: >-
           docker buildx build --platform ${{ matrix.platform }}
