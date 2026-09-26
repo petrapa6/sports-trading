@@ -91,6 +91,13 @@ async function waitHealthy(timeoutMs: number): Promise<number> {
   );
 }
 
+/** GET with curl (connection closed after the response): status and body. */
+function curlGet(url: string): { status: number; body: string } {
+  const r = run('curl', ['-s', '-w', '\n%{http_code}', url]);
+  const i = r.stdout.lastIndexOf('\n');
+  return { status: Number(r.stdout.slice(i + 1)), body: r.stdout.slice(0, i) };
+}
+
 /** Writes `options.json` for a fixture `config.local.json` via `npm run compose:options`. */
 function writeOptions(local: Record<string, unknown>, out: string): string {
   const localPath = join(BASE, `config.local.${Math.random().toString(36).slice(2)}.json`);
@@ -177,8 +184,10 @@ if (want('compose')) {
       const up = compose(['up', '--build', '-d']);
       assert(up.code === 0, `docker compose up failed:\n${up.out.slice(-2000)}`);
       const ms = await waitHealthy(90_000);
-      const res = await fetch(`http://127.0.0.1:${HOST_PORT}/healthz`);
-      const body = await res.text();
+      // curl (one request per connection), not fetch: a kept-alive connection would hold a socket fd in
+      // the app and skew the "no fd 3 after boot" check below.
+      const res = curlGet(`http://127.0.0.1:${HOST_PORT}/healthz`);
+      const body = res.body;
       assert(res.status === 200 && body.startsWith('{"ok":true'), `/healthz → ${res.status} ${body}`);
       const dbUid = exec('stat -c %u /data/db/trader.db');
       assert(dbUid.code === 0 && dbUid.stdout.trim() === '1000', `db/trader.db owner: ${dbUid.out.trim()}`);
@@ -219,18 +228,22 @@ if (want('key')) {
     'Key never in the environment (environ grep → 0), no fd 3 after boot; dev-only endpoint fingerprint = openssl pkey -pubout | sha256sum',
     async () => {
       const pid = nodePid();
+      // /proc/<pid>/environ and fd link targets of another user's process need ptrace rights, which root
+      // in the container lacks (no CAP_SYS_PTRACE); read them as the app user, and make sure the read works.
+      const size = exec(`wc -c < /proc/${pid}/environ`, '1000');
+      assert(size.code === 0 && Number(size.stdout.trim()) > 0, `cannot read environ: ${size.out.trim()}`);
       const env = exec(
         `tr '\\0' '\\n' < /proc/${pid}/environ | grep -c -e KALSHI_PRIVATE -e 'BEGIN .*PRIVATE KEY'`,
+        '1000',
       );
       assert(env.stdout.trim() === '0', `environ grep count: ${env.out.trim()}`);
       let fd3 = '';
       for (let i = 0; i < 5; i++) {
-        const r = exec(`ls -l /proc/${pid}/fd/3`);
+        const r = exec(`ls -l /proc/${pid}/fd/3`, '1000');
         fd3 = r.out.trim();
         if (r.code !== 0 && /No such file/.test(fd3)) break;
         await sleep(1000); // a transient socket (e.g. the health probe) may briefly hold the lowest free fd
       }
-      // Link targets of another user's fds need ptrace rights, so the diagnostic listing runs as uid 1000.
       if (!/No such file/.test(fd3)) {
         throw new Error(`fd 3 after boot: ${fd3}\n${exec(`ls -l /proc/${pid}/fd`, '1000').out}`);
       }
@@ -249,7 +262,7 @@ if (want('key')) {
       );
       const got = (JSON.parse(r.stdout || '{}') as { sha256?: string }).sha256;
       assert(got === expected, `endpoint → ${r.out.trim()}, openssl → ${expected}`);
-      const outside = await fetch(`http://127.0.0.1:${HOST_PORT}/api/dev/key-fingerprint`);
+      const outside = curlGet(`http://127.0.0.1:${HOST_PORT}/api/dev/key-fingerprint`);
       compose(['down']);
       const prodUp = compose(['up', '-d']);
       assert(prodUp.code === 0, 'docker compose up (production) failed');
@@ -331,6 +344,8 @@ if (want('runsh')) {
             await sleep(500);
             const r = run('docker', [
               'exec',
+              '-u',
+              '1000',
               cname,
               'sh',
               '-c',
