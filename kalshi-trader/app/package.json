@@ -44,7 +44,9 @@
     "verify:T10": "tsx scripts/verify-T10.ts",
     "import:nhl": "tsx scripts/import-nhl.ts",
     "verify:T11": "tsx scripts/verify-T11.ts",
-    "verify:T12": "tsx scripts/verify-T12.ts"
+    "verify:T12": "tsx scripts/verify-T12.ts",
+    "e2e:demo": "tsx scripts/e2e-demo.ts",
+    "verify:T13": "tsx scripts/verify-T13.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

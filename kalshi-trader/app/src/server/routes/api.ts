@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatabaseManager } from '../../db/database.js';
 import { SETTINGS } from '../../db/settings.js';
+import type { OrderGroupManager } from '../../core/orderGroup.js';
+import { describeKalshiError } from './kalshi.js';
 import { resetBankroll } from '../../core/trades.js';
 import { userActor } from '../audit.js';
 import { parseBody } from '../http.js';
@@ -60,6 +62,7 @@ export function registerApiRoutes(
   database: Pick<DatabaseManager, 'repositories'>,
   hub: LiveHub,
   now: () => number = Date.now,
+  orderGroups?: Pick<OrderGroupManager, 'status' | 'reset'>,
 ): void {
   const auth = app.authService;
 
@@ -136,6 +139,57 @@ export function registerApiRoutes(
     req.log.info({ mode: 'dry_run', ...change }, 'Dry-run bankroll reset to its initial value');
     hub.strategiesChanged();
     return publicSettings();
+  });
+
+  /**
+   * The Kalshi order group (SPEC.md §10 Blast radius, T13): id, contract limit and state. Without live orders
+   * (`allow_live_orders: false` or no Kalshi credentials) the state is `disabled`.
+   */
+  app.get('/api/settings/order-group', async () => {
+    if (orderGroups) return orderGroups.status();
+    return {
+      enabled: false,
+      id: database.repositories.settings.get('kalshi_order_group_id'),
+      contractsLimit: database.repositories.settings.get('order_group_contract_limit'),
+      state: 'disabled',
+      lastError: null,
+      checkedAt: null,
+      limitHitAt: null,
+    };
+  });
+
+  /** Resets the order group on the exchange after its limit was hit (step-up, audited with `mode = 'live'`). */
+  app.post('/api/settings/order-group/reset', async (req, reply) => {
+    const { user, session } = authOf(req);
+    if (!auth.isRecentAuth(session)) return reply.code(403).send({ error: 'reauth_required' });
+    if (!orderGroups || !orderGroups.status().enabled)
+      return reply.code(409).send({
+        error: 'live_orders_disabled',
+        message: 'Live orders are disabled (allow_live_orders is off or Kalshi is not configured).',
+      });
+    const actor = { actor: userActor(user.username), ...clientContext(req) };
+    try {
+      const status = await orderGroups.reset();
+      auth.audit(actor, {
+        action: 'order_group_reset',
+        entity: 'settings',
+        entityId: 'kalshi_order_group_id',
+        mode: 'live',
+        detail: { orderGroupId: status.id },
+      });
+      req.log.info({ mode: 'live', orderGroupId: status.id }, 'Kalshi order group reset');
+      return status;
+    } catch (err) {
+      const e = describeKalshiError(err);
+      auth.audit(actor, {
+        action: 'order_group_reset_failed',
+        entity: 'settings',
+        entityId: 'kalshi_order_group_id',
+        mode: 'live',
+        detail: { code: e.code },
+      });
+      return reply.code(e.status).send({ error: e.code, message: e.message });
+    }
   });
 
   /** Switch states plus the read-only process facts (add-on lock, Kalshi env, subaccount, version). */

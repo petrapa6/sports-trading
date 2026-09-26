@@ -161,8 +161,28 @@ shows the current and initial bankroll; **Reset bankroll** restores the initial 
 The **Trades** page lists everything that fired or nearly fired, with the shared filter bar, a status filter
 (waiting, filled, settled, skipped by reason) and a mode badge on every row; a row expands to the trigger snapshot,
 every attempt, the fill, the settlement and the audit trail. The CSV export carries `effective_mode`,
-`configured_mode`, `mode_reason` and `kalshi_env`. Live orders arrive in a later version: until then a strategy
-that would run live is skipped (`live_not_implemented`).
+`configured_mode`, `mode_reason` and `kalshi_env`.
+
+## Live trading
+
+With `allow_live_orders: true`, global dry run off and a strategy set to live, an attempt that passes the guards
+places a real **immediate-or-cancel** buy of YES on Kalshi at the limit price. The stake is a percentage of the
+subaccount's Kalshi cash balance (minus orders of the app still in flight); the count is capped by the contracts
+offered at or below the limit. The trade is recorded as **pending** before the order is sent, so a crash always
+leaves a record: at the next start the app looks the order up on Kalshi and applies what actually happened. An
+order that fills nothing leaves the trade waiting (retried while the window is open); a partial fill is kept as
+it is; an order Kalshi rejects skips the trade (`order_rejected`). Fees are the exchange's own. When a live trade
+settles, the app compares Kalshi's settlement with its own payout; a difference above $0.01 is shown as a
+**reconcile** warning on the Trades page. The Kalshi balance is recorded every 15 minutes and after each live fill
+or settlement (Dashboard → Balance history).
+
+**Order group.** Every live order carries the app's Kalshi order group, created at start-up: an exchange-side
+brake that rejects further orders once the contract limit (Settings → Trading, default 200 per rolling 15 s) was
+matched. Settings → Trading shows its state; after the limit was hit, **Reset order group** (asks for your
+password) re-enables live orders. A changed limit applies to the next group created.
+
+**First live test.** `npm run e2e:demo` (development machine, demo key in `config.local.json`) places one real
+order for 1 contract on the cheapest open demo market, records it as a live trade and prints the fee comparison.
 
 ## Historical data (Settings → Data)
 

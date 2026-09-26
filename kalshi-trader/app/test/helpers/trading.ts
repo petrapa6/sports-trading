@@ -2,7 +2,8 @@ import { EventEmitter } from 'node:events';
 import { http, HttpResponse } from 'msw';
 import { bpToDollars } from '../../src/core/decimal.js';
 import { evaluateLeadAtTime, StrategyEngine } from '../../src/core/engine.js';
-import { Executor } from '../../src/core/executor.js';
+import { Executor, PENDING_LIVE_MIN_AGE_MS } from '../../src/core/executor.js';
+import { OrderGroupManager } from '../../src/core/orderGroup.js';
 import { Settler } from '../../src/core/settler.js';
 import { StrategyDefinitionSchema, type StrategyDefinitionInput } from '../../src/core/strategy.js';
 import { createStrategy } from '../../src/core/strategyStore.js';
@@ -85,6 +86,37 @@ export class KalshiScript {
   onRequest: ((path: string) => void) | null = null;
   bookError: boolean = false;
 
+  // ---- live (T13) ----
+  /** `GET /portfolio/balance` → `balance_dollars`. */
+  balanceDollars = '100.0000';
+  /** Create Order V2 answer: status and JSON (default: everything filled at the limit, fee 0.0046 / contract). */
+  orderAnswer: (body: Record<string, unknown>) => { status: number; json: Record<string, unknown> } = (
+    body,
+  ) => ({
+    status: 201,
+    json: {
+      order_id: `ord-${this.orderBodies.length}`,
+      client_order_id: body['client_order_id'],
+      fill_count: `${String(body['count'])}.00`,
+      remaining_count: '0.00',
+      average_fill_price: body['price'],
+      average_fee_paid: '0.0046',
+      ts_ms: 1_791_684_065_123,
+    },
+  });
+  /** Create Order V2 fails without an HTTP answer (the order's outcome is unknown to the app). */
+  orderNetworkError = false;
+  /** Bodies of every Create Order V2 request, in order. */
+  readonly orderBodies: Record<string, unknown>[] = [];
+  /** `GET /portfolio/orders` and `GET /historical/orders` answers, and the URLs requested. */
+  orders: Record<string, unknown>[] = [];
+  historicalOrders: Record<string, unknown>[] = [];
+  readonly orderQueries: URL[] = [];
+  /** `GET /portfolio/settlements` answer. */
+  settlements: Record<string, unknown>[] = [];
+  /** Answers of the order-group endpoints (status only; 200 by default). */
+  orderGroupStatus = 200;
+
   setAsk(ticker: string, ask: string, contracts = '50.00'): void {
     this.book.set(ticker, orderbookJson([[ask, contracts]]));
   }
@@ -130,6 +162,58 @@ export class KalshiScript {
         seen(request);
         return HttpResponse.json({ market_settled_ts: '2026-06-25T00:00:00Z' });
       }),
+      http.get(`${TEST_BASE}/portfolio/balance`, ({ request }) => {
+        seen(request);
+        return HttpResponse.json({ balance_dollars: this.balanceDollars, portfolio_value_dollars: '0.0000' });
+      }),
+      http.post(`${TEST_BASE}/portfolio/events/orders`, async ({ request }) => {
+        seen(request);
+        const body = (await request.json()) as Record<string, unknown>;
+        this.orderBodies.push(body);
+        if (this.orderNetworkError) return HttpResponse.error();
+        const a = this.orderAnswer(body);
+        return HttpResponse.json(a.json, { status: a.status });
+      }),
+      http.get(`${TEST_BASE}/portfolio/orders`, ({ request }) => {
+        seen(request);
+        this.orderQueries.push(new URL(request.url));
+        return HttpResponse.json({ orders: this.orders, cursor: '' });
+      }),
+      http.get(`${TEST_BASE}/historical/orders`, ({ request }) => {
+        seen(request);
+        this.orderQueries.push(new URL(request.url));
+        return HttpResponse.json({ orders: this.historicalOrders, cursor: '' });
+      }),
+      http.get(`${TEST_BASE}/portfolio/settlements`, ({ request }) => {
+        seen(request);
+        const ticker = new URL(request.url).searchParams.get('ticker');
+        return HttpResponse.json({
+          settlements: this.settlements.filter((x) => ticker === null || x['ticker'] === ticker),
+          cursor: '',
+        });
+      }),
+      http.post(`${TEST_BASE}/portfolio/order_groups/create`, ({ request }) => {
+        seen(request);
+        return HttpResponse.json({ order_group_id: 'grp-new' }, { status: 201 });
+      }),
+      http.get(`${TEST_BASE}/portfolio/order_groups/:id`, ({ request }) => {
+        seen(request);
+        return this.orderGroupStatus === 200
+          ? HttpResponse.json({ is_auto_cancel_enabled: false, orders: [] })
+          : HttpResponse.json(
+              { error: { code: 'not_found', message: 'order group not found' } },
+              { status: this.orderGroupStatus },
+            );
+      }),
+      http.put(`${TEST_BASE}/portfolio/order_groups/:id/reset`, ({ request }) => {
+        seen(request);
+        return this.orderGroupStatus === 200
+          ? HttpResponse.json({})
+          : HttpResponse.json(
+              { error: { code: 'not_found', message: 'order group not found' } },
+              { status: this.orderGroupStatus },
+            );
+      }),
     ];
   }
 }
@@ -169,6 +253,7 @@ export interface Trading {
   engine: StrategyEngine;
   executor: Executor;
   settler: Settler;
+  orderGroups: OrderGroupManager;
   client: KalshiClient;
   logs: ReturnType<typeof captureLogger>;
   /** Creates a hockey strategy on NHL (kill switch off), returns its id. */
@@ -180,7 +265,9 @@ export interface Trading {
 
 export const HOCKEY_RULE = { type: 'lead_at_time', minLead: 2, atMinute: 50, windowMinutes: 3 } as const;
 
-export function setupTrading(opts: { allowLiveOrders?: boolean; killSwitch?: () => boolean } = {}): Trading {
+export function setupTrading(
+  opts: { allowLiveOrders?: boolean; killSwitch?: () => boolean; subaccount?: number } = {},
+): Trading {
   const tdb = tempDb();
   const clock = new Clock();
   const repos = createRepositories(tdb.db.orm, clock.now);
@@ -220,6 +307,16 @@ export function setupTrading(opts: { allowLiveOrders?: boolean; killSwitch?: () 
   }).attach(tracker as unknown as GameTracker);
   const client = testClient({
     killSwitch: opts.killSwitch ?? (() => repos.settings.get('global_kill_switch')),
+    subaccount: opts.subaccount ?? 0,
+  });
+  // Live orders carry the stored order group (T13); `OrderGroupManager` reuses it without a request.
+  repos.settings.set('kalshi_order_group_id', 'grp-1');
+  const orderGroups = new OrderGroupManager({
+    repos: () => repos,
+    log: logs.log,
+    kalshi: () => client,
+    allowLiveOrders,
+    now: clock.now,
   });
   const transaction = (fn: () => void) => tdb.db.sqlite.transaction(fn)();
   const executor = new Executor({
@@ -229,6 +326,7 @@ export function setupTrading(opts: { allowLiveOrders?: boolean; killSwitch?: () 
     allowLiveOrders,
     kalshiEnv: 'demo',
     transaction,
+    orderGroups,
     now: clock.now,
   }).attach(engine, tracker as unknown as GameTracker);
   const settler = new Settler({
@@ -237,7 +335,10 @@ export function setupTrading(opts: { allowLiveOrders?: boolean; killSwitch?: () 
     kalshi: () => client,
     transaction,
     now: clock.now,
-    beforeRun: () => executor.sweep(),
+    beforeRun: async () => {
+      executor.sweep();
+      await executor.resolvePendingLive('order_not_found', PENDING_LIVE_MIN_AGE_MS);
+    },
   });
   return {
     tdb,
@@ -247,6 +348,7 @@ export function setupTrading(opts: { allowLiveOrders?: boolean; killSwitch?: () 
     engine,
     executor,
     settler,
+    orderGroups,
     client,
     logs,
     strategy(def = {}, o = {}) {

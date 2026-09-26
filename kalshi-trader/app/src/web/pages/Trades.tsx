@@ -29,9 +29,14 @@ const SKIP_REASONS = [
   'too_small',
   'paused',
   'error',
+  'unfilled',
+  'order_group_limit',
+  'order_rejected',
+  'mode_changed',
   'no_market',
-  'live_not_implemented',
   'restart',
+  'restart_no_order',
+  'order_not_found',
   'window_expired',
 ] as const;
 
@@ -90,6 +95,12 @@ function StatusCell({ t }: { t: TradeView }) {
           {' '}
           ({t.skipReason.replaceAll('_', ' ')}
           {t.windowExpired ? ', window closed' : ''})
+        </span>
+      )}
+      {t.reconcileWarning && (
+        <span className="error" title={t.reconcileWarning} data-testid={`reconcile-${t.id}`}>
+          {' '}
+          ⚠ reconcile
         </span>
       )}
     </span>

@@ -55,6 +55,7 @@ export function routeKalshi(method: string, path: string, query: URLSearchParams
     }
     if (a === 'events' && seg.length === 2) return ok(`event_${b ?? ''}`);
     if (key === 'GET /milestones') return ok(`milestones_${query.get('related_event_ticker') ?? ''}`);
+    if (key === 'GET /markets') return ok('markets_open');
     if (a === 'markets' && seg.length === 2) return ok('market');
     if (a === 'markets' && c === 'orderbook') return ok('orderbook');
     if (a === 'series' && c === 'markets' && seg[4] === 'candlesticks') return ok('candlesticks');

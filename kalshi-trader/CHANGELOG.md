@@ -273,3 +273,27 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   save, compare up to 3 saved runs, promote to strategy. Strategies page "Test against last 30 days" enabled.
 - `test/fixtures/parity/game-a.json` parity test (tracker → engine → executor vs simulator); `npm run verify:T12`;
   `docs/verification/T12.md`. Deviations: SPEC.md §14 T12 implementation notes.
+
+### T13 — Live trading path: orders, order group, subaccount, recovery, reconciliation
+
+- Executor live branch (`src/core/executor.ts`): sizing from `GET /portfolio/balance` minus the cost of the app's
+  pending live attempts; trade `pending` with the attempt's limit and count before Create Order V2 (IOC,
+  `client_order_id = <trade.id>-<n>`, `price` with 4 decimals, whole-contract `count` capped by depth, order group,
+  subaccount); outcomes `filled` (exchange count, average price and fee), `unfilled` → waiting, 4xx →
+  `order_rejected`, order-group rejection → `order_group_limit`; unknown outcomes looked up by `client_order_id`;
+  switches re-read right before the order.
+- Start-up recovery of pending live attempts via `getOrders` / `getHistoricalOrders` matched by `client_order_id`
+  (`restart_no_order` when absent); `src/core/startup.ts` orders order group → recovery → loops; unresolved
+  attempts retried by the settler loop.
+- `src/core/orderGroup.ts`: order group created or reused at start-up when live orders are possible;
+  `GET /api/settings/order-group`, `POST /api/settings/order-group/reset` (step-up, audited); Settings → Trading
+  shows state, id, contract limit and a reset button.
+- Settler: live trades reconciled with `GET /portfolio/settlements` (`reconcile_warning` + `warn` above $0.01),
+  shown in the Trades row and detail.
+- `src/core/balances.ts`: `balance_snapshots` every 15 min and after each live fill / settlement, never under the
+  global kill switch.
+- Kalshi client: `listMarkets`; allow-list test (`test/unit/kalshi/allowlist.test.ts`) forbidding deposit,
+  withdrawal and transfer methods.
+- `npm run e2e:demo` (one real IOC order on demo, fee comparison at both precisions), `npm run replay --
+  --live-mock` (in-process live replay against the msw mock); `npm run verify:T13`; `docs/verification/T13.md`.
+  Deviations: SPEC.md §14 T13 implementation notes.

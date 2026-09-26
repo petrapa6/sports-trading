@@ -218,7 +218,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
-  registerApiRoutes(app, database, hub, options.now);
+  registerApiRoutes(app, database, hub, options.now, options.live?.orderGroups);
   registerStrategyRoutes(app, database, hub, options.now);
   registerTradeRoutes(app, database, hub, options.now);
   registerStatsRoutes(app, database, hub, options.now);

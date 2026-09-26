@@ -1,0 +1,101 @@
+{
+  "markets": [
+    {
+      "ticker": "KXNHLGAME-26OCT10UTAVGK-VGK",
+      "event_ticker": "KXNHLGAME-26OCT10UTAVGK",
+      "market_type": "binary",
+      "title": "Vegas wins?",
+      "yes_sub_title": "Vegas",
+      "no_sub_title": "Vegas",
+      "open_time": "2026-10-01T14:00:00Z",
+      "close_time": "2026-10-11T05:00:00Z",
+      "expiration_time": "2026-10-11T05:00:00Z",
+      "status": "active",
+      "yes_bid_dollars": "0.9100",
+      "yes_ask_dollars": "0.9300",
+      "last_price_dollars": "0.5700",
+      "volume_fp": "1520.00",
+      "result": "",
+      "can_close_early": true,
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "start": "0.0100",
+          "end": "0.9900",
+          "step": "0.0100"
+        }
+      ],
+      "some_future_field": {
+        "nested": true
+      },
+      "custom_strike": {
+        "hockey_team": "00000000-0000-4000-8000-000000000002"
+      }
+    },
+    {
+      "ticker": "KXNHLGAME-26OCT10UTAVGK-UTA",
+      "event_ticker": "KXNHLGAME-26OCT10UTAVGK",
+      "market_type": "binary",
+      "title": "Vegas wins?",
+      "yes_sub_title": "Vegas",
+      "no_sub_title": "Vegas",
+      "open_time": "2026-10-01T14:00:00Z",
+      "close_time": "2026-10-11T05:00:00Z",
+      "expiration_time": "2026-10-11T05:00:00Z",
+      "status": "active",
+      "yes_bid_dollars": "0.0600",
+      "yes_ask_dollars": "0.0800",
+      "last_price_dollars": "0.5700",
+      "volume_fp": "1520.00",
+      "result": "",
+      "can_close_early": true,
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "start": "0.0100",
+          "end": "0.9900",
+          "step": "0.0100"
+        }
+      ],
+      "some_future_field": {
+        "nested": true
+      },
+      "custom_strike": {
+        "hockey_team": "00000000-0000-4000-8000-000000000002"
+      }
+    },
+    {
+      "ticker": "KXNHLGAME-26OCT10UTAVGK-XXX",
+      "event_ticker": "KXNHLGAME-26OCT10UTAVGK",
+      "market_type": "binary",
+      "title": "Vegas wins?",
+      "yes_sub_title": "Vegas",
+      "no_sub_title": "Vegas",
+      "open_time": "2026-10-01T14:00:00Z",
+      "close_time": "2026-10-11T05:00:00Z",
+      "expiration_time": "2026-10-11T05:00:00Z",
+      "status": "active",
+      "yes_bid_dollars": "0.0000",
+      "yes_ask_dollars": "0.0000",
+      "last_price_dollars": "0.5700",
+      "volume_fp": "1520.00",
+      "result": "",
+      "can_close_early": true,
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "start": "0.0100",
+          "end": "0.9900",
+          "step": "0.0100"
+        }
+      ],
+      "some_future_field": {
+        "nested": true
+      },
+      "custom_strike": {
+        "hockey_team": "00000000-0000-4000-8000-000000000002"
+      }
+    }
+  ],
+  "cursor": ""
+}
