@@ -1,0 +1,53 @@
+name: probe (temporary, T11)
+on:
+  push:
+    branches: [claude/ticket-11-360uam]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: NHL schedule + play-by-play
+        run: |
+          set -x
+          curl -sS https://api-web.nhle.com/v1/schedule/2025-10-13 > sched.json
+          jq -c 'del(.gameWeek) ' sched.json | head -c 1500; echo
+          jq -c '.gameWeek[0].games[0]' sched.json | head -c 3000; echo
+          jq -c '[.gameWeek[] | {date, n:(.games|length), types:[.games[].gameType]}]' sched.json
+          curl -sS https://api-web.nhle.com/v1/schedule/2025-09-22 | jq -c '[.gameWeek[] | {date, types:[.games[].gameType], states:[.games[].gameState]}]'
+          for id in $(jq -r '.gameWeek[].games[].id' sched.json | head -40); do
+            curl -sS https://api-web.nhle.com/v1/gamecenter/$id/play-by-play > p.json
+            lp=$(jq -r '.gameOutcome.lastPeriodType' p.json)
+            echo "$id $lp $(jq -c '{a:.awayTeam.score,h:.homeTeam.score,aid:.awayTeam.id,hid:.homeTeam.id}' p.json)"
+            if [ "$lp" = "SO" ] && [ ! -f so.json ]; then cp p.json so.json; fi
+            if [ "$lp" = "REG" ] && [ ! -f reg.json ]; then cp p.json reg.json; fi
+          done
+          echo REGKEYS; jq -c 'keys' reg.json
+          jq -c 'del(.plays,.rosterSpots,.summary)' reg.json | head -c 4000; echo
+          echo REGGOALS; jq -c '.plays[] | select(.typeDescKey=="goal")' reg.json | head -c 6000; echo
+          echo SOPLAYS; jq -c '.plays[] | select(.periodDescriptor.periodType!="REG") | {t:.typeDescKey,pd:.periodDescriptor,tip:.timeInPeriod,d:(.details|{eventOwnerTeamId,homeScore,awayScore})}' so.json | head -c 5000; echo
+          jq -c '{a:.awayTeam.score,h:.homeTeam.score,go:.gameOutcome,pd:.periodDescriptor}' so.json
+      - name: Kalshi public (no auth)
+        run: |
+          B=https://api.elections.kalshi.com/trade-api/v2
+          curl -sS "$B/historical/cutoff"; echo
+          for S in KXEPLGAME KXNHLGAME; do
+            curl -sS "$B/events?series_ticker=$S&status=settled&limit=3&with_nested_markets=true" > ev.json
+            jq -c '.events[] | {event_ticker, product_metadata, markets:[.markets[]|{ticker,status,result,settlement_value_dollars,close_time,open_time,settlement_ts,expiration_time,custom_strike}]}' ev.json | head -c 4000; echo
+            E=$(jq -r '.events[0].event_ticker' ev.json)
+            T=$(jq -r '.events[0].markets[0].ticker' ev.json)
+            curl -sS "$B/milestones?related_event_ticker=$E" > ms.json; jq -c . ms.json | head -c 2500; echo
+            M=$(jq -r '.milestones[0].id' ms.json)
+            echo "GAMESTATS $S $M"
+            curl -sS -w '\nHTTP %{http_code}\n' "$B/live_data/milestone/$M/game_stats" > gs.json; head -c 200 gs.json; echo
+            jq -c '.pbp.periods[] | {k:(keys), n:(.events|length)}' gs.json | head -20
+            jq -c '[.pbp.periods[].events[]?] | .[0:40]' gs.json | head -c 8000; echo
+            jq -c 'del(.pbp)' gs.json | head -c 2000; echo
+            curl -sS -w '\nHTTP %{http_code}\n' "$B/live_data/milestone/$M" | head -c 2500; echo
+            CL=$(jq -r '.events[0].markets[0].close_time' ev.json)
+            END=$(date -d "$CL" +%s); START=$((END-4*3600))
+            echo "CANDLES $T"
+            curl -sS -w '\nHTTP %{http_code}\n' "$B/series/$S/markets/$T/candlesticks?start_ts=$START&end_ts=$END&period_interval=1" | head -c 1500; echo
+            curl -sS -w '\nHTTP %{http_code}\n' "$B/historical/markets/$T/candlesticks?start_ts=$START&end_ts=$END&period_interval=1" | head -c 1500; echo
+          done
