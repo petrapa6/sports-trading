@@ -250,16 +250,20 @@ export class GameTracker extends EventEmitter<{
    * to 6 h after their start, in enabled leagues. Replayed games are never polled.
    */
   pollTargets(now = this.now()): TrackedGame[] {
+    // Backfilled settled events (`historical = 1`, T11) are never tracked.
     const rows = this.repos.games.list(
-      or(
-        and(
-          inArray(gamesTable.phase, [...IN_PROGRESS]),
-          gte(gamesTable.scheduled_at, iso(now - LIVE_WINDOW_MS)),
-        ),
-        and(
-          eq(gamesTable.phase, 'scheduled'),
-          gte(gamesTable.scheduled_at, iso(now - LATE_START_MS)),
-          lte(gamesTable.scheduled_at, iso(now + PREGAME_MS)),
+      and(
+        eq(gamesTable.historical, 0),
+        or(
+          and(
+            inArray(gamesTable.phase, [...IN_PROGRESS]),
+            gte(gamesTable.scheduled_at, iso(now - LIVE_WINDOW_MS)),
+          ),
+          and(
+            eq(gamesTable.phase, 'scheduled'),
+            gte(gamesTable.scheduled_at, iso(now - LATE_START_MS)),
+            lte(gamesTable.scheduled_at, iso(now + PREGAME_MS)),
+          ),
         ),
       ),
     );
@@ -273,17 +277,20 @@ export class GameTracker extends EventEmitter<{
   /** The dashboard's live game cards: games in progress, about to start, or finished in the last 3 h. */
   displayGames(now = this.now()): GameView[] {
     const rows = this.repos.games.list(
-      or(
-        and(
-          inArray(gamesTable.phase, [...IN_PROGRESS]),
-          gte(gamesTable.scheduled_at, iso(now - LIVE_WINDOW_MS)),
+      and(
+        eq(gamesTable.historical, 0),
+        or(
+          and(
+            inArray(gamesTable.phase, [...IN_PROGRESS]),
+            gte(gamesTable.scheduled_at, iso(now - LIVE_WINDOW_MS)),
+          ),
+          and(
+            eq(gamesTable.phase, 'scheduled'),
+            gte(gamesTable.scheduled_at, iso(now - LATE_START_MS)),
+            lte(gamesTable.scheduled_at, iso(now + PREGAME_MS)),
+          ),
+          and(eq(gamesTable.phase, 'finished'), gte(gamesTable.finished_at, iso(now - FINISHED_VISIBLE_MS))),
         ),
-        and(
-          eq(gamesTable.phase, 'scheduled'),
-          gte(gamesTable.scheduled_at, iso(now - LATE_START_MS)),
-          lte(gamesTable.scheduled_at, iso(now + PREGAME_MS)),
-        ),
-        and(eq(gamesTable.phase, 'finished'), gte(gamesTable.finished_at, iso(now - FINISHED_VISIBLE_MS))),
       ),
     );
     const { sports, teams } = this.lookups();

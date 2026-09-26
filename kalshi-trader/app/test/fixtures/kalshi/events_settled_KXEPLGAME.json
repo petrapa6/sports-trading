@@ -1,0 +1,320 @@
+{
+  "events": [
+    {
+      "event_ticker": "KXEPLGAME-26SEP20FULMUN",
+      "series_ticker": "KXEPLGAME",
+      "title": "Fulham vs Manchester United",
+      "sub_title": "",
+      "category": "Sports",
+      "mutually_exclusive": true,
+      "strike_date": null,
+      "product_metadata": {
+        "competition": "EPL",
+        "competition_scope": "Game"
+      },
+      "markets": [
+        {
+          "ticker": "KXEPLGAME-26SEP20FULMUN-FUL",
+          "event_ticker": "KXEPLGAME-26SEP20FULMUN",
+          "market_type": "binary",
+          "title": "Fulham wins?",
+          "yes_sub_title": "Fulham",
+          "no_sub_title": "Fulham",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-09-20T17:28:06Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "no",
+          "settlement_value_dollars": "0.0000",
+          "settlement_ts": "2026-09-20T17:28:06Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "664077ba-242b-43e3-975d-cd754a774727"
+          }
+        },
+        {
+          "ticker": "KXEPLGAME-26SEP20FULMUN-MUN",
+          "event_ticker": "KXEPLGAME-26SEP20FULMUN",
+          "market_type": "binary",
+          "title": "Manchester United wins?",
+          "yes_sub_title": "Manchester United",
+          "no_sub_title": "Manchester United",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-09-20T17:28:06Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "no",
+          "settlement_value_dollars": "0.0000",
+          "settlement_ts": "2026-09-20T17:28:06Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "7e273345-6669-4db7-8a38-7f3ccb608937"
+          }
+        },
+        {
+          "ticker": "KXEPLGAME-26SEP20FULMUN-TIE",
+          "event_ticker": "KXEPLGAME-26SEP20FULMUN",
+          "market_type": "binary",
+          "title": "Tie wins?",
+          "yes_sub_title": "Tie",
+          "no_sub_title": "Tie",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-09-20T17:28:06Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "yes",
+          "settlement_value_dollars": "1.0000",
+          "settlement_ts": "2026-09-20T17:28:06Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "111193d4-9b1f-4bd8-ab7c-9de252737f05"
+          }
+        }
+      ]
+    },
+    {
+      "event_ticker": "KXEPLGAME-26SEP20MCISUN",
+      "series_ticker": "KXEPLGAME",
+      "title": "Manchester City vs Sunderland",
+      "sub_title": "",
+      "category": "Sports",
+      "mutually_exclusive": true,
+      "strike_date": null,
+      "product_metadata": {
+        "competition": "EPL",
+        "competition_scope": "Game"
+      },
+      "markets": [
+        {
+          "ticker": "KXEPLGAME-26SEP20MCISUN-MCI",
+          "event_ticker": "KXEPLGAME-26SEP20MCISUN",
+          "market_type": "binary",
+          "title": "Manchester City wins?",
+          "yes_sub_title": "Manchester City",
+          "no_sub_title": "Manchester City",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-09-20T15:14:01Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "yes",
+          "settlement_value_dollars": "1.0000",
+          "settlement_ts": "2026-09-20T15:14:01Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "f5d3f1b2-8ff6-4165-835f-45406eae5fb6"
+          }
+        },
+        {
+          "ticker": "KXEPLGAME-26SEP20MCISUN-SUN",
+          "event_ticker": "KXEPLGAME-26SEP20MCISUN",
+          "market_type": "binary",
+          "title": "Sunderland wins?",
+          "yes_sub_title": "Sunderland",
+          "no_sub_title": "Sunderland",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-09-20T15:14:01Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "no",
+          "settlement_value_dollars": "0.0000",
+          "settlement_ts": "2026-09-20T15:14:01Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "f0a69f43-b3c4-4049-bf6d-4717809000a1"
+          }
+        },
+        {
+          "ticker": "KXEPLGAME-26SEP20MCISUN-TIE",
+          "event_ticker": "KXEPLGAME-26SEP20MCISUN",
+          "market_type": "binary",
+          "title": "Tie wins?",
+          "yes_sub_title": "Tie",
+          "no_sub_title": "Tie",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-09-20T15:14:01Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "no",
+          "settlement_value_dollars": "0.0000",
+          "settlement_ts": "2026-09-20T15:14:01Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "111193d4-9b1f-4bd8-ab7c-9de252737f05"
+          }
+        }
+      ]
+    },
+    {
+      "event_ticker": "KXEPLGAME-26AUG30ARSLIV",
+      "series_ticker": "KXEPLGAME",
+      "title": "Arsenal vs Liverpool",
+      "sub_title": "",
+      "category": "Sports",
+      "mutually_exclusive": true,
+      "strike_date": null,
+      "product_metadata": {
+        "competition": "EPL",
+        "competition_scope": "Game"
+      },
+      "markets": [
+        {
+          "ticker": "KXEPLGAME-26AUG30ARSLIV-ARS",
+          "event_ticker": "KXEPLGAME-26AUG30ARSLIV",
+          "market_type": "binary",
+          "title": "Arsenal wins?",
+          "yes_sub_title": "Arsenal",
+          "no_sub_title": "Arsenal",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-08-30T17:21:40Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "no",
+          "settlement_value_dollars": "0.0000",
+          "settlement_ts": "2026-08-30T17:21:40Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "0a9eca41-bd4f-415c-b804-58214e97a77f"
+          }
+        },
+        {
+          "ticker": "KXEPLGAME-26AUG30ARSLIV-LIV",
+          "event_ticker": "KXEPLGAME-26AUG30ARSLIV",
+          "market_type": "binary",
+          "title": "Liverpool wins?",
+          "yes_sub_title": "Liverpool",
+          "no_sub_title": "Liverpool",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-08-30T17:21:40Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "yes",
+          "settlement_value_dollars": "1.0000",
+          "settlement_ts": "2026-08-30T17:21:40Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "c57caf81-f8f2-4115-8987-077818520be5"
+          }
+        },
+        {
+          "ticker": "KXEPLGAME-26AUG30ARSLIV-TIE",
+          "event_ticker": "KXEPLGAME-26AUG30ARSLIV",
+          "market_type": "binary",
+          "title": "Tie wins?",
+          "yes_sub_title": "Tie",
+          "no_sub_title": "Tie",
+          "open_time": "2026-09-06T00:36:00Z",
+          "close_time": "2026-08-30T17:21:40Z",
+          "expiration_time": "2026-09-22T21:30:00Z",
+          "status": "finalized",
+          "result": "no",
+          "settlement_value_dollars": "0.0000",
+          "settlement_ts": "2026-08-30T17:21:40Z",
+          "can_close_early": true,
+          "price_level_structure": "linear_cent",
+          "price_ranges": [
+            {
+              "start": "0.0000",
+              "end": "1.0000",
+              "step": "0.0100"
+            }
+          ],
+          "yes_bid_dollars": "0.0000",
+          "yes_ask_dollars": "0.0000",
+          "volume_fp": "250000.00",
+          "custom_strike": {
+            "soccer_team": "111193d4-9b1f-4bd8-ab7c-9de252737f05"
+          }
+        }
+      ]
+    }
+  ],
+  "cursor": ""
+}

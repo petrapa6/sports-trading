@@ -1,0 +1,163 @@
+{
+  "id": 2025020039,
+  "season": 20252026,
+  "gameType": 2,
+  "limitedScoring": false,
+  "gameDate": "2025-09-24",
+  "startTimeUTC": "2025-09-24T16:30:00Z",
+  "gameState": "OFF",
+  "gameScheduleState": "OK",
+  "periodDescriptor": {
+    "number": 3,
+    "periodType": "REG",
+    "maxRegulationPeriods": 3
+  },
+  "awayTeam": {
+    "id": 21,
+    "commonName": {
+      "default": "Avalanche"
+    },
+    "placeName": {
+      "default": "Colorado"
+    },
+    "abbrev": "COL",
+    "score": 3,
+    "sog": 30
+  },
+  "homeTeam": {
+    "id": 7,
+    "commonName": {
+      "default": "Sabres"
+    },
+    "placeName": {
+      "default": "Buffalo"
+    },
+    "abbrev": "BUF",
+    "score": 1,
+    "sog": 28
+  },
+  "shootoutInUse": true,
+  "otInUse": true,
+  "clock": {
+    "timeRemaining": "00:00",
+    "secondsRemaining": 0,
+    "running": false,
+    "inIntermission": false
+  },
+  "displayPeriod": 1,
+  "maxPeriods": 5,
+  "gameOutcome": {
+    "lastPeriodType": "REG"
+  },
+  "regPeriods": 3,
+  "plays": [
+    {
+      "eventId": 100,
+      "periodDescriptor": {
+        "number": 1,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "00:00",
+      "timeRemaining": "20:00",
+      "typeDescKey": "period-start",
+      "details": {}
+    },
+    {
+      "eventId": 107,
+      "periodDescriptor": {
+        "number": 1,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "03:14",
+      "timeRemaining": "16:46",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 107,
+      "details": {
+        "eventOwnerTeamId": 21,
+        "scoringPlayerId": 8470107,
+        "homeScore": 0,
+        "awayScore": 1,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 114,
+      "periodDescriptor": {
+        "number": 1,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "16:32",
+      "timeRemaining": "03:28",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 114,
+      "details": {
+        "eventOwnerTeamId": 7,
+        "scoringPlayerId": 8470114,
+        "homeScore": 1,
+        "awayScore": 1,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 121,
+      "periodDescriptor": {
+        "number": 2,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "04:32",
+      "timeRemaining": "15:28",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 121,
+      "details": {
+        "eventOwnerTeamId": 21,
+        "scoringPlayerId": 8470121,
+        "homeScore": 1,
+        "awayScore": 2,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 128,
+      "periodDescriptor": {
+        "number": 2,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "11:59",
+      "timeRemaining": "08:01",
+      "situationCode": "1551",
+      "typeCode": 505,
+      "typeDescKey": "goal",
+      "sortOrder": 128,
+      "details": {
+        "eventOwnerTeamId": 21,
+        "scoringPlayerId": 8470128,
+        "homeScore": 1,
+        "awayScore": 3,
+        "goalieInNetId": 8479312
+      }
+    },
+    {
+      "eventId": 999,
+      "periodDescriptor": {
+        "number": 3,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "timeInPeriod": "20:00",
+      "timeRemaining": "00:00",
+      "typeDescKey": "game-end",
+      "details": {}
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "milestones": [
+    {
+      "id": "70de1a3b-9f5d-4a74-adc7-b803ce6b0ae2",
+      "category": "Sports",
+      "type": "soccer_tournament_multi_leg",
+      "title": "Fulham vs Manchester United",
+      "start_date": "2026-09-20T15:30:00Z",
+      "end_date": null,
+      "details": {
+        "home_team_id": "664077ba-242b-43e3-975d-cd754a774727",
+        "away_team_id": "7e273345-6669-4db7-8a38-7f3ccb608937",
+        "competition": "EPL"
+      },
+      "primary_event_tickers": ["KXEPLGAME-26SEP20FULMUN"],
+      "related_event_tickers": ["KXEPLGAME-26SEP20FULMUN"],
+      "source_id": "sr:sport_event:6e6b0ae2",
+      "source_ids": {
+        "sportradar": "sr:sport_event:6e6b0ae2"
+      },
+      "last_updated_ts": "2026-09-20T17:28:06Z"
+    }
+  ],
+  "cursor": ""
+}

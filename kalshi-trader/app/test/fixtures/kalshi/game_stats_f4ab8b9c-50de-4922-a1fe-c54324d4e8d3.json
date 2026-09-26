@@ -1,0 +1,279 @@
+{
+  "pbp": {
+    "periods": [
+      {
+        "away_score": 3,
+        "away_team_id": "sr:competitor:41",
+        "home_score": 5,
+        "home_team_id": "sr:competitor:17",
+        "period_name": "2nd Half",
+        "period_number": 2,
+        "period_type": "regular_period",
+        "events": [
+          {
+            "away_points": 3,
+            "clock": "90+5",
+            "competitor": "away",
+            "description": "Malick Fofana (Sunderland AFC) strikes at Etihad Stadium but his header is cleared.",
+            "event_type": "shot_on_target",
+            "home_points": 5,
+            "match_time": 90,
+            "player_name": "",
+            "stoppage_time": 5,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 3,
+            "clock": "81:36",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 5,
+            "match_time": 82,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 3,
+            "clock": "80:59",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 5,
+            "match_time": 81,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 3,
+            "clock": "80:00",
+            "competitor": "home",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 5,
+            "match_time": 81,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 3,
+            "clock": "80:00",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 4,
+            "match_time": 81,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 3,
+            "clock": "58:44",
+            "competitor": "away",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 4,
+            "match_time": 59,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 2,
+            "clock": "58:44",
+            "competitor": "away",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 4,
+            "match_time": 59,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 2,
+            "clock": "56:02",
+            "competitor": "home",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 4,
+            "match_time": 57,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 2,
+            "clock": "56:02",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 3,
+            "match_time": 57,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          }
+        ]
+      },
+      {
+        "away_score": 3,
+        "away_team_id": "sr:competitor:41",
+        "home_score": 5,
+        "home_team_id": "sr:competitor:17",
+        "period_name": "",
+        "period_number": 0,
+        "period_type": "regular_period",
+        "events": [
+          {
+            "away_points": 3,
+            "clock": "90+3",
+            "competitor": "",
+            "description": "",
+            "event_type": "match_ended",
+            "home_points": 5,
+            "match_time": 90,
+            "player_name": "",
+            "stoppage_time": 3,
+            "type": "soccer_event"
+          }
+        ]
+      },
+      {
+        "away_score": 2,
+        "away_team_id": "sr:competitor:41",
+        "home_score": 3,
+        "home_team_id": "sr:competitor:17",
+        "period_name": "1st Half",
+        "period_number": 1,
+        "period_type": "regular_period",
+        "events": [
+          {
+            "away_points": 2,
+            "clock": "42:30",
+            "competitor": "home",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 3,
+            "match_time": 43,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 2,
+            "clock": "42:30",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 2,
+            "match_time": 43,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 2,
+            "clock": "32:51",
+            "competitor": "away",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 2,
+            "match_time": 33,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "32:51",
+            "competitor": "away",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 2,
+            "match_time": 33,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "28:05",
+            "competitor": "home",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 2,
+            "match_time": 29,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "28:05",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 1,
+            "match_time": 29,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "11:40",
+            "competitor": "away",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 1,
+            "match_time": 12,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "11:40",
+            "competitor": "away",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 1,
+            "match_time": 12,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "08:12",
+            "competitor": "home",
+            "description": "Goal!",
+            "event_type": "score_change",
+            "home_points": 1,
+            "match_time": 9,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "08:12",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 0,
+            "match_time": 9,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          }
+        ]
+      }
+    ]
+  }
+}

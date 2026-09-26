@@ -32,15 +32,28 @@ async function csrf(): Promise<string> {
   return csrfToken;
 }
 
+/** A request body sent as-is with its own content type (the CSV upload), instead of JSON. */
+class RawBody {
+  constructor(
+    readonly text: string,
+    readonly contentType: string,
+  ) {}
+}
+
 async function request<T>(method: string, path: string, body?: unknown, retried = false): Promise<T> {
   const headers: Record<string, string> = { accept: 'application/json' };
-  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (body instanceof RawBody) headers['content-type'] = body.contentType;
+  else if (body !== undefined) headers['content-type'] = 'application/json';
   if (method !== 'GET' && method !== 'HEAD' && !NO_SESSION.has(path)) headers['x-csrf-token'] = await csrf();
   const res = await fetch(endpoint(path), {
     method,
     headers,
     credentials: 'same-origin',
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    ...(body instanceof RawBody
+      ? { body: body.text }
+      : body !== undefined
+        ? { body: JSON.stringify(body) }
+        : {}),
   });
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
@@ -67,6 +80,10 @@ export function kalshiErrorMessage(err: unknown): string {
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body: unknown = {}) => request<T>('POST', path, body),
+  del: <T>(path: string) => request<T>('DELETE', path),
+  /** POSTs text with its own content type (e.g. `text/csv`). */
+  upload: <T>(path: string, text: string, contentType: string) =>
+    request<T>('POST', path, new RawBody(text, contentType)),
 };
 
 // ---- Response types ------------------------------------------------------------------------
@@ -451,4 +468,63 @@ export interface PublicSettings {
   dry_run_initial_bankroll_micros: number;
   fee_balance_precision_micros: number;
   order_group_contract_limit: number;
+}
+
+// ---- Settings → Data (T11) ------------------------------------------------------------------
+
+export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles';
+export type JobStatus = 'running' | 'paused' | 'done' | 'failed' | 'cancelled';
+
+export interface JobView {
+  id: string;
+  type: JobType;
+  label: string;
+  status: JobStatus;
+  done: number;
+  total: number | null;
+  message: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+  result: unknown;
+  error: string | null;
+}
+
+export interface PriceModelCell {
+  sport: 'soccer' | 'hockey';
+  lead: 1 | 2 | 3;
+  remainingFrom: number;
+  remainingTo: number;
+  askBp: number;
+  sampleSize: number;
+  seeded: boolean;
+}
+
+export interface PriceModelSummary {
+  builtAt: string;
+  minSamples: number;
+  sports: Record<'soccer' | 'hockey', { games: number; observations: number; modelledCells: number }>;
+  cells: PriceModelCell[];
+}
+
+export interface DataSummary {
+  dbPath: string;
+  dbSizeBytes: number;
+  histGames: { total: number; bySource: Record<string, number> };
+  linkedHistGames: number;
+  histPrices: number;
+  backfilledGames: number;
+  priceModel: PriceModelSummary | null;
+  jobs: JobView[];
+}
+
+export interface CsvImportResult {
+  rows: number;
+  inserted: number;
+  updated: number;
+}
+
+export interface VacuumResult {
+  beforeBytes: number;
+  afterBytes: number;
+  dbSizeBytes: number;
 }

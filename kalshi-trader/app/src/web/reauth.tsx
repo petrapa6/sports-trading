@@ -79,7 +79,7 @@ export function ReauthProvider({ children }: { children: ReactNode }) {
             onSubmit={submit}
           >
             <h2 id="reauth-title">Confirm your password</h2>
-            <p>This change can lead to real orders, so your password is needed again.</p>
+            <p>Changes that can lead to real orders, and data imports, need your password again.</p>
             <label htmlFor="reauth-password">Password</label>
             <input
               id="reauth-password"

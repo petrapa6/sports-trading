@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import {
   api,
   type GameView,
+  type JobView,
   type LogEntry,
   type LoopStatus,
   type Signal,
@@ -93,6 +94,20 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       es.addEventListener('trade', () => {
         void queryClient.invalidateQueries({ queryKey: ['trades'] });
         void queryClient.invalidateQueries({ queryKey: ['settings'] });
+      });
+      // A data job (Settings → Data, T11) changed: status and progress go straight into the cache.
+      es.addEventListener('job', (e) => {
+        const job = JSON.parse((e as MessageEvent<string>).data) as JobView;
+        queryClient.setQueryData<{ jobs: JobView[] }>(['jobs'], (old) => {
+          const jobs = old?.jobs ?? [];
+          return {
+            jobs: jobs.some((j) => j.id === job.id)
+              ? jobs.map((j) => (j.id === job.id ? job : j))
+              : [job, ...jobs],
+          };
+        });
+        if (job.status === 'done' || job.status === 'cancelled' || job.status === 'failed')
+          void queryClient.invalidateQueries({ queryKey: ['data-summary'] });
       });
       es.addEventListener('signals', (e) => {
         const { signals } = JSON.parse((e as MessageEvent<string>).data) as { signals: Signal[] };

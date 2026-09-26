@@ -1022,3 +1022,54 @@ table.trades-table {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Settings → Data (T11) */
+.data-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+.data-form input[type='file'] {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.data-form input:not([type='checkbox']):not([type='file']) {
+  flex: 0 1 10rem;
+  min-width: 0;
+}
+.job-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.job-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.job-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.job-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.job-status.done {
+  color: var(--ok);
+}
+.job-status.failed {
+  color: var(--danger);
+}

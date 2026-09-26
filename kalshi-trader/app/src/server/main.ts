@@ -233,6 +233,8 @@ const app = await buildApp({
   },
   live: { tracker, scheduler, feeds, engine, executor, settler },
   replay: { allowLoopback: e2e, transaction },
+  // Settings → Data (T11): the NHL importer uses the same e2e stand-in as the NHL feed.
+  data: { gate, transaction, ...(nhlBaseUrl ? { nhlBaseUrl } : {}) },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
 

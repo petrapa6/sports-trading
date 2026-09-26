@@ -96,7 +96,7 @@ export function isPreseason(competition: string | null): boolean {
   return competition !== null && /preseason/i.test(competition);
 }
 
-function chooseMilestone(event: string, milestones: Milestone[]): Milestone | undefined {
+export function chooseMilestone(event: string, milestones: Milestone[]): Milestone | undefined {
   return milestones.find((m) => m.primary_event_tickers?.includes(event)) ?? milestones[0];
 }
 
@@ -203,12 +203,19 @@ async function discoverLeague(
   return result;
 }
 
-function upsertEvent(
-  deps: DiscoveryDeps,
+/**
+ * Upserts one event's teams, game and markets. With `historical` (the T11 backfill of settled events)
+ * a new game is stored as `phase = 'finished'`, `historical = 1` (never tracked or traded) with
+ * `finished_at` = the markets' latest close time; a game the app already knows as a regular
+ * (non-historical) game keeps its row, and only its markets are refreshed.
+ */
+export function upsertEvent(
+  deps: Pick<DiscoveryDeps, 'repos' | 'log' | 'transaction'>,
   league: League,
   event: KalshiEvent,
   milestone: Milestone,
   nowIso: string,
+  options: { historical?: boolean } = {},
 ): { markets: number; unknown: number } {
   const { repos, log } = deps;
   const homeTarget = pick(milestone.details, HOME_KEYS);
@@ -236,7 +243,22 @@ function upsertEvent(
       feed_game_ids: JSON.stringify({ kalshi_milestone: milestone.id, ...sourceIds(milestone) }),
       updated_at: nowIso,
     };
-    if (repos.games.get({ id: event.event_ticker })) repos.games.update({ id: event.event_ticker }, game);
+    const existing = repos.games.get({ id: event.event_ticker });
+    if (options.historical) {
+      const closes = event.markets
+        .map((m) => m.close_time)
+        .filter((t): t is string => typeof t === 'string' && !Number.isNaN(Date.parse(t)))
+        .map((t) => new Date(t).toISOString())
+        .sort();
+      const historical = {
+        ...game,
+        phase: 'finished',
+        historical: 1,
+        finished_at: closes[closes.length - 1] ?? null,
+      };
+      if (!existing) repos.games.insert({ id: event.event_ticker, ...historical });
+      else if (existing.historical === 1) repos.games.update({ id: event.event_ticker }, historical);
+    } else if (existing) repos.games.update({ id: event.event_ticker }, game);
     else repos.games.insert({ id: event.event_ticker, ...game });
 
     for (const { market, outcome } of outcomes) {

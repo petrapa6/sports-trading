@@ -1,0 +1,195 @@
+{
+  "pbp": {
+    "periods": [
+      {
+        "away_score": 1,
+        "away_team_id": "sr:competitor:35",
+        "home_score": 1,
+        "home_team_id": "sr:competitor:43",
+        "period_name": "2nd Half",
+        "period_number": 2,
+        "period_type": "regular_period",
+        "events": [
+          {
+            "away_points": 1,
+            "clock": "90+4",
+            "competitor": "away",
+            "description": "Manchester United takes a corner from the right.",
+            "event_type": "corner_kick",
+            "home_points": 1,
+            "match_time": 90,
+            "player_name": "",
+            "stoppage_time": 4,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "90+3",
+            "competitor": "away",
+            "description": "Manchester United's Lisandro Martinez gets his shot away but it misses the target.",
+            "event_type": "shot_off_target",
+            "home_points": 1,
+            "match_time": 90,
+            "player_name": "",
+            "stoppage_time": 3,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "90+1",
+            "competitor": "",
+            "description": "",
+            "event_type": "injury_time_shown",
+            "home_points": 1,
+            "match_time": 90,
+            "player_name": "",
+            "stoppage_time": 1,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 1,
+            "clock": "88:38",
+            "competitor": "away",
+            "description": "Matheus Cunha grabs a goal to bring things level at 1 - 1 at Craven Cottage.",
+            "event_type": "score_change",
+            "home_points": 1,
+            "match_time": 89,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "88:38",
+            "competitor": "away",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 1,
+            "match_time": 89,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "81:10",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 1,
+            "match_time": 82,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "77:26",
+            "competitor": "away",
+            "description": "Manchester United are pushing forward but Bryan Mbeumo's finish is wide of the goal.",
+            "event_type": "shot_off_target",
+            "home_points": 1,
+            "match_time": 78,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "62:25",
+            "competitor": "home",
+            "description": "Lisandro Martinez scores an unfortunate own goal. This makes it 1 - 0 at Craven Cottage.",
+            "event_type": "score_change",
+            "home_points": 1,
+            "match_time": 63,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "62:25",
+            "competitor": "home",
+            "description": "",
+            "event_type": "possible_goal",
+            "home_points": 0,
+            "match_time": 63,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          }
+        ]
+      },
+      {
+        "away_score": 1,
+        "away_team_id": "sr:competitor:35",
+        "home_score": 1,
+        "home_team_id": "sr:competitor:43",
+        "period_name": "",
+        "period_number": 0,
+        "period_type": "regular_period",
+        "events": [
+          {
+            "away_points": 1,
+            "clock": "90+3",
+            "competitor": "",
+            "description": "",
+            "event_type": "match_ended",
+            "home_points": 1,
+            "match_time": 90,
+            "player_name": "",
+            "stoppage_time": 3,
+            "type": "soccer_event"
+          }
+        ]
+      },
+      {
+        "away_score": 0,
+        "away_team_id": "sr:competitor:35",
+        "home_score": 0,
+        "home_team_id": "sr:competitor:43",
+        "period_name": "1st Half",
+        "period_number": 1,
+        "period_type": "regular_period",
+        "events": [
+          {
+            "away_points": 0,
+            "clock": "45+2",
+            "competitor": "",
+            "description": "",
+            "event_type": "period_score",
+            "home_points": 0,
+            "match_time": 45,
+            "player_name": "",
+            "stoppage_time": 2,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "45+1",
+            "competitor": "",
+            "description": "",
+            "event_type": "injury_time_shown",
+            "home_points": 0,
+            "match_time": 45,
+            "player_name": "",
+            "stoppage_time": 1,
+            "type": "soccer_event"
+          },
+          {
+            "away_points": 0,
+            "clock": "12:04",
+            "competitor": "away",
+            "description": "Manchester United are pushing forward but the finish is wide of the goal.",
+            "event_type": "shot_off_target",
+            "home_points": 0,
+            "match_time": 13,
+            "player_name": "",
+            "stoppage_time": 0,
+            "type": "soccer_event"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -41,6 +41,11 @@ export function routeKalshi(method: string, path: string, query: URLSearchParams
     if (a === 'series' && seg.length === 2) return ok(`series_${b ?? ''}`);
     if (key === 'GET /events') {
       const series = query.get('series_ticker');
+      // Settled events (T11 backfill): `events_settled_<series>`, or none.
+      if (query.get('status') === 'settled')
+        return existsSync(resolve(FIXTURE_DIR, `events_settled_${series ?? ''}.json`))
+          ? ok(`events_settled_${series ?? ''}`)
+          : ok('events_empty');
       if (series === 'KXNHLGAME')
         return ok(
           query.get('cursor') === 'cursor-nhl-2' ? 'events_KXNHLGAME_page2' : 'events_KXNHLGAME_page1',
@@ -58,7 +63,10 @@ export function routeKalshi(method: string, path: string, query: URLSearchParams
     if (key === 'GET /historical/cutoff') return ok('historical_cutoff');
     if (key === 'GET /live_data/batch') return ok('live_data_batch');
     if (a === 'live_data' && b === 'milestone' && seg.length === 3) return ok('live_data');
-    if (a === 'live_data' && b === 'milestone' && d === 'game_stats') return ok('game_stats');
+    if (a === 'live_data' && b === 'milestone' && d === 'game_stats')
+      return existsSync(resolve(FIXTURE_DIR, `game_stats_${c ?? ''}.json`))
+        ? ok(`game_stats_${c ?? ''}`)
+        : ok('game_stats');
     if (key === 'GET /portfolio/orders' || key === 'GET /historical/orders')
       return ok(query.get('cursor') === 'cursor-orders-2' ? 'orders_page2' : 'orders_page1');
     if (key === 'GET /portfolio/positions') return ok('positions');

@@ -229,3 +229,27 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
 - `test/fixtures/db/stats-seed.sql` with `stats-seed.expected.json` and `stats-seed.md`;
   `npm run seed:demo -- --trades 500`; `npm run verify:T10`; `docs/verification/T10.md`.
   Deviations: SPEC.md §14 T10 implementation notes.
+
+### T11 — Historical importers, candle collector, backfill, price model
+
+- NHL importer (`src/backtest/nhlImporter.ts`): `/v1/schedule/{date}` week by week over a season +
+  `/v1/gamecenter/{id}/play-by-play` → `hist_games` (`source='nhl'`, id `nhl:<gameId>`); preseason only on
+  request; official final incl. the shootout, shootout attempts never goal events; resumable (`skipped N existing`),
+  4 requests/s, network gate; `npm run import:nhl -- --season 20252026 [--limit N] [--preseason]`.
+- Kalshi backfill (`src/backtest/kalshiBackfill.ts`): settled events of the enabled series within a date range →
+  games with `historical = 1` (new column, migration `0002_games_historical`; never tracked or traded) and their
+  settled markets; then the play-by-play importer (`src/backtest/kalshiPbp.ts`) turns `game_stats` into
+  `hist_games` (`source='kalshi_pbp'`) — soccer and hockey payloads qualify.
+- CSV importer (`src/backtest/csvImporter.ts`): §3 columns, per-row validation naming row and column, 20 MB limit,
+  step-up; idempotent upsert.
+- Candle collector (`src/backtest/candles.ts`): 1-minute candles of every finished / backfilled game's markets →
+  `hist_prices` (`/historical/markets/…` before the historical cutoff, `/series/…` after); links NHL / CSV
+  timelines to their Kalshi event (`kalshi_event_ticker`).
+- Price model (`src/backtest/priceModel.ts`): median ask close by (sport, lead 1/2/3+, 5-minute remaining bucket)
+  from `hist_prices` + `hist_games`, seed table below 20 observations, stored in `settings.price_model`;
+  `priceModelLookup` for T12.
+- Jobs (`src/backtest/jobs.ts`): in-memory data jobs with SSE `job` progress, cancel (`DELETE /api/jobs/:id`),
+  paused while the global kill switch is on. Routes in `src/server/routes/data.ts`.
+- Settings → Data page: import CSV, fetch NHL season, backfill settled Kalshi events, collect candles, rebuild
+  price model (per-sport sample sizes), DB size, vacuum, job list with cancel.
+- `npm run verify:T11`; `docs/verification/T11.md`. Deviations: SPEC.md §14 T11 implementation notes.

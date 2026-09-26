@@ -1,0 +1,4 @@
+league_code,season,date,home,away,home_goals_final,away_goals_final,goal_events
+epl,2015-16,2015-08-08,Manchester United,Tottenham,1,0,home:22
+epl,2015-16,2015-08-08,Bournemouth,Aston Villa,0,1,away:72
+epl,2015-16,2015-08-09,Arsenal,West Ham,2,1,home:23;away:67;home:90+2

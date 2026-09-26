@@ -84,6 +84,8 @@ export async function createTestApp(overrides: Partial<AppOptions> = {}, dir?: s
 interface RequestOptions {
   body?: unknown;
   form?: Record<string, string>;
+  /** A body sent as-is (e.g. a CSV upload). */
+  raw?: { contentType: string; payload: string | Buffer };
   headers?: Record<string, string>;
 }
 
@@ -108,8 +110,11 @@ export class Client {
     if (this.cookies.size > 0) {
       headers['cookie'] = [...this.cookies].map(([k, v]) => `${k}=${v}`).join('; ');
     }
-    let payload: string | undefined;
-    if (opts.form) {
+    let payload: string | Buffer | undefined;
+    if (opts.raw) {
+      headers['content-type'] = opts.raw.contentType;
+      payload = opts.raw.payload;
+    } else if (opts.form) {
       headers['content-type'] = 'application/x-www-form-urlencoded';
       payload = new URLSearchParams(opts.form).toString();
     } else if (opts.body !== undefined) {
