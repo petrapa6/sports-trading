@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { closePrivateKeyFd, ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
+import { Scheduler } from '../core/scheduler.js';
+import { GameTracker } from '../core/tracker.js';
+import type { ScoreFeed } from '../feeds/gameState.js';
+import { KalshiLiveFeed } from '../feeds/kalshi/live.js';
+import { NhlFeed } from '../feeds/nhl/feed.js';
+import { isFeedEnabled } from './routes/feeds.js';
 import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
 import { KalshiClient } from '../feeds/kalshi/client.js';
 import { DiscoveryService } from '../feeds/kalshi/discovery.js';
@@ -156,6 +162,29 @@ const discovery = kalshiClient
     })
   : undefined;
 
+// Live game state (T07): feeds → tracker, driven by the scheduler (paused while the kill switch is on).
+const transaction = (fn: () => void) => {
+  const db = database.current;
+  if (db) db.sqlite.transaction(fn)();
+  else fn();
+};
+const tracker = new GameTracker({ repos: () => database.repositories, log, transaction });
+const trackedGames = () => tracker.pollTargets();
+const feeds: ScoreFeed[] = [];
+if (kalshiClient) feeds.push(new KalshiLiveFeed({ client: kalshiClient, log, games: trackedGames }));
+// `KST_E2E_NHL_URL`: the Playwright stand-in for the NHL API; honoured only with KST_E2E=1 outside production.
+const nhlBaseUrl = e2e ? process.env['KST_E2E_NHL_URL'] : undefined;
+feeds.push(new NhlFeed({ gate, log, games: trackedGames, ...(nhlBaseUrl ? { baseUrl: nhlBaseUrl } : {}) }));
+const balanceClient = kalshiClient;
+const scheduler = new Scheduler({
+  tracker,
+  feeds,
+  isFeedEnabled: (id) => isFeedEnabled(database.repositories.settings.get('feeds'), id),
+  isPaused: () => database.repositories.settings.get('global_kill_switch'),
+  log,
+  ...(balanceClient ? { balance: async () => (await balanceClient.getBalance()).cash_micros } : {}),
+});
+
 const app = await buildApp({
   logger: log,
   database,
@@ -177,6 +206,8 @@ const app = await buildApp({
     client: kalshiClient,
     discovery,
   },
+  live: { tracker, scheduler, feeds },
+  replay: { allowLoopback: e2e, transaction },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
 
@@ -188,6 +219,7 @@ async function shutdown(signal: string): Promise<void> {
   try {
     maintenance.stop();
     discovery?.stop();
+    scheduler.stop();
     await app.close();
     database.close();
     process.exit(0);
@@ -208,3 +240,4 @@ try {
 closePrivateKeyFd(config);
 // Discovery at start-up (after the server listens, so a slow Kalshi never delays /healthz), then daily at 05:00.
 discovery?.start();
+scheduler.start();

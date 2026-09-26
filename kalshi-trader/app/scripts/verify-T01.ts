@@ -172,7 +172,8 @@ await check(
     const dev = startDev(devEnv({ CONFIG_LOCAL_PATH: '/nonexistent/config.local.json' }));
     try {
       const { body, ms } = await waitForHealth(8099, 5000);
-      assert(body === '{"ok":true}', `body was ${body}`);
+      // Since T07 the body also carries the loop state: {"ok":true,"loop":"starting"|"idle"|…}.
+      assert(/^\{"ok":true(,"loop":"[a-z]+")?\}$/.test(body), `body was ${body}`);
       await sleep(300);
       await dev.stop();
       const lines = jsonLines(dev.stdout());

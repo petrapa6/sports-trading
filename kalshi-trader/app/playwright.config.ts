@@ -66,6 +66,7 @@ export default defineConfig({
         DATA_DIR: './.local/e2e/data',
         KST_E2E: '1',
         KST_E2E_KALSHI_URL: `http://127.0.0.1:${KALSHI_PORT}/trade-api/v2`,
+        KST_E2E_NHL_URL: `http://127.0.0.1:${KALSHI_PORT}/nhl/v1`,
       },
     },
     {

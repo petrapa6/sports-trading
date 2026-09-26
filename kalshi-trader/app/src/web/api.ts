@@ -55,13 +55,7 @@ async function request<T>(method: string, path: string, body?: unknown, retried 
   return data as T;
 }
 
-/** Micro-dollars as `$1,234.56` (integer arithmetic; rounds half away from zero to the cent). */
-export function formatUsd(micros: number): string {
-  const negative = micros < 0;
-  const cents = Math.floor((Math.abs(micros) + 5000) / 10_000);
-  const whole = Math.floor(cents / 100).toLocaleString('en-US');
-  return `${negative ? '−' : ''}$${whole}.${String(cents % 100).padStart(2, '0')}`;
-}
+export { formatUsd } from './format';
 
 /** A readable message for a failed Kalshi action (`{error, message}` from the server). */
 export function kalshiErrorMessage(err: unknown): string {
@@ -173,4 +167,78 @@ export interface LogEntry {
   level: string;
   msg: string;
   mode: LogMode;
+}
+
+// ---- Live games and the trading loop (T07) ----------------------------------------------------
+
+export type Phase = 'scheduled' | 'live' | 'halftime' | 'intermission' | 'finished' | 'postponed';
+
+export interface GameClock {
+  minute?: number;
+  minuteSource?: 'feed' | 'derived';
+  period?: number;
+  secondsLeftInPeriod?: number;
+  regulationOver: boolean;
+}
+
+export interface GameView {
+  id: string;
+  leagueId: string;
+  sport: 'soccer' | 'hockey';
+  competition: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  homeAbbr: string | null;
+  awayAbbr: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  phase: Phase;
+  clock: GameClock;
+  blocked: boolean;
+  scheduledAt: string;
+  observedAt: string | null;
+  source: string | null;
+  strategies: { id: string; name: string; effectiveMode: 'live' | 'dry_run' }[];
+}
+
+export type FeedHealth = 'ok' | 'error' | 'idle' | 'disabled' | 'paused' | 'unavailable';
+
+export interface FeedStatus {
+  id: string;
+  name: string;
+  enabled: boolean;
+  available: boolean;
+  status: FeedHealth;
+  lastPollAt: string | null;
+  lastOkAt: string | null;
+  lastError: string | null;
+}
+
+export interface LoopStatus {
+  state: 'starting' | 'running' | 'idle' | 'paused' | 'stopped' | 'stale';
+  lastTickAt: string | null;
+  lastPollAt: string | null;
+  cadenceMs: number | null;
+  trackedGames: number;
+  feeds: FeedStatus[];
+  balance: { cashMicros: number | null; at: string | null; error: string | null };
+}
+
+export interface FeedInfo {
+  id: string;
+  name: string;
+  sports: string[];
+  enabled: boolean;
+  available: boolean;
+  status: FeedHealth;
+  lastOkAt: string | null;
+  lastError: string | null;
+}
+
+export interface FeedTestResult {
+  id: string;
+  name: string;
+  enabled: boolean;
+  ok: boolean;
+  message: string;
 }

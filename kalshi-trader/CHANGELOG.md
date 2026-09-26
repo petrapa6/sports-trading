@@ -134,3 +134,37 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   `test/fixtures/kalshi/` served by `msw` (new dev dependency) in unit tests and by `test/e2e/fake-kalshi.ts` in
   the e2e run. Deviations and unverified field names: SPEC.md §14 T06 implementation notes;
   `docs/verification/T06.md`.
+
+### T07 — Score feeds, GameTracker, Scheduler, replay, live cards, timeline archive
+
+- `src/feeds/gameState.ts`: `GameState` / `ScoreFeed` (SPEC.md §3), feed ids, derived soccer minute (whole minutes
+  since the observed kick-off / second-half start, capped at 45 / 90), hockey elapsed minute.
+- `src/feeds/kalshi/live.ts` (`kalshi-live`): one batch live-data request per tick for every tracked milestone;
+  hockey `round` / `final_round_time_left` (intermission at `00:00` in rounds 1–2); soccer minute parsed from
+  `tileLiveText` / `widgetLiveText` (`78'`, `45+2'` → 45, `90+4'` → 90, `HT`, `FT`, `1st Half`, `Postponed`),
+  otherwise derived (`minuteSource: 'derived'`), an unknown text logged once per game.
+- `src/feeds/nhl/feed.ts` (`nhl-official`): NHL Web API `/v1/score/now` (+ `/v1/gamecenter/{id}/landing` for a
+  tracked game missing from it), matched by tricodes (`teams.aliases`) and start time or an NHL id in the milestone
+  `source_ids`; `FUT`/`PRE` scheduled, `LIVE`/`CRIT` live, `FINAL`/`OFF` finished. Every request passes the
+  network gate.
+- `src/core/tracker.ts`: feed merge (agreed score; a disagreement > 20 s sets `games.blocked = 1` with a `warn`,
+  agreement clears it; NHL feed = hockey clock), one `game_snapshots` row per observation (with `minute_source`),
+  `games` updates, kick-off / second-half observation, `stateUpdated` / `phaseChanged` events; on `finished` the
+  goal events are derived from the snapshot score changes and written to `hist_games` (`source='live'`),
+  `timeline_archived = 1`.
+- `src/core/scheduler.ts`: 5 s while a tracked game is in progress, 60 s in the hour before a game, idle
+  otherwise, **paused** (zero requests) while the global kill switch is on; feeds polled with
+  `Promise.allSettled`; Kalshi balance every 5 min for the status strip. `/healthz` now answers
+  `{"ok":true,"loop":"running"|"idle"|"paused"|"starting"}`, and `503 {"ok":false,"loop":"stale"}` after 2 minutes
+  without a tick.
+- Replay: `src/core/replay.ts` (self-contained JSONL lines), `npm run replay -- --file … --speed 100` (posts to the
+  development-only `POST /api/dev/replay`), `npm run fixtures:record:feeds`, sample
+  `test/fixtures/replay/nhl-sample.jsonl`; `npm run feeds:smoke` (today's NHL games from the real API).
+- API: `GET /api/games`, `GET /api/loop`, `GET /api/feeds`, `POST /api/feeds/:id` (audited `feed_change`),
+  `POST /api/feeds/test`; SSE `/api/live` adds `games` (`{games: […]}` with score and clock incl.
+  `minuteSource`) and `loop` events. New setting `feeds` (adapter → enabled).
+- UI: Dashboard status strip (loop state, last poll, feeds with per-adapter status, Kalshi env + balance, the three
+  switches) and live game cards (score, phase / clock, minute with a "derived" marker, blocked warning);
+  Settings → Feeds (adapters on/off, Test feed).
+- CI: a `feeds-smoke` job runs `npm run feeds:smoke` against the real NHL API. `npm run verify:T07`;
+  `docs/verification/T07.md`. Deviations: SPEC.md §14 T07 implementation notes.

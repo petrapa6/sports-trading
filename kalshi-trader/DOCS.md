@@ -110,6 +110,22 @@ the app's own login that also hides the login page from scanners.
 3. Set a session duration (e.g. 24 hours) and save. Opening the hostname now asks Cloudflare for your email
    first, then shows the app's login.
 
+## Score feeds
+
+The app follows every game of the enabled leagues that Kalshi lists: it polls every **5 s** while a game is in
+progress, every **60 s** in the hour before a game, and not at all otherwise. Two adapters are available under
+**Settings → Feeds** (each can be switched off; **Test feed** checks both):
+
+| Feed | Sports | Needs |
+| --- | --- | --- |
+| Kalshi live data | soccer, hockey | the Kalshi key (one batch request per poll for all tracked games) |
+| NHL official API (`api-web.nhle.com`) | hockey | nothing (public, no key); used as the authoritative clock and to cross-check the score |
+
+When the two feeds disagree on an NHL score for more than 20 s, entries for that game are blocked until they agree
+again. While the **global kill switch** is on, no feed is polled at all and `/healthz` reports
+`{"ok":true,"loop":"paused"}`; if the loop stops ticking for 2 minutes, `/healthz` answers `503` (`"loop":"stale"`)
+and the Supervisor watchdog restarts the app. When a game finishes, its goal timeline is kept for backtesting.
+
 ## Data Storage
 
 | Path | Contents |

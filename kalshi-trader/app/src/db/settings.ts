@@ -29,6 +29,8 @@ export const SETTINGS = {
   price_model: { schema: z.json().nullable(), default: null },
   api_football_key_enc: { schema: z.string().min(1).nullable(), default: null },
   notifications: { schema: z.record(z.string(), z.json()), default: {} },
+  /** Settings → Feeds (T07): adapter id → enabled; an adapter missing from the map is on. */
+  feeds: { schema: z.record(z.string(), z.boolean()), default: {} },
 } as const satisfies Record<string, { schema: z.ZodType; default: unknown }>;
 
 export type SettingKey = keyof typeof SETTINGS;
