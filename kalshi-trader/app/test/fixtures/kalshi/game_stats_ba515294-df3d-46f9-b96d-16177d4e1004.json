@@ -1,0 +1,156 @@
+{
+  "pbp": {
+    "periods": [
+      {
+        "away_score": 2,
+        "away_team_id": "6f769f6d-161e-43d3-a586-db5451c5050e",
+        "home_score": 4,
+        "home_team_id": "70ecc991-a426-4567-b6ec-53f529f29078",
+        "period_name": "Period 3",
+        "period_number": 3,
+        "period_type": "REG",
+        "events": [
+          {
+            "attribution": "",
+            "away_points": 2,
+            "clock": "00:00",
+            "description": "End of 3rd Period.",
+            "home_points": 4,
+            "strength": "",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "70ecc991-a426-4567-b6ec-53f529f29078",
+            "away_points": 2,
+            "clock": "00:22",
+            "description": "Goal scored by T.J. Hughes assisted by Nazem Kadri and Jaden Schwartz",
+            "home_points": 4,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "6f769f6d-161e-43d3-a586-db5451c5050e",
+            "away_points": 2,
+            "clock": "00:38",
+            "description": "Shot on goal by Gabriel Vilardi saved by Mackenzie Blackwood",
+            "home_points": 3,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "70ecc991-a426-4567-b6ec-53f529f29078",
+            "away_points": 2,
+            "clock": "08:05",
+            "description": "Goal scored by T.J. Hughes assisted by Nazem Kadri and Jaden Schwartz",
+            "home_points": 3,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "6f769f6d-161e-43d3-a586-db5451c5050e",
+            "away_points": 2,
+            "clock": "15:10",
+            "description": "Goal scored by T.J. Hughes assisted by Nazem Kadri and Jaden Schwartz",
+            "home_points": 2,
+            "strength": "even",
+            "type": "hockey_play"
+          }
+        ]
+      },
+      {
+        "away_score": 2,
+        "away_team_id": "6f769f6d-161e-43d3-a586-db5451c5050e",
+        "home_score": 4,
+        "home_team_id": "70ecc991-a426-4567-b6ec-53f529f29078",
+        "period_name": "Period 1",
+        "period_number": 1,
+        "period_type": "REG",
+        "events": [
+          {
+            "attribution": "",
+            "away_points": 1,
+            "clock": "00:00",
+            "description": "End of 1st Period.",
+            "home_points": 1,
+            "strength": "",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "6f769f6d-161e-43d3-a586-db5451c5050e",
+            "away_points": 1,
+            "clock": "06:45",
+            "description": "Goal scored by T.J. Hughes assisted by Nazem Kadri and Jaden Schwartz",
+            "home_points": 1,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "70ecc991-a426-4567-b6ec-53f529f29078",
+            "away_points": 0,
+            "clock": "14:02",
+            "description": "Goal scored by T.J. Hughes assisted by Nazem Kadri and Jaden Schwartz",
+            "home_points": 1,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "70ecc991-a426-4567-b6ec-53f529f29078",
+            "away_points": 0,
+            "clock": "18:30",
+            "description": "Fedor Svechkov won faceoff against Vladislav Namestnikov in neutral zone",
+            "home_points": 0,
+            "strength": "even",
+            "type": "hockey_play"
+          }
+        ]
+      },
+      {
+        "away_score": 2,
+        "away_team_id": "6f769f6d-161e-43d3-a586-db5451c5050e",
+        "home_score": 4,
+        "home_team_id": "70ecc991-a426-4567-b6ec-53f529f29078",
+        "period_name": "Period 2",
+        "period_number": 2,
+        "period_type": "REG",
+        "events": [
+          {
+            "attribution": "",
+            "away_points": 1,
+            "clock": "00:00",
+            "description": "End of 2nd Period.",
+            "home_points": 2,
+            "strength": "",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "70ecc991-a426-4567-b6ec-53f529f29078",
+            "away_points": 1,
+            "clock": "03:31",
+            "description": "Shot on goal by Gabriel Vilardi saved by Mackenzie Blackwood",
+            "home_points": 2,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "70ecc991-a426-4567-b6ec-53f529f29078",
+            "away_points": 1,
+            "clock": "11:20",
+            "description": "Goal scored by T.J. Hughes assisted by Nazem Kadri and Jaden Schwartz",
+            "home_points": 2,
+            "strength": "even",
+            "type": "hockey_play"
+          },
+          {
+            "attribution": "6f769f6d-161e-43d3-a586-db5451c5050e",
+            "away_points": 1,
+            "clock": "19:59",
+            "description": "Fedor Svechkov won faceoff against Vladislav Namestnikov in neutral zone",
+            "home_points": 1,
+            "strength": "even",
+            "type": "hockey_play"
+          }
+        ]
+      }
+    ]
+  }
+}

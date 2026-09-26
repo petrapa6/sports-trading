@@ -5,7 +5,11 @@ import Fastify, {
   type FastifyError,
   type FastifyInstance,
 } from 'fastify';
+import type { Logger } from 'pino';
+import { JobManager } from '../backtest/jobs.js';
+import type { Db } from '../db/connection.js';
 import { DatabaseUnavailableError, type DbHealth } from '../db/database.js';
+import { createNetworkGate } from '../feeds/network.js';
 import type { Repositories } from '../db/repositories.js';
 import { AuthService, type Argon2Params } from './auth/service.js';
 import { HttpError } from './http.js';
@@ -15,6 +19,7 @@ import { registerApiRoutes } from './routes/api.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerBacktestRoutes } from './routes/backtests.js';
 import { BacktestRunner } from '../backtest/runner.js';
+import { registerDataRoutes, type DataServices } from './routes/data.js';
 import { OnceSet } from '../feeds/gameState.js';
 import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
 import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
@@ -36,12 +41,7 @@ const DEFAULT_RUNTIME: RuntimeInfo = {
 export interface AppOptions {
   logger: FastifyBaseLogger;
   /** The database (`DatabaseManager`): health probe and repositories (throws while unavailable). */
-  database: {
-    health(): DbHealth;
-    readonly repositories: Repositories;
-    /** The open database file (the backtest worker opens its own connection to it). */
-    readonly current?: { readonly path: string } | undefined;
-  };
+  database: { health(): DbHealth; readonly repositories: Repositories; readonly current?: Db | undefined };
   /** The 32-byte secret from `${DATA_DIR}/secret.key`. */
   secretKey: Buffer;
   /** `TRUSTED_PROXIES`. */
@@ -76,6 +76,11 @@ export interface AppOptions {
   replay?: { allowLoopback: boolean; transaction?: (fn: () => void) => void };
   /** Backtest runner (T12); by default one on the app's database file. */
   backtests?: BacktestRunner;
+  /**
+   * Settings → Data (T11): the job manager and the network gate default to ones reading the global kill
+   * switch from the database; `nhlBaseUrl` / `nhlFetch` point the NHL importer at a stand-in (tests, e2e).
+   */
+  data?: Partial<DataServices>;
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -196,6 +201,20 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     });
   backtests.on('progress', (p) => hub.backtestProgress(p));
   app.addHook('onClose', async () => backtests.close());
+  // Data jobs (T11) pause while the global kill switch is on and resume as soon as it is turned off.
+  const killSwitchOn = () => database.repositories.settings.get('global_kill_switch');
+  const jobs =
+    options.data?.jobs ??
+    new JobManager({
+      isPaused: killSwitchOn,
+      log: logger as unknown as Logger,
+      ...(options.now ? { now: options.now } : {}),
+    });
+  hub.on('switches', () => jobs.wake());
+  app.addHook('onClose', async () => {
+    jobs.cancelAll();
+    await jobs.idle();
+  });
 
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
@@ -210,6 +229,14 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     options.kalshi ?? { env: hub.runtime.kalshiEnv, subaccount: hub.runtime.kalshiSubaccount },
   );
   registerFeedRoutes(app, database, hub, live);
+  registerDataRoutes(
+    app,
+    database,
+    hub,
+    options.kalshi,
+    { ...options.data, jobs, gate: options.data?.gate ?? createNetworkGate(killSwitchOn) },
+    options.now,
+  );
   if (options.nodeEnv === 'development') {
     registerDevRoutes(app, { privateKeyFingerprint: options.privateKeyFingerprint });
   }

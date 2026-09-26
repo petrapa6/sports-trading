@@ -1,0 +1,25 @@
+{
+  "milestones": [
+    {
+      "id": "f4ab8b9c-50de-4922-a1fe-c54324d4e8d3",
+      "category": "Sports",
+      "type": "soccer_tournament_multi_leg",
+      "title": "Manchester City vs Sunderland",
+      "start_date": "2026-09-20T13:00:00Z",
+      "end_date": null,
+      "details": {
+        "home_team_id": "f5d3f1b2-8ff6-4165-835f-45406eae5fb6",
+        "away_team_id": "f0a69f43-b3c4-4049-bf6d-4717809000a1",
+        "competition": "EPL"
+      },
+      "primary_event_tickers": ["KXEPLGAME-26SEP20MCISUN"],
+      "related_event_tickers": ["KXEPLGAME-26SEP20MCISUN"],
+      "source_id": "sr:sport_event:64d4e8d3",
+      "source_ids": {
+        "sportradar": "sr:sport_event:64d4e8d3"
+      },
+      "last_updated_ts": "2026-09-20T15:14:01Z"
+    }
+  ],
+  "cursor": ""
+}

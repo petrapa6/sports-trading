@@ -1,0 +1,188 @@
+{
+  "nextStartDate": "2025-09-29",
+  "previousStartDate": "2025-08-25",
+  "preSeasonStartDate": "2025-09-20",
+  "regularSeasonStartDate": "2025-10-07",
+  "regularSeasonEndDate": "2026-04-17",
+  "playoffEndDate": "2026-06-15",
+  "numberOfGames": 3,
+  "gameWeek": [
+    {
+      "date": "2025-09-22",
+      "dayAbbrev": "",
+      "numberOfGames": 1,
+      "games": [
+        {
+          "id": 2025010001,
+          "season": 20252026,
+          "gameType": 1,
+          "venue": {
+            "default": "Arena"
+          },
+          "neutralSite": false,
+          "startTimeUTC": "2025-09-22T23:00:00Z",
+          "easternUTCOffset": "-04:00",
+          "venueUTCOffset": "-04:00",
+          "gameState": "OFF",
+          "gameScheduleState": "OK",
+          "awayTeam": {
+            "id": 10,
+            "commonName": {
+              "default": "Maple Leafs"
+            },
+            "placeName": {
+              "default": "Toronto"
+            },
+            "abbrev": "TOR",
+            "score": 1
+          },
+          "homeTeam": {
+            "id": 8,
+            "commonName": {
+              "default": "Canadiens"
+            },
+            "placeName": {
+              "default": "Montr\u00e9al"
+            },
+            "abbrev": "MTL",
+            "score": 2
+          },
+          "periodDescriptor": {
+            "number": 3,
+            "periodType": "REG",
+            "maxRegulationPeriods": 3
+          },
+          "gameOutcome": {
+            "lastPeriodType": "REG"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-23",
+      "dayAbbrev": "",
+      "numberOfGames": 0,
+      "games": []
+    },
+    {
+      "date": "2025-09-24",
+      "dayAbbrev": "",
+      "numberOfGames": 1,
+      "games": [
+        {
+          "id": 2025020039,
+          "season": 20252026,
+          "gameType": 2,
+          "venue": {
+            "default": "Arena"
+          },
+          "neutralSite": false,
+          "startTimeUTC": "2025-09-24T16:30:00Z",
+          "easternUTCOffset": "-04:00",
+          "venueUTCOffset": "-04:00",
+          "gameState": "OFF",
+          "gameScheduleState": "OK",
+          "awayTeam": {
+            "id": 21,
+            "commonName": {
+              "default": "Avalanche"
+            },
+            "placeName": {
+              "default": "Colorado"
+            },
+            "abbrev": "COL",
+            "score": 3
+          },
+          "homeTeam": {
+            "id": 7,
+            "commonName": {
+              "default": "Sabres"
+            },
+            "placeName": {
+              "default": "Buffalo"
+            },
+            "abbrev": "BUF",
+            "score": 1
+          },
+          "periodDescriptor": {
+            "number": 3,
+            "periodType": "REG",
+            "maxRegulationPeriods": 3
+          },
+          "gameOutcome": {
+            "lastPeriodType": "REG"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-25",
+      "dayAbbrev": "",
+      "numberOfGames": 1,
+      "games": [
+        {
+          "id": 2025020074,
+          "season": 20252026,
+          "gameType": 2,
+          "venue": {
+            "default": "Arena"
+          },
+          "neutralSite": false,
+          "startTimeUTC": "2025-09-25T00:30:00Z",
+          "easternUTCOffset": "-04:00",
+          "venueUTCOffset": "-04:00",
+          "gameState": "FINAL",
+          "gameScheduleState": "OK",
+          "awayTeam": {
+            "id": 23,
+            "commonName": {
+              "default": "Canucks"
+            },
+            "placeName": {
+              "default": "Vancouver"
+            },
+            "abbrev": "VAN",
+            "score": 3
+          },
+          "homeTeam": {
+            "id": 16,
+            "commonName": {
+              "default": "Blackhawks"
+            },
+            "placeName": {
+              "default": "Chicago"
+            },
+            "abbrev": "CHI",
+            "score": 2
+          },
+          "periodDescriptor": {
+            "number": 5,
+            "periodType": "SO",
+            "maxRegulationPeriods": 3
+          },
+          "gameOutcome": {
+            "lastPeriodType": "SO"
+          }
+        }
+      ]
+    },
+    {
+      "date": "2025-09-26",
+      "dayAbbrev": "",
+      "numberOfGames": 0,
+      "games": []
+    },
+    {
+      "date": "2025-09-27",
+      "dayAbbrev": "",
+      "numberOfGames": 0,
+      "games": []
+    },
+    {
+      "date": "2025-09-28",
+      "dayAbbrev": "",
+      "numberOfGames": 0,
+      "games": []
+    }
+  ]
+}

@@ -73,7 +73,7 @@ function seedHistory(): void {
     );
     const hist = db.prepare(
       `INSERT OR IGNORE INTO hist_games (id, league_id, season, played_at, home, away, final_home, final_away, goal_events, source, kalshi_event_ticker)
-       VALUES (?, 'epl', ?, ?, ?, ?, ?, ?, ?, 'csv', ?)`,
+       VALUES (?, 'epl', ?, ?, ?, ?, ?, ?, ?, 'kalshi_pbp', ?)`,
     );
     const candle = db.prepare(
       `INSERT OR IGNORE INTO hist_prices (market_ticker, minute_ts, ask_close_bp, bid_close_bp, trade_close_bp, volume_cc) VALUES (?, ?, ?, ?, NULL, 0)`,
@@ -172,7 +172,7 @@ test('Backtest: run from the form, tiles + equity/drawdown/monthly charts + trad
   // 2. Modelled run at 75': the badge names the smallest sample size.
   await runFromForm(page, '75', 'Modelled');
   await expect(page.getByTestId('modelled-badge')).toBeVisible();
-  await expect(page.getByTestId('modelled-badge')).toContainText('smallest sample size 0');
+  await expect(page.getByTestId('modelled-badge')).toContainText(/smallest sample size \d+/);
   await expect(page.getByTestId('backtest-trades')).toContainText('model');
   const second = `E2E modelled 75 ${info.project.name}`;
   await save(page, second);

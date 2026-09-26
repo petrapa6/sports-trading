@@ -8,14 +8,17 @@ import type { Sport } from '../feeds/gameState.js';
  * mapping from a game minute to the wall-clock minute of a Kalshi 1-minute candle (`hist_prices.minute_ts`).
  *
  * - Soccer: match minutes 1–90 (a goal recorded at `90` or later counts at 90, as stoppage does live).
- * - Hockey: elapsed minutes 1–60, `period` and `secondsLeftInPeriod` derived so that `ruleMinute()` returns
+ * - Hockey: elapsed minutes 1–59, `period` and `secondsLeftInPeriod` derived so that `ruleMinute()` returns
  *   the same minute the live NHL clock would.
  * - A goal at minute `m` is part of the score from tick `m` on (the live feeds report the new score within
  *   the minute the goal was scored in, and the rule minute is floored).
  */
 
-/** The last tick of a game: soccer 90, hockey 60 (regulation). */
-export const LAST_MINUTE: Record<Sport, number> = { soccer: 90, hockey: 60 };
+/**
+ * The last tick of a game: soccer 90 (stoppage counts as 90), hockey 59 (at 60:00 regulation is over, and
+ * overtime goals are recorded at minute ≥ 60).
+ */
+export const LAST_MINUTE: Record<Sport, number> = { soccer: 90, hockey: 59 };
 
 /** Score after every goal with `minute ≤ m`. */
 export function scoreAt(goals: readonly GoalEvent[], minute: number): { home: number; away: number } {
@@ -53,40 +56,27 @@ export function stateAt(sport: Sport, goals: readonly GoalEvent[], minute: numbe
 }
 
 const MINUTE_MS = 60_000;
-/** Soccer: first-half stoppage allowance plus the 15-minute break, when the second half start is unknown. */
-export const SOCCER_BREAK_MIN = 17;
-/** Hockey: wall-clock minutes of one 20-minute period (stoppages included) and of an intermission. */
-export const HOCKEY_PERIOD_WALL_MIN = 37;
-export const HOCKEY_INTERMISSION_MIN = 18;
-
-/** The start of the UTC minute containing `ms`. */
-export const floorMinute = (ms: number): number => Math.floor(ms / MINUTE_MS) * MINUTE_MS;
 
 /**
- * The wall-clock minute (epoch ms, start of the minute) whose candle stands for game minute `minute`:
- *
- * - soccer: kick-off + `minute` for the first half; for the second half the observed second-half start (live
- *   games archived by the tracker) + `minute − 45`, else kick-off + `minute` + 17 (stoppage + break);
- * - hockey: kick-off + 55 min per completed period (37 of play incl. stoppages + an 18-minute intermission) +
- *   the elapsed minutes of the current period scaled by 37 / 20.
- *
- * The same function positions the orderbook in the parity test, so live replay and simulator read one candle.
+ * The first wall minute `e` (whole minutes after the scheduled start) at which T11's clock model
+ * (`matchMinute` in `priceModel.ts`, the same model the price-model builder uses to place candles) reads
+ * game minute `minute`: soccer `e = minute` in the first half and `minute + 17` in the second (after the
+ * 15-minute break and 2 minutes of first-half stoppage); hockey three 36-minute periods separated by
+ * 18-minute intermissions, `e = 54 × period index + ceil(minute in period × 36 / 20)`.
  */
-export function candleMinuteMs(
-  sport: Sport,
-  kickoffMs: number,
-  minute: number,
-  secondHalfMs: number | null = null,
-): number {
+export function wallMinuteOf(sport: Sport, minute: number): number {
   if (sport === 'hockey') {
-    const period = Math.min(3, Math.floor(minute / 20) + 1);
-    const inPeriod = minute - (period - 1) * 20;
-    const wall =
-      (period - 1) * (HOCKEY_PERIOD_WALL_MIN + HOCKEY_INTERMISSION_MIN) +
-      Math.floor((inPeriod * HOCKEY_PERIOD_WALL_MIN) / 20);
-    return floorMinute(kickoffMs) + wall * MINUTE_MS;
+    const p = Math.min(2, Math.floor(minute / 20));
+    return p * 54 + Math.ceil(((minute - p * 20) * 36) / 20);
   }
-  if (minute <= 45) return floorMinute(kickoffMs) + minute * MINUTE_MS;
-  if (secondHalfMs !== null) return floorMinute(secondHalfMs) + (minute - 45) * MINUTE_MS;
-  return floorMinute(kickoffMs) + (minute + SOCCER_BREAK_MIN) * MINUTE_MS;
+  return minute <= 45 ? minute : minute + 17;
+}
+
+/** Wall minute of a candle: `floor((minute_ts − start) / 1 min)`, as the price-model builder computes it. */
+export const wallMinuteAt = (startMs: number, candleMs: number): number =>
+  Math.floor((candleMs - startMs) / MINUTE_MS);
+
+/** The candle time (`hist_prices.minute_ts`) that stands for game minute `minute` of a game starting at `startMs`. */
+export function candleMinuteMs(sport: Sport, startMs: number, minute: number): number {
+  return startMs + wallMinuteOf(sport, minute) * MINUTE_MS;
 }

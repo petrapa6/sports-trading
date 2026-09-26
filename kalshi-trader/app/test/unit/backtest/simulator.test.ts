@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { candleMinuteMs, stateAt } from '../../../src/backtest/clock.js';
+import { candleMinuteMs, stateAt, wallMinuteOf } from '../../../src/backtest/clock.js';
 import { loadSimInput, type ResolvedRequest } from '../../../src/backtest/data.js';
-import { MIN_SAMPLE, PriceModelLookup, seedAskBp, seedTable } from '../../../src/backtest/priceModel.js';
+import {
+  matchMinute,
+  MIN_SAMPLES,
+  seedAskBp,
+  seedModel,
+  type PriceModel,
+} from '../../../src/backtest/priceModel.js';
 import { settlementValueBp, simulate } from '../../../src/backtest/simulator.js';
 import { ruleMinute } from '../../../src/core/engine.js';
 import { feeMicros } from '../../../src/core/pricing.js';
@@ -19,7 +25,7 @@ const A = {
 
 describe('clock', () => {
   it('hockey ticks give the same rule minute as the live NHL clock; goals count from their minute', () => {
-    for (const m of [1, 19, 20, 21, 39, 40, 41, 55, 59, 60]) {
+    for (const m of [1, 19, 20, 21, 39, 40, 41, 55, 59]) {
       expect(ruleMinute('hockey', stateAt('hockey', [], m).clock)).toBe(m);
     }
     const s = stateAt('soccer', [goal('home', 12), goal('away', 55)], 55);
@@ -27,13 +33,25 @@ describe('clock', () => {
     expect(stateAt('soccer', [goal('away', 55)], 54).awayScore).toBe(0);
   });
 
-  it('candle minutes: soccer first half = kick-off + minute, second half after the break; hockey periods + intermissions', () => {
+  it("candle minutes are the inverse of T11's clock model (matchMinute), from the scheduled start", () => {
+    for (const sport of ['soccer', 'hockey'] as const) {
+      for (let m = 1; m <= (sport === 'soccer' ? 90 : 59); m++) {
+        const e = wallMinuteOf(sport, m);
+        expect(matchMinute(sport, e), `${sport} ${m}`).toBe(m);
+        // …and the first such wall minute (soccer 45 also covers the stoppage minute 46).
+        if (!(sport === 'soccer' && m === 1)) expect(matchMinute(sport, e - 1)).not.toBe(m);
+      }
+    }
     const k = Date.parse(PLAYED);
     expect(candleMinuteMs('soccer', k, 30)).toBe(k + 30 * 60_000);
     expect(candleMinuteMs('soccer', k, 80)).toBe(k + 97 * 60_000);
-    expect(candleMinuteMs('soccer', k, 80, k + 65 * 60_000)).toBe(k + 100 * 60_000);
     expect(candleMinuteMs('hockey', k, 10)).toBe(k + 18 * 60_000);
-    expect(candleMinuteMs('hockey', k, 50)).toBe(k + (110 + 18) * 60_000);
+    expect(candleMinuteMs('hockey', k, 50)).toBe(k + (108 + 18) * 60_000);
+  });
+
+  it('an overtime goal (minute ≥ 60) never counts in a hockey tick', () => {
+    const s = stateAt('hockey', [goal('home', 10, 1), goal('away', 60, 4)], 59);
+    expect([s.homeScore, s.awayScore]).toEqual([1, 0]);
   });
 });
 
@@ -127,6 +145,53 @@ describe('exact mode', () => {
     }
   });
 
+  it('one timeline per Kalshi event: several sources for the same event replay once, the most trusted (T11 rank)', () => {
+    const tdb: TempDb = tempDb();
+    try {
+      const repos = createRepositories(tdb.db.orm);
+      seedHistGame(repos, 'epl', '2025-26', { ...A, id: 'csv:a' }, 'csv');
+      // The same event from Kalshi play-by-play, with the away side leading instead.
+      repos.histGames.insert({
+        id: 'kpbp:a',
+        league_id: 'epl',
+        season: '2025-26',
+        played_at: PLAYED,
+        final_home: 0,
+        final_away: 2,
+        goal_events: JSON.stringify([goal('away', 20), goal('away', 70)]),
+        source: 'kalshi_pbp',
+        kalshi_event_ticker: 'EV-A',
+      });
+      seedCandles(repos, 'soccer', PLAYED, 'EV-A-A', { 80: [9000, null] });
+      const p = params();
+      const input = loadSimInput(tdb.db.sqlite, {
+        name: null,
+        saved: false,
+        quick: false,
+        sport: 'soccer',
+        leagueIds: ['epl'],
+        seasons: [],
+        sinceIso: null,
+        strategy: null,
+        definition: {
+          name: p.name,
+          leagueIds: p.leagueIds,
+          rule: p.rule,
+          sizing: p.sizing,
+          execution: p.execution,
+        },
+        priceMode: 'exact',
+        initialBankrollMicros: 100_000_000,
+      });
+      expect(input.games.map((g) => g.id)).toEqual(['kpbp:a']);
+      expect(simulate(input).trades).toEqual([
+        expect.objectContaining({ side: 'away', settlement_value_bp: 10_000 }),
+      ]);
+    } finally {
+      tdb.cleanup();
+    }
+  });
+
   it('retry: ask above maxPrice at 80 and below at 82 → entry at 82; window closing → skipped with the last soft reason', () => {
     const retry = simulate(
       simInput('soccer', [A], { candles: { 'EV-A-H': { 80: 9800, 81: 9800, 82: 9400 } } }),
@@ -166,23 +231,29 @@ describe('modelled mode', () => {
   });
 
   it('a model cell with ≥ 20 observations is used; smaller cells fall back to the seed and report their sample size', () => {
-    const model = {
-      cells: [
-        { sport: 'soccer' as const, lead: 1, remaining: 10, askBp: 9000, sampleSize: 60 },
-        { sport: 'soccer' as const, lead: 2, remaining: 10, askBp: 9100, sampleSize: 5 },
-      ],
+    // T11's model shape: a full table; one cell with 60 observations, one with 5 (seeded).
+    const model: PriceModel = seedModel('2026-09-26T00:00:00.000Z');
+    const cell = (lead: number, from: number) => {
+      const c = model.cells.find((x) => x.sport === 'soccer' && x.lead === lead && x.remainingFrom === from);
+      if (!c) throw new Error('cell');
+      return c;
     };
-    const lookup = new PriceModelLookup(model);
-    expect(lookup.price('soccer', 1, 10)).toEqual({ askBp: 9000, sampleSize: 60, seeded: false });
-    expect(lookup.price('soccer', 2, 12)).toEqual({ askBp: 9600, sampleSize: 5, seeded: true });
-    expect(lookup.price('hockey', 2, 5)).toEqual({ askBp: 9700, sampleSize: 0, seeded: true });
+    Object.assign(cell(1, 10), { askBp: 9000, sampleSize: 60, seeded: false });
+    Object.assign(cell(2, 10), { sampleSize: 5 });
     expect(seedAskBp('soccer', 1, 10)).toBe(8500);
-    expect(seedTable().length).toBe(3 * 18 + 3 * 12);
-    expect(MIN_SAMPLE).toBe(20);
+    expect(seedAskBp('soccer', 2, 10)).toBe(9600);
+    expect(seedAskBp('hockey', 2, 5)).toBe(9700);
+    expect(MIN_SAMPLES).toBe(20);
+
+    // Lead 2 at 80' (10 minutes left): the seeded cell ($0.96 → limit $0.97) reports its 5 observations.
+    const two = { ...A, id: 'g-2', goals: [goal('home', 12), goal('home', 78)] };
+    const seeded = simulate(simInput('soccer', [two], { priceMode: 'modelled', priceModel: model }));
+    expect(seeded.trades[0]).toMatchObject({ price_source: 'model', price_bp: 9700 });
+    expect(seeded.summary).toMatchObject({ minSampleSize: 5, seededPrices: 1 });
 
     const r = simulate(simInput('soccer', [A], { priceMode: 'modelled', priceModel: model }));
     expect(r.trades[0]).toMatchObject({ price_source: 'model', price_bp: 9100 });
-    expect(r.summary.minSampleSize).toBe(60);
+    expect(r.summary).toMatchObject({ minSampleSize: 60, seededPrices: 0 });
   });
 });
 

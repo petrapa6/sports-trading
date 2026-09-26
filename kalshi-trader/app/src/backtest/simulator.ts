@@ -10,8 +10,8 @@ import {
 } from '../core/strategy.js';
 import type { GoalEvent } from '../core/tracker.js';
 import type { Sport } from '../feeds/gameState.js';
-import { candleMinuteMs, LAST_MINUTE, scoreAt, stateAt } from './clock.js';
-import { PriceModelLookup, type PriceModel } from './priceModel.js';
+import { LAST_MINUTE, scoreAt, stateAt, wallMinuteOf } from './clock.js';
+import { priceModelLookup, REGULATION_MINUTES, seedModel, type PriceModel } from './priceModel.js';
 
 /**
  * The backtest simulator (SPEC.md §9, T12): replays a strategy over historical games with the production
@@ -45,10 +45,6 @@ export interface SimMarket {
 export interface SimGame {
   id: string;
   playedAt: string;
-  /** Kick-off (epoch ms): `played_at`, or the observed kick-off of a live-archived game. */
-  kickoffMs: number;
-  /** Observed second-half start (soccer, live-archived games), else `null`. */
-  secondHalfMs: number | null;
   finalHome: number;
   finalAway: number;
   goals: GoalEvent[];
@@ -64,9 +60,12 @@ export interface SimInput {
   /** `fee_balance_precision_micros`. */
   precisionMicros: number;
   multiplierMilli?: number;
-  /** `settings.price_model` (modelled mode); `null` → seed table. */
+  /** `settings.price_model` built by T11 (modelled mode); `null` → the full seed table. */
   priceModel?: PriceModel | null;
-  /** Exact mode: YES ask close by market ticker and candle minute (epoch ms, start of the minute). */
+  /**
+   * Exact mode: YES ask close by market ticker and wall minute after the game's scheduled start (`e` of T11's
+   * clock model, see `clock.ts`).
+   */
   candles?: ReadonlyMap<string, ReadonlyMap<number, number>>;
   games: readonly SimGame[];
 }
@@ -145,17 +144,16 @@ export function settlementValueBp(sport: Sport, side: Side, finalHome: number, f
 
 /** Ask at `minute` from the exact provider: the candle, else the next one within 3 minutes. */
 function exactAsk(
-  game: SimGame,
   sport: Sport,
   series: ReadonlyMap<number, number> | undefined,
   minute: number,
 ): { askBp: number; source: PriceSource } | null {
   if (!series) return null;
-  const at = candleMinuteMs(sport, game.kickoffMs, minute, game.secondHalfMs);
-  const here = series.get(at);
+  const e = wallMinuteOf(sport, minute);
+  const here = series.get(e);
   if (here !== undefined) return { askBp: here, source: 'candle' };
   for (let k = 1; k <= NEXT_CANDLE_MINUTES; k++) {
-    const next = series.get(at + k * 60_000);
+    const next = series.get(e + k);
     if (next !== undefined) return { askBp: next, source: 'next_candle' };
   }
   return null;
@@ -168,7 +166,7 @@ export function simulate(input: SimInput, onProgress?: ProgressFn, progressEvery
   const rule = params.rule;
   const exec = params.execution;
   const sizing = params.sizing;
-  const model = new PriceModelLookup(input.priceModel ?? null);
+  const model = input.priceModel ?? seedModel('');
   const multiplierMilli = input.multiplierMilli ?? DEFAULT_MULTIPLIER_MILLI;
   const maxPriceBp = strategyPriceBp(exec.maxPrice);
   const minPriceBp = exec.minPrice === null ? null : strategyPriceBp(exec.minPrice);
@@ -203,13 +201,19 @@ export function simulate(input: SimInput, onProgress?: ProgressFn, progressEvery
       let ask: { askBp: number; source: PriceSource } | null;
       if (priceMode === 'modelled') {
         const score = scoreAt(game.goals, minute);
-        const p = model.price(sport, Math.abs(score.home - score.away), LAST_MINUTE[sport] - minute);
+        const p = priceModelLookup(
+          model,
+          sport,
+          Math.abs(score.home - score.away),
+          REGULATION_MINUTES[sport] - minute,
+        );
+        if (!p) throw new Error(`the price model has no ${sport} cell for minute ${minute}`);
         if (p.seeded) seeded++;
         minSample = minSample === null ? p.sampleSize : Math.min(minSample, p.sampleSize);
         ask = { askBp: p.askBp, source: 'model' };
       } else {
         const market = game.markets[side];
-        ask = market ? exactAsk(game, sport, input.candles?.get(market.ticker), minute) : null;
+        ask = market ? exactAsk(sport, input.candles?.get(market.ticker), minute) : null;
       }
       if (!ask) {
         lastReason = NO_PRICE; // soft: the next minute may have a candle
