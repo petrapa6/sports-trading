@@ -33,7 +33,11 @@
     "verify:T05": "tsx scripts/verify-T05.ts",
     "kalshi:smoke": "tsx scripts/kalshi-smoke.ts",
     "fixtures:record:kalshi": "tsx scripts/record-kalshi-fixtures.ts",
-    "verify:T06": "tsx scripts/verify-T06.ts"
+    "verify:T06": "tsx scripts/verify-T06.ts",
+    "replay": "tsx scripts/replay.ts",
+    "feeds:smoke": "tsx scripts/feeds-smoke.ts",
+    "fixtures:record:feeds": "tsx scripts/record-feed-fixtures.ts",
+    "verify:T07": "tsx scripts/verify-T07.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

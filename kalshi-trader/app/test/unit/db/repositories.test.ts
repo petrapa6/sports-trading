@@ -159,6 +159,7 @@ describe('repositories', () => {
         price_model: null,
         api_football_key_enc: null,
         notifications: {},
+        feeds: {},
       });
       expect(t.db.sqlite.prepare('SELECT count(*) AS n FROM settings').get()).toEqual({ n: 0 });
     });
@@ -191,7 +192,7 @@ describe('repositories', () => {
       expect(() => r.settings.set('fee_balance_precision_micros', 300)).toThrow(SettingsError);
       r.settings.set('fee_balance_precision_micros', 10_000);
       expect(() => r.settings.get('nope' as never)).toThrow(/unknown setting/);
-      expect(SETTING_KEYS).toHaveLength(10);
+      expect(SETTING_KEYS).toHaveLength(11);
     });
 
     it('rejects a corrupt stored value', () => {

@@ -214,6 +214,10 @@ export class GameSnapshotsRepository extends Repository<typeof s.game_snapshots,
       .orderBy(asc(s.game_snapshots.observed_at), asc(s.game_snapshots.id))
       .all();
   }
+  /** Deletes every snapshot of a game (replay reset); returns the number deleted. */
+  deleteByGame(gameId: string): number {
+    return this.orm.delete(s.game_snapshots).where(eq(s.game_snapshots.game_id, gameId)).run().changes;
+  }
   /**
    * Deletes snapshots observed before `cutoffIso`, but only for games whose timeline is archived
    * (`timeline_archived = 1`); everything else is kept (§7 Retention). Returns the number deleted.

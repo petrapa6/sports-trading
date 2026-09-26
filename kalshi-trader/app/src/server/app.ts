@@ -13,7 +13,9 @@ import { LiveHub, registerLiveRoutes, type RuntimeInfo } from './live.js';
 import { LogRing } from './logRing.js';
 import { registerApiRoutes } from './routes/api.js';
 import { registerAuthRoutes } from './routes/auth.js';
-import { registerDevRoutes } from './routes/dev.js';
+import { OnceSet } from '../feeds/gameState.js';
+import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
+import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
 import { registerKalshiRoutes, type KalshiServices } from './routes/kalshi.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
 import { registerWeb, WEB_DIR } from './web.js';
@@ -55,6 +57,13 @@ export interface AppOptions {
   privateKeyFingerprint?: string | undefined;
   /** Kalshi client and discovery (T06); without them every Kalshi action answers `kalshi_not_configured`. */
   kalshi?: KalshiServices;
+  /** Tracker, scheduler and feeds (T07): `/healthz` loop state, SSE games, Settings → Feeds. */
+  live?: LiveServices;
+  /**
+   * `POST /api/dev/replay` (needs `live`): registered with `NODE_ENV=development`, or when
+   * `allowLoopback` is set (the e2e server, `KST_E2E=1`), where it also accepts loopback peers.
+   */
+  replay?: { allowLoopback: boolean; transaction?: (fn: () => void) => void };
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -121,10 +130,16 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     ...(options.ingressPeer ? { ingressPeer: options.ingressPeer } : {}),
   });
 
+  // Database first, then the trading loop (T07): `loop` is `running` / `idle` / `paused` / `starting`,
+  // and a loop without a tick for 2 minutes answers `503 {"ok":false,"loop":"stale"}`.
   app.get('/healthz', { config: { public: true } }, async (_req, reply) => {
     const health = database.health();
     if (!health.ok) return reply.code(503).send(health);
-    return { ok: true };
+    const scheduler = options.live?.scheduler;
+    if (!scheduler) return { ok: true };
+    const loop = scheduler.health(options.now?.());
+    if (!loop.ok) return reply.code(503).send(loop);
+    return loop;
   });
 
   const repos = () => database.repositories;
@@ -134,6 +149,18 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     repos,
   );
 
+  const live = options.live;
+  if (live) {
+    hub.setSource({ games: () => live.tracker.displayGames(), loop: () => live.scheduler.status() });
+    live.tracker.on('stateUpdated', () => hub.gamesChanged());
+    live.scheduler.on('status', (status) => {
+      hub.loopChanged(status);
+      hub.gamesChanged();
+    });
+    // Leaving `paused` (kill switch off) must not wait for the next 5 s check.
+    hub.on('switches', () => live.scheduler.wake());
+  }
+
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
   registerApiRoutes(app, database, hub);
@@ -142,8 +169,24 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     database,
     options.kalshi ?? { env: hub.runtime.kalshiEnv, subaccount: hub.runtime.kalshiSubaccount },
   );
+  registerFeedRoutes(app, database, hub, live);
   if (options.nodeEnv === 'development') {
     registerDevRoutes(app, { privateKeyFingerprint: options.privateKeyFingerprint });
+  }
+  if (live && (options.nodeEnv === 'development' || options.replay?.allowLoopback)) {
+    registerReplayRoute(app, {
+      context: {
+        get repos() {
+          return database.repositories;
+        },
+        tracker: live.tracker,
+        log: logger,
+        unknownText: new OnceSet(),
+        ...(options.replay?.transaction ? { transaction: options.replay.transaction } : {}),
+      },
+      allowLoopback: options.replay?.allowLoopback ?? false,
+      ...(options.now ? { now: options.now } : {}),
+    });
   }
   registerLiveRoutes(app, hub, repos, {
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),

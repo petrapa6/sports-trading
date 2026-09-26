@@ -1,12 +1,14 @@
 import { Link, useLocation } from '../router';
 import { AccountSettings } from './settings/Account';
 import { DiagnosticsSettings } from './settings/Diagnostics';
+import { FeedsSettings } from './settings/Feeds';
 import { LeaguesSettings } from './settings/Leagues';
 import { TradingSettings } from './settings/Trading';
 
 const SECTIONS = [
   { path: '/settings/trading', label: 'Trading' },
   { path: '/settings/leagues', label: 'Leagues' },
+  { path: '/settings/feeds', label: 'Feeds' },
   { path: '/settings/account', label: 'Account' },
   { path: '/settings/diagnostics', label: 'Diagnostics' },
 ] as const;
@@ -26,6 +28,7 @@ export function SettingsPage() {
       </nav>
       {current === '/settings/trading' && <TradingSettings />}
       {current === '/settings/leagues' && <LeaguesSettings />}
+      {current === '/settings/feeds' && <FeedsSettings />}
       {current === '/settings/account' && <AccountSettings />}
       {current === '/settings/diagnostics' && <DiagnosticsSettings />}
     </>

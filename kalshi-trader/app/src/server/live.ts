@@ -3,6 +3,8 @@ import type { ServerResponse } from 'node:http';
 import type { FastifyInstance } from 'fastify';
 import type { KalshiEnv } from '../config.js';
 import type { Repositories } from '../db/repositories.js';
+import type { LoopStatus } from '../core/scheduler.js';
+import type { GameView } from '../core/tracker.js';
 import { LOG_RING_SIZE, type LogEntry, type LogMode, type LogRing } from './logRing.js';
 import { authOf } from './security.js';
 
@@ -36,8 +38,26 @@ export const globalMode = (
 
 export const HEARTBEAT_MS = 10_000;
 
-/** Fan-out point for everything `/api/live` streams: log lines (from the ring) and switch changes. */
-export class LiveHub extends EventEmitter<{ switches: [SwitchStates] }> {
+/** Where the tracked games and the loop status come from (the tracker and scheduler, T07). */
+export interface LiveSource {
+  games(): GameView[];
+  loop(): LoopStatus | null;
+}
+
+const NO_SOURCE: LiveSource = { games: () => [], loop: () => null };
+
+/**
+ * Fan-out point for everything `/api/live` streams: log lines (from the ring), switch changes, the
+ * tracked games (after every tracker update, coalesced per event-loop turn) and the loop status.
+ */
+export class LiveHub extends EventEmitter<{
+  switches: [SwitchStates];
+  games: [GameView[]];
+  loop: [LoopStatus];
+}> {
+  private source: LiveSource = NO_SOURCE;
+  private gamesPending = false;
+
   constructor(
     readonly ring: LogRing,
     readonly runtime: RuntimeInfo,
@@ -45,6 +65,37 @@ export class LiveHub extends EventEmitter<{ switches: [SwitchStates] }> {
   ) {
     super();
     this.setMaxListeners(0);
+  }
+
+  setSource(source: LiveSource): void {
+    this.source = source;
+  }
+
+  /** Tracked games for the dashboard cards (empty while the database is unavailable). */
+  games(): GameView[] {
+    try {
+      return this.source.games();
+    } catch {
+      return [];
+    }
+  }
+
+  loop(): LoopStatus | null {
+    return this.source.loop();
+  }
+
+  /** Called after a tracker update; many updates in one tick produce one `games` event. */
+  gamesChanged(): void {
+    if (this.gamesPending) return;
+    this.gamesPending = true;
+    setImmediate(() => {
+      this.gamesPending = false;
+      this.emit('games', this.games());
+    });
+  }
+
+  loopChanged(status: LoopStatus): void {
+    this.emit('loop', status);
   }
 
   /** Current switch states, read from the database (never cached, SPEC.md §4). */
@@ -71,10 +122,12 @@ export function sseEvent(event: string, data: unknown): string {
 }
 
 /**
- * `GET /api/live` (SPEC.md §4 Live status): `retry`, then `switches` and `logs` (the last 50 lines,
- * each with its `mode`), then a `log` event per new line, `switches` on every change and a
- * `heartbeat` (with the switch states) every 10 s. Each heartbeat re-checks the session, so a
- * revoked or expired session stops receiving data within one interval.
+ * `GET /api/live` (SPEC.md §4 Live status): `retry`, then `switches`, `logs` (the last 50 lines,
+ * each with its `mode`), `games` (`{games: GameView[]}`, the tracked games with score and clock) and
+ * `loop` (loop state, last poll, feed status, Kalshi balance); then a `log` event per new line,
+ * `switches` / `games` / `loop` on every change and a `heartbeat` (with the switch states) every 10 s.
+ * Each heartbeat re-checks the session, so a revoked or expired session stops receiving data within
+ * one interval.
  */
 export function registerLiveRoutes(
   app: FastifyInstance,
@@ -114,6 +167,8 @@ export function registerLiveRoutes(
     };
     const onLine = (line: LogEntry) => send('log', line);
     const onSwitches = (s: SwitchStates) => send('switches', s);
+    const onGames = (games: GameView[]) => send('games', { games });
+    const onLoop = (loop: LoopStatus) => send('loop', loop);
 
     const sessionActive = (): boolean => {
       try {
@@ -128,6 +183,8 @@ export function registerLiveRoutes(
       clearInterval(timer);
       hub.ring.off('line', onLine);
       hub.off('switches', onSwitches);
+      hub.off('games', onGames);
+      hub.off('loop', onLoop);
       open.delete(res);
     };
 
@@ -151,8 +208,13 @@ export function registerLiveRoutes(
     res.write('retry: 2000\n\n');
     send('switches', initialSwitches);
     send('logs', hub.ring.last(LOG_RING_SIZE));
+    send('games', { games: hub.games() });
+    const loop = hub.loop();
+    if (loop) send('loop', loop);
     hub.ring.on('line', onLine);
     hub.on('switches', onSwitches);
+    hub.on('games', onGames);
+    hub.on('loop', onLoop);
     req.raw.on('close', cleanup);
     res.on('close', cleanup);
   });

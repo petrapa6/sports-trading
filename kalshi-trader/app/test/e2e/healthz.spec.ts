@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('GET /healthz returns {"ok":true} without console or CSP errors', async ({ page }) => {
+test('GET /healthz returns {"ok":true,"loop":…} without console or CSP errors', async ({ page }) => {
   const problems: string[] = [];
   page.on('console', (msg) => {
     // The browser's automatic favicon request is not part of the page under test.
@@ -11,6 +11,7 @@ test('GET /healthz returns {"ok":true} without console or CSP errors', async ({ 
 
   const response = await page.goto('/healthz');
   expect(response?.status()).toBe(200);
-  expect(await response?.text()).toBe('{"ok":true}');
+  // Since T07 the body carries the trading loop state as well.
+  expect(await response?.text()).toMatch(/^\{"ok":true,"loop":"(starting|idle|running)"\}$/);
   expect(problems).toEqual([]);
 });

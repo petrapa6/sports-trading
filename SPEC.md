@@ -576,7 +576,7 @@ CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEX
 -- keys and defaults: global_kill_switch=false, global_dry_run=true,
 --   dry_run_bankroll_micros=100000000, dry_run_initial_bankroll_micros=100000000,
 --   fee_balance_precision_micros=100, kalshi_order_group_id=null, order_group_contract_limit=200,
---   price_model=null, api_football_key_enc=null (T15), notifications={} (T15)
+--   price_model=null, api_football_key_enc=null (T15), notifications={} (T15), feeds={} (T07)
 
 -- Backtesting
 CREATE TABLE hist_games (
@@ -1304,18 +1304,31 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** strategies, trades.
 
 **Acceptance (verify locally)**
-- [ ] Soccer minute parser table test: `"78'"` → 78, `"45+2'"` → 45, `"90+4'"` → 90, `"HT"` → halftime, `"FT"` → finished, `"1st Half"` → no minute, `"Postponed"` → postponed; an unseen string yields a derived minute with `minuteSource:'derived'` and exactly one `warn` per game id.
-- [ ] Derived minute (fake timers): kick-off observed at T → at T+30 min 10 s the minute is 30 (`derived`); second half observed at S → at S+20 min the minute is 65; capped at 45/90.
-- [ ] Kalshi live fixture (NHL, `round: 2`, `final_round_time_left: "12:34"`) → `phase:'live'`, `period:2`, `secondsLeftInPeriod:754`, minute 27; `round: 1` with `"00:00"` → `intermission`; `status:'finished'` → `finished`, `regulationOver:true`.
-- [ ] NHL adapter: `LIVE`, period 3, `"05:00"` → minute 55; `OFF`/`FINAL` → finished; `FUT` → scheduled; `CRIT` → live.
-- [ ] Batch: 8 live milestones → exactly one live-data request per tick (msw count).
-- [ ] Tracker replay of `test/fixtures/replay/nhl-sample.jsonl` produces the expected snapshot sequence (`toMatchSnapshot`) with phases `scheduled → live → intermission → live → finished`; `game_snapshots` has one row per input line; on `finished` a `hist_games` row with `source='live'` and the correct goal events exists and `timeline_archived=1`.
-- [ ] Disagreement: 2-1 vs 1-1 for 25 s → `games.blocked=1` and a `warn`; agreement → `blocked=0`; `stateUpdated` events carry `blocked`.
-- [ ] Scheduler (fake timers): no games → zero feed calls in 10 min; game in 30 min → a call every 60 s; live game → every 5 s; after `finished` → idle within one interval. Global kill switch on → zero requests over 10 min of fake time and `/healthz` → `200 {"ok":true,"loop":"paused"}`; off → polling resumes within one interval. Stopped scheduler while running → `503` after 2 min.
-- [ ] A feed throwing on every call does not stop the other feed or the loop; the status strip shows that feed as `error`.
-- [ ] `npm run replay -- --file test/fixtures/replay/nhl-sample.jsonl --speed 100` against the dev server: e2e sees the card appear, its score change and its phase reach "Final" within 30 s; SSE frames include `games[]` with `homeScore`, `awayScore`, `clock` (incl. `minuteSource`).
-- [ ] `npm run feeds:smoke` prints today's NHL games from the real NHL API or `no games today`; exits 0.
-- [ ] e2e: Settings → Feeds toggles persist; "Test feed" shows one result line per adapter.
+- [x] Soccer minute parser table test: `"78'"` → 78, `"45+2'"` → 45, `"90+4'"` → 90, `"HT"` → halftime, `"FT"` → finished, `"1st Half"` → no minute, `"Postponed"` → postponed; an unseen string yields a derived minute with `minuteSource:'derived'` and exactly one `warn` per game id.
+- [x] Derived minute (fake timers): kick-off observed at T → at T+30 min 10 s the minute is 30 (`derived`); second half observed at S → at S+20 min the minute is 65; capped at 45/90.
+- [x] Kalshi live fixture (NHL, `round: 2`, `final_round_time_left: "12:34"`) → `phase:'live'`, `period:2`, `secondsLeftInPeriod:754`, minute 27; `round: 1` with `"00:00"` → `intermission`; `status:'finished'` → `finished`, `regulationOver:true`.
+- [x] NHL adapter: `LIVE`, period 3, `"05:00"` → minute 55; `OFF`/`FINAL` → finished; `FUT` → scheduled; `CRIT` → live.
+- [x] Batch: 8 live milestones → exactly one live-data request per tick (msw count).
+- [x] Tracker replay of `test/fixtures/replay/nhl-sample.jsonl` produces the expected snapshot sequence (`toMatchSnapshot`) with phases `scheduled → live → intermission → live → finished`; `game_snapshots` has one row per input line; on `finished` a `hist_games` row with `source='live'` and the correct goal events exists and `timeline_archived=1`.
+- [x] Disagreement: 2-1 vs 1-1 for 25 s → `games.blocked=1` and a `warn`; agreement → `blocked=0`; `stateUpdated` events carry `blocked`.
+- [x] Scheduler (fake timers): no games → zero feed calls in 10 min; game in 30 min → a call every 60 s; live game → every 5 s; after `finished` → idle within one interval. Global kill switch on → zero requests over 10 min of fake time and `/healthz` → `200 {"ok":true,"loop":"paused"}`; off → polling resumes within one interval. Stopped scheduler while running → `503` after 2 min.
+- [x] A feed throwing on every call does not stop the other feed or the loop; the status strip shows that feed as `error`.
+- [x] `npm run replay -- --file test/fixtures/replay/nhl-sample.jsonl --speed 100` against the dev server: e2e sees the card appear, its score change and its phase reach "Final" within 30 s; SSE frames include `games[]` with `homeScore`, `awayScore`, `clock` (incl. `minuteSource`).
+- [x] `npm run feeds:smoke` prints today's NHL games from the real NHL API or `no games today`; exits 0.
+- [x] e2e: Settings → Feeds toggles persist; "Test feed" shows one result line per adapter.
+
+**Implementation notes (T07, deviations and clarifications)**
+- `npm run feeds:smoke` against the real NHL API was observed in CI, not in the development session: that session's egress policy blocks `api-web.nhle.com` (the proxy answers `403`), so there it ran only against the fixture stand-in (`NHL_SCRIPT_BASE_URL`). The `feeds-smoke` job in `ci.yml` runs it on every push (run URL and output in `docs/verification/T07.md`).
+- `ScoreFeed` gains `poll(games)` (one call per tick for every tracked game the adapter covers — this is how `kalshi-live` makes exactly one batch request per tick across leagues) and `test(games)` (Settings → Feeds); `listLive` / `get` from §3 are implemented on top of `poll`. `FeedObservation` carries the raw payload (stored in `game_snapshots.raw` as `{"clock": …, "payload": …}`, so the goal timeline can use period and seconds after a restart) and an optional feed game id (the NHL id is remembered in `games.feed_game_ids.nhl`, then used for `/gamecenter/{id}/landing`).
+- Soccer parser details: `45+2'` → 45 and `90+4'` → 90 (stoppage counts as 45 / 90); a plain minute above 90 is capped at 90; `1st Half` / `2nd Half` set the half without a minute, so the minute is derived (no `warn`: the text is known); only an unrecognised text is logged, once per game id. Kalshi `round` 1 / 2 is used as the soccer half when present. Hockey: round ≥ 4 (overtime) counts as minute 60 with `regulationOver: true`; round 3 at `00:00` while still `live` (going to overtime) is `regulationOver: true` too.
+- Tracker merge: a feed's observation counts for 60 s. The score is the one all fresh feeds agree on; while they disagree the last agreed score is kept, and `blocked` is set once the disagreement has lasted more than 20 s. A single fresh feed never clears `blocked` (only agreement does). For hockey the NHL feed's phase and clock win when fresh; a game is `finished` as soon as any fresh feed says so. Snapshots are written per observation of each feed (one row per replay line); the archived timeline uses the `kalshi-live` snapshots when there are any. `hist_games.id` is `live:<event ticker>`, `season` is `YYYY-YY` (July starts a season). Observations of an archived game are ignored.
+- Tracked set: games in progress whose scheduled start is less than 12 h ago, and scheduled games from 60 min before to 6 h after their start, in enabled leagues. The dashboard also shows games finished in the last 3 h. Idle means no feed request; the database is re-checked every 60 s. While paused the switch is re-read every 5 s, and immediately after any switch change (`wake()`), so polling resumes within one interval. A tick that cannot read the kill switch counts as paused (fail closed).
+- `/healthz` (§11 Behaviour): besides `running` / `idle` / `paused` the loop can read `starting` (before the first tick, right after boot) — still `200`. The T01/T02 checks that expected exactly `{"ok":true}` were relaxed to allow the `loop` field (and `test/e2e/healthz.spec.ts` updated); `buildApp` without the live services (unit tests) still answers `{"ok":true}`.
+- The Kalshi balance for the status strip is read every 5 minutes while the loop is not paused (kept in memory only; `balance_snapshots` is left to T13).
+- New setting `feeds` (`{"kalshi-live": bool, "nhl-official": bool}`, an adapter missing from the map is on); changes are audited as `feed_change` and need no step-up. Without Kalshi credentials the `kalshi-live` adapter does not exist (Settings → Feeds shows it as unavailable and "Test feed" says why).
+- Replay format: one self-contained JSON object per line — `{at, feed, game: {id, leagueId, home, away, …}, payload}` with the feed's own record as `payload` — played through the same adapter conversion and `GameTracker.ingest` as live polling. `npm run replay` posts each line to `POST /api/dev/replay`, registered only with `NODE_ENV=development` (class `dev`) or in the e2e server (`KST_E2E=1`, loopback peers); the first line of each game resets it and schedules it "now". Replayed games carry `feed_game_ids.replay = true` and are never polled. `npm run fixtures:record:feeds` writes a line whenever a game's payload changed (NHL games in progress, and Kalshi live data of the tracked games when a key is configured).
+- The e2e server points the NHL adapter at the fixture stand-in (`KST_E2E_NHL_URL`, `test/e2e/fake-kalshi.ts` under `/nhl/v1`, honoured only with `KST_E2E=1` outside production). The replay e2e runs twice: `test/e2e/replay.spec.ts` on the production build inside `npm run e2e`, and `verify:T07` against `npm run dev` in headless Chromium.
+- The live game cards list "No strategies armed" until T08 fills `strategies` with effective-mode badges.
 
 ### T08 — Strategy model, effective mode, engine, Strategies page
 

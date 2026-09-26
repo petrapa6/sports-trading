@@ -621,3 +621,77 @@ td {
 .series-list {
   padding-left: 1.2rem;
 }
+
+/* Status strip feed list and live game cards (T07) */
+.feed-states {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.feed-state--error {
+  color: var(--danger);
+  font-weight: 600;
+}
+.feed-state--ok {
+  color: var(--ok);
+}
+.game-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+.game-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.game-card--live,
+.game-card--halftime,
+.game-card--intermission {
+  border-color: var(--live);
+}
+.game-card-head,
+.game-team {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.game-team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-phase {
+  font-weight: 700;
+}
+.game-score {
+  font-weight: 700;
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.game-meta,
+.game-strategies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.derived-marker {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.feed-test {
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.25rem;
+}

@@ -67,7 +67,11 @@ await check(
     const dev = startDev(cleanEnv({ PORT: String(PORT), DB_PATH: DB_REL }));
     try {
       const { status, body } = await waitForHealth(PORT, 10_000);
-      assert(status === 200 && body === '{"ok":true}', `/healthz answered ${status} ${body}`);
+      // Since T07 the body also carries the loop state.
+      assert(
+        status === 200 && /^\{"ok":true(,"loop":"[a-z]+")?\}$/.test(body),
+        `/healthz answered ${status} ${body}`,
+      );
       firstRunFiles = { dir: existsSync(join(DB, '..')), db: existsSync(DB), wal: existsSync(`${DB}-wal`) };
     } finally {
       await dev.stop();

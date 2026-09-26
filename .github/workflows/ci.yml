@@ -34,6 +34,24 @@ jobs:
       - run: npm run e2e
       - run: npm audit --audit-level=high --loglevel=warn
 
+  # T07: `npm run feeds:smoke` reads today's games from the real NHL Web API (no key). The development
+  # sandbox cannot reach api-web.nhle.com, so this job is where the acceptance item is observed.
+  feeds-smoke:
+    name: NHL feed smoke (real API)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: kalshi-trader/app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: kalshi-trader/app/package-lock.json
+      - run: npm ci --loglevel=warn
+      - run: npm run feeds:smoke
+
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-24.04

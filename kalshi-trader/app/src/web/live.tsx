@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api, type LogEntry, type Status, type SwitchStates } from './api';
+import { api, type GameView, type LogEntry, type LoopStatus, type Status, type SwitchStates } from './api';
 import { endpoint } from './base';
 
 export type LiveStatus = 'connecting' | 'connected' | 'reconnecting' | 'reconnected';
@@ -10,10 +10,21 @@ export interface LiveState {
   switches: SwitchStates | null;
   logs: LogEntry[];
   lastHeartbeat: string | null;
+  /** Tracked games (live game cards), pushed after every tracker update. */
+  games: GameView[] | null;
+  /** Loop state, last poll, feed status and Kalshi balance. */
+  loop: LoopStatus | null;
 }
 
 const KEEP_LOGS = 200;
-const INITIAL: LiveState = { status: 'connecting', switches: null, logs: [], lastHeartbeat: null };
+const INITIAL: LiveState = {
+  status: 'connecting',
+  switches: null,
+  logs: [],
+  lastHeartbeat: null,
+  games: null,
+  loop: null,
+};
 const LiveContext = createContext<LiveState>(INITIAL);
 
 /**
@@ -58,6 +69,14 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       es.addEventListener('log', (e) => {
         const line = JSON.parse((e as MessageEvent<string>).data) as LogEntry;
         setState((s) => ({ ...s, logs: [...s.logs, line].slice(-KEEP_LOGS) }));
+      });
+      es.addEventListener('games', (e) => {
+        const { games } = JSON.parse((e as MessageEvent<string>).data) as { games: GameView[] };
+        setState((s) => ({ ...s, games }));
+      });
+      es.addEventListener('loop', (e) => {
+        const loop = JSON.parse((e as MessageEvent<string>).data) as LoopStatus;
+        setState((s) => ({ ...s, loop }));
       });
       es.addEventListener('heartbeat', (e) => {
         const beat = JSON.parse((e as MessageEvent<string>).data) as {
