@@ -367,7 +367,7 @@ describe('restart recovery', () => {
 
   it('window closed → attempt unfilled / restart, trade skipped', async () => {
     const id = await pendingAttempt(false);
-    t.executor.recoverOnStart();
+    await t.executor.recoverOnStart();
     expect(t.repos.tradeAttempts.findByClientOrderId(`${id}-2`)).toMatchObject({
       status: 'unfilled',
       reason: 'restart',
@@ -381,7 +381,7 @@ describe('restart recovery', () => {
 
   it('window still open → trade waiting', async () => {
     const id = await pendingAttempt(true);
-    t.executor.recoverOnStart();
+    await t.executor.recoverOnStart();
     expect(t.repos.tradeAttempts.findByClientOrderId(`${id}-2`)).toMatchObject({
       status: 'unfilled',
       reason: 'restart',
@@ -403,27 +403,6 @@ describe('modes', () => {
       mode_reason: 'addon_lock',
     });
     expect(bankroll()).toBeLessThan(INITIAL);
-  });
-
-  it('allow_live_orders=true, global dry run off, mode live → hard_skip / live_not_implemented, nothing crashes', async () => {
-    t = setupTrading({ allowLiveOrders: true });
-    t.repos.settings.set('global_dry_run', false);
-    const id = t.strategy({}, { mode: 'live' });
-    script.setAsk(HOME_TICKER, '0.9300');
-    await t.tick(hockeyState(50, 3, 1));
-    const trade = tradeOf(id);
-    expect(trade).toMatchObject({
-      status: 'skipped',
-      skip_reason: 'live_not_implemented',
-      configured_mode: 'live',
-      effective_mode: 'live',
-      mode_reason: null,
-    });
-    expect(t.repos.tradeAttempts.listForTrade(trade.id)).toMatchObject([
-      { status: 'hard_skip', reason: 'live_not_implemented', effective_mode: 'live' },
-    ]);
-    expect(script.log).toEqual([]);
-    expect(bankroll()).toBe(INITIAL);
   });
 
   it('a strategy kill switch turned on mid-window → the next attempt is hard_skip / paused', async () => {

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api, ApiError, type PublicSettings, type Status } from '../../api';
+import { api, ApiError, type OrderGroupStatus, type PublicSettings, type Status } from '../../api';
 import { formatUsd } from '../../format';
 import { useStepUp } from '../../reauth';
 
@@ -85,6 +85,8 @@ export function TradingSettings() {
       )}
 
       <DryRunBankroll />
+
+      <OrderGroup />
 
       <h3>Set in Home Assistant</h3>
       <p className="muted">
@@ -253,6 +255,120 @@ function DryRunBankroll() {
         </select>
         <span className="hint">Position cost + fee is rounded up to this amount (SPEC §2 Fees).</span>
       </div>
+      {message && (
+        <p className={message.ok ? 'success' : 'error'} role={message.ok ? 'status' : 'alert'}>
+          {message.text}
+        </p>
+      )}
+    </section>
+  );
+}
+
+const GROUP_STATE: Record<OrderGroupStatus['state'], string> = {
+  disabled: 'Not used: live orders are disabled (allow_live_orders is off or Kalshi is not configured)',
+  unknown: 'Not checked yet',
+  active: 'Active',
+  limit_hit: 'Limit hit: live orders are rejected until the group is reset',
+  error: 'Unavailable',
+};
+
+/** Settings → Trading: the Kalshi order group (SPEC.md §10 Blast radius) — status, contract limit, reset (step-up). */
+function OrderGroup() {
+  const queryClient = useQueryClient();
+  const stepUp = useStepUp();
+  const group = useQuery({
+    queryKey: ['order-group'],
+    queryFn: () => api.get<OrderGroupStatus>('api/settings/order-group'),
+  });
+  const [limit, setLimit] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const g = group.data;
+  if (!g) return null;
+
+  const run = async (fn: () => Promise<unknown>, ok: string) => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await fn();
+      setMessage({ ok: true, text: ok });
+    } catch (err) {
+      setMessage({
+        ok: false,
+        text: err instanceof ApiError ? `The request failed (${err.code}).` : 'The request failed.',
+      });
+    } finally {
+      setBusy(false);
+      await queryClient.invalidateQueries({ queryKey: ['order-group'] });
+      await queryClient.invalidateQueries({ queryKey: ['settings'] });
+    }
+  };
+  const limitText = limit ?? String(g.contractsLimit);
+  const limitValue = /^\d{1,7}$/.test(limitText.trim()) ? Number.parseInt(limitText.trim(), 10) : null;
+
+  return (
+    <section aria-labelledby="order-group-heading">
+      <h3 id="order-group-heading">Order group</h3>
+      <p className="muted">
+        An exchange-side brake: Kalshi rejects further live orders once this many contracts were matched in a
+        rolling 15 seconds, until the group is reset here.
+      </p>
+      <dl className="kv">
+        <dt>Status</dt>
+        <dd data-testid="order-group-state" className={g.state === 'limit_hit' ? 'error' : undefined}>
+          {GROUP_STATE[g.state]}
+        </dd>
+        <dt>Group id</dt>
+        <dd>
+          <code>{g.id ?? '—'}</code>
+        </dd>
+        {g.lastError && (
+          <>
+            <dt>Last error</dt>
+            <dd className="error">{g.lastError}</dd>
+          </>
+        )}
+      </dl>
+      <form
+        className="bankroll-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (limitValue === null || limitValue < 1) return;
+          void run(
+            () => api.post('api/settings', { order_group_contract_limit: limitValue }),
+            'Contract limit saved; it applies when a new group is created.',
+          ).then(() => setLimit(null));
+        }}
+      >
+        <div className="field">
+          <label htmlFor="order-group-limit">Contract limit (per 15 s)</label>
+          <input
+            id="order-group-limit"
+            inputMode="numeric"
+            value={limitText}
+            aria-invalid={limitValue === null || limitValue < 1 ? true : undefined}
+            onChange={(e) => setLimit(e.target.value)}
+          />
+        </div>
+        <button
+          type="submit"
+          className="secondary small"
+          disabled={busy || limitValue === null || limitValue < 1}
+        >
+          Save limit
+        </button>
+        <button
+          type="button"
+          className="secondary small danger"
+          disabled={busy || !g.enabled}
+          onClick={() => {
+            if (!window.confirm('Reset the Kalshi order group so live orders can be placed again?')) return;
+            void run(() => stepUp(() => api.post('api/settings/order-group/reset')), 'Order group reset.');
+          }}
+        >
+          Reset order group
+        </button>
+      </form>
       {message && (
         <p className={message.ok ? 'success' : 'error'} role={message.ok ? 'status' : 'alert'}>
           {message.text}

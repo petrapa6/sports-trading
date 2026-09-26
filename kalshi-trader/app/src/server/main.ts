@@ -3,8 +3,11 @@ import { resolve } from 'node:path';
 import { closePrivateKeyFd, ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
 import { StrategyEngine } from '../core/engine.js';
-import { Executor } from '../core/executor.js';
+import { BalanceRecorder } from '../core/balances.js';
+import { Executor, PENDING_LIVE_MIN_AGE_MS } from '../core/executor.js';
+import { OrderGroupManager } from '../core/orderGroup.js';
 import { Settler } from '../core/settler.js';
+import { snapshotBalanceOnLiveChanges, startTrading } from '../core/startup.js';
 import { Scheduler } from '../core/scheduler.js';
 import { GameTracker } from '../core/tracker.js';
 import type { ScoreFeed } from '../feeds/gameState.js';
@@ -178,7 +181,15 @@ const engine = new StrategyEngine({
   log,
   allowLiveOrders: config.allowLiveOrders,
 }).attach(tracker);
-// Executor and settler (T09): dry-run fills against the live orderbook, settlement every minute.
+// Order group (T13): created or reused at start-up when live orders are possible; every live order carries it.
+const orderGroups = new OrderGroupManager({
+  repos: () => database.repositories,
+  log,
+  kalshi: () => kalshiClient,
+  allowLiveOrders: config.allowLiveOrders,
+});
+// Executor and settler (T09, live path T13): fills against the live orderbook (virtual in dry run, IOC orders
+// in live), settlement every minute; pending live attempts whose outcome was unknown are resolved there too.
 const executor = new Executor({
   repos: () => database.repositories,
   log,
@@ -186,14 +197,27 @@ const executor = new Executor({
   allowLiveOrders: config.allowLiveOrders,
   kalshiEnv: config.kalshiEnv,
   transaction,
+  orderGroups,
 }).attach(engine, tracker);
 const settler = new Settler({
   repos: () => database.repositories,
   log,
   kalshi: () => kalshiClient,
   transaction,
-  beforeRun: () => executor.sweep(),
+  beforeRun: async () => {
+    executor.sweep();
+    await executor.resolvePendingLive('order_not_found', PENDING_LIVE_MIN_AGE_MS);
+  },
 });
+// Live balance history (T13): every 15 min and after each live fill / settlement (never under the kill switch).
+const balances = new BalanceRecorder({
+  repos: () => database.repositories,
+  log,
+  kalshi: () => kalshiClient,
+  kalshiEnv: config.kalshiEnv,
+  subaccount: config.kalshiSubaccount,
+});
+snapshotBalanceOnLiveChanges(balances, executor, settler);
 const trackedGames = () => tracker.pollTargets();
 const feeds: ScoreFeed[] = [];
 if (kalshiClient) feeds.push(new KalshiLiveFeed({ client: kalshiClient, log, games: trackedGames }));
@@ -231,7 +255,7 @@ const app = await buildApp({
     client: kalshiClient,
     discovery,
   },
-  live: { tracker, scheduler, feeds, engine, executor, settler },
+  live: { tracker, scheduler, feeds, engine, executor, settler, orderGroups },
   replay: { allowLoopback: e2e, transaction },
   // Settings → Data (T11): the NHL importer uses the same e2e stand-in as the NHL feed.
   data: { gate, transaction, ...(nhlBaseUrl ? { nhlBaseUrl } : {}) },
@@ -248,6 +272,7 @@ async function shutdown(signal: string): Promise<void> {
     discovery?.stop();
     scheduler.stop();
     settler.stop();
+    balances.stop();
     await executor.idle();
     await app.close();
     database.close();
@@ -269,13 +294,12 @@ try {
 closePrivateKeyFd(config);
 // Discovery at start-up (after the server listens, so a slow Kalshi never delays /healthz), then daily at 05:00.
 discovery?.start();
-// Restart recovery runs before the scheduler starts (§4).
-if (database.current) {
-  try {
-    executor.recoverOnStart();
-  } catch (err) {
-    log.error({ err: { message: (err as Error).message } }, 'Trade recovery at start-up failed');
-  }
-}
-scheduler.start();
-settler.start();
+// Order group, then restart recovery (live attempts resolved against Kalshi), then the loops (§4).
+await startTrading({
+  log,
+  orderGroups,
+  recover: async () => {
+    if (database.current) await executor.recoverOnStart();
+  },
+  loops: [scheduler, settler, balances],
+});

@@ -5,11 +5,13 @@ import type { KalshiEnv } from '../config.js';
 import type { Repositories } from '../db/repositories.js';
 import type { Trade, TradeAttempt } from '../db/schema.js';
 import type { Sport } from '../feeds/gameState.js';
-import type { KalshiClient } from '../feeds/kalshi/client.js';
-import type { Orderbook } from '../feeds/kalshi/schemas.js';
+import { KalshiApiError, type KalshiClient } from '../feeds/kalshi/client.js';
+import type { Order, Orderbook, OrderResult } from '../feeds/kalshi/schemas.js';
+import { NetworkPaused } from '../feeds/network.js';
 import { evaluateLeadAtTime, type Signal, type StrategyEngine } from './engine.js';
 import { evaluateEntry, depthAtOrBelow, type EntryFacts, type GuardReason } from './guards.js';
 import { effectiveMode as computeMode, type ModeResult } from './modes.js';
+import { isOrderGroupLimit, isUnknownOrderGroup, type OrderGroupManager } from './orderGroup.js';
 import { costMicros, feeMicros, toMultiplierMilli, type PriceRange } from './pricing.js';
 import {
   parseVersionPayload,
@@ -43,15 +45,30 @@ import {
  *   `skipped` with `window_expired = 1` and the last soft reason.
  * - Dry run: the stake is a percentage of the shared bankroll; the virtual fill is at the limit price for
  *   `min(contracts, contracts offered ≤ limit)`; the bankroll is debited by cost + fee with a
- *   `bankroll_snapshots` row in the same transaction as the fill. Live orders arrive in T13: a live
- *   effective mode ends the attempt as `hard_skip` / `live_not_implemented`.
+ *   `bankroll_snapshots` row in the same transaction as the fill.
+ * - Live (T13): the stake is a percentage of the Kalshi cash balance minus the cost of this app's live
+ *   attempts still `pending`; the trade goes `pending` (attempt row carrying limit and count) **before** the
+ *   Create Order V2 request (IOC, `client_order_id = <trade.id>-<n>`, the order group, the subaccount). The
+ *   response decides: a fill → `filled` with the exchange's count, average price and fee; nothing filled →
+ *   attempt `unfilled`, trade `waiting` (retried); a 4xx → `skipped/order_rejected`, or `waiting/
+ *   order_group_limit` when the order group stopped it. When the outcome is unknown (network error, 5xx after
+ *   backoff, unreadable response) the order is looked up by `client_order_id`; if that fails too the attempt
+ *   stays `pending` and is resolved by `resolvePendingLive()` (settler loop, start-up recovery).
  * - Nothing is ever thrown to the tracker or the scheduler: failures become attempt `error` rows.
  */
 
-/** The Kalshi reads the executor makes. */
+/** The Kalshi calls the executor makes (reads, and in live mode the balance and the order endpoints). */
 export type ExecutorKalshi = Pick<
   KalshiClient,
-  'getMarket' | 'getOrderbook' | 'getExchangeStatus' | 'getSeries' | 'getEvent'
+  | 'getMarket'
+  | 'getOrderbook'
+  | 'getExchangeStatus'
+  | 'getSeries'
+  | 'getEvent'
+  | 'getBalance'
+  | 'createOrderV2'
+  | 'getOrders'
+  | 'getHistoricalOrders'
 >;
 
 export interface ExecutorOptions {
@@ -64,16 +81,87 @@ export interface ExecutorOptions {
   kalshiEnv: KalshiEnv;
   /** Runs `fn` in one SQLite transaction. */
   transaction: (fn: () => void) => void;
+  /** The Kalshi order group every live order carries (T13); without it live attempts end as `error`. */
+  orderGroups?: Pick<OrderGroupManager, 'currentId' | 'markLimitHit' | 'invalidate'>;
   now?: () => number;
 }
 
-/** Why an attempt ended, beyond the §5 guards. */
-export type AttemptReason = GuardReason | 'live_not_implemented' | 'restart' | 'no_market';
+/**
+ * Why an attempt ended, beyond the §5 guards: `restart` (dry-run attempt pending at start-up),
+ * `restart_no_order` / `order_not_found` (a pending live attempt whose order Kalshi does not know, at start-up /
+ * later), `mode_changed` (the effective mode left `live` between the reads and the order), `no_market`.
+ */
+export type AttemptReason =
+  GuardReason | 'restart' | 'restart_no_order' | 'order_not_found' | 'mode_changed' | 'no_market';
 
 export interface TradeEvent {
   id: string;
   status: string;
+  mode: 'live' | 'dry_run';
 }
+
+/** A live order as the exchange reports it (from the Create Order V2 response or an order lookup). */
+export interface LiveOutcome {
+  orderId: string;
+  fillCc: number;
+  avgFillPriceBp: number | null;
+  costMicros: number;
+  feeMicros: number;
+  response: Record<string, unknown>;
+}
+
+/** `a / b` rounded half up, exact for integers (BigInt). */
+function divRound(a: number, b: number): number {
+  const q = (2n * BigInt(a) + BigInt(b)) / (2n * BigInt(b));
+  return Number(q);
+}
+
+/** The outcome of a Create Order V2 response. */
+export function outcomeFromResult(r: OrderResult, limitBp: number): LiveOutcome {
+  const avg = r.avg_fill_price_bp ?? limitBp;
+  return {
+    orderId: r.order_id,
+    fillCc: r.fill_cc,
+    avgFillPriceBp: r.fill_cc > 0 ? avg : null,
+    costMicros: r.fill_cc > 0 ? costMicros(r.fill_cc, avg) : 0,
+    feeMicros: r.fee_micros,
+    response: {
+      order_id: r.order_id,
+      client_order_id: r.client_order_id,
+      fill_cc: r.fill_cc,
+      remaining_cc: r.remaining_cc,
+      avg_fill_price_bp: r.avg_fill_price_bp,
+      fee_micros: r.fee_micros,
+      ts_ms: r.ts_ms,
+    },
+  };
+}
+
+/** The outcome of an order found by `client_order_id` (`fill_count_fp`, `taker_fill_cost_dollars`, `taker_fees_dollars`). */
+export function outcomeFromOrder(o: Order): LiveOutcome {
+  const cost = o.taker_fill_cost_micros ?? (o.yes_price_bp !== null ? o.fill_cc * o.yes_price_bp : 0);
+  return {
+    orderId: o.order_id,
+    fillCc: o.fill_cc,
+    avgFillPriceBp: o.fill_cc > 0 ? divRound(cost, o.fill_cc) : null,
+    costMicros: o.fill_cc > 0 ? cost : 0,
+    feeMicros: o.fill_cc > 0 ? (o.taker_fees_micros ?? 0) : 0,
+    response: {
+      lookup: true,
+      order_id: o.order_id,
+      client_order_id: o.client_order_id,
+      status: o.status,
+      fill_cc: o.fill_cc,
+      taker_fill_cost_micros: o.taker_fill_cost_micros,
+      taker_fees_micros: o.taker_fees_micros,
+    },
+  };
+}
+
+/** Orders are looked up from this long before the attempt (§4: `min_ts` = attempt time − 60 s). */
+export const ORDER_LOOKUP_SLACK_MS = 60_000;
+/** A pending live attempt is resolved by the settler loop once it is this old (its request has long ended). */
+export const PENDING_LIVE_MIN_AGE_MS = 30_000;
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
@@ -152,8 +240,12 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
     return this.queue;
   }
 
-  private changed(t: Pick<Trade, 'id' | 'status'>): void {
-    this.emit('trade', { id: t.id, status: t.status });
+  private changed(t: Pick<Trade, 'id' | 'status' | 'effective_mode'>): void {
+    this.emit('trade', {
+      id: t.id,
+      status: t.status,
+      mode: t.effective_mode === 'live' ? 'live' : 'dry_run',
+    });
   }
 
   private enqueue(tradeId: string, state: ObservedState): void {
@@ -396,18 +488,22 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
 
     // 2. Effective mode again (a kill switch may have been turned on mid-window).
     if (mode.mode === 'paused') return finish('hard_skip', 'paused');
-    if (mode.mode === 'live') return finish('hard_skip', 'live_not_implemented');
+    const live = mode.mode === 'live';
 
     const kalshi = this.options.kalshi();
     if (!kalshi) return finish('error', 'error', {}, { error: 'Kalshi is not configured' });
 
+    let facts: Partial<EntryFacts> = {};
     try {
-      // 3. Market, exchange status, orderbook.
+      // 3. Market, exchange status, orderbook (and in live mode the Kalshi balance).
       const market = await kalshi.getMarket(ticker);
       const exchange = await kalshi.getExchangeStatus();
       const book = await kalshi.getOrderbook(ticker);
       const nowMs = this.now();
       this.recordMarket(repos, ticker, market, book, nowMs);
+      const balance = live
+        ? (await kalshi.getBalance()).cash_micros - this.pendingLiveCostMicros(repos, attempt.id)
+        : repos.settings.get('dry_run_bankroll_micros');
 
       const latest = repos.gameSnapshots.latestObservedAt(trade.game_id);
       const observed = [latest ? Date.parse(latest) : null, state.observedAtMs].filter(
@@ -417,7 +513,6 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
       const exec = payload.execution;
       const sizing = payload.sizing;
       const priceRanges: PriceRange[] = market.price_ranges;
-      const balance = repos.settings.get('dry_run_bankroll_micros');
       const result = evaluateEntry({
         effectiveMode: mode.mode,
         nowMs,
@@ -443,6 +538,34 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
       this.recordOrderbookTop(repos, trade, book, result.limitBp, nowMs);
       if (!result.ok)
         return finish(result.class === 'hard' ? 'hard_skip' : 'soft_skip', result.reason, result);
+
+      if (live) {
+        // 4 (live). Whole contracts: the sizing, capped by what is offered at or below the limit.
+        const contracts = Math.floor(Math.min(result.requestedCc, result.depthCc) / 100);
+        facts = { ...result, requestedCc: contracts * 100 };
+        if (contracts < 1) return finish('soft_skip', 'liquidity', facts);
+        // The switches once more, right before the order (§10: enforced in the executor before any order).
+        const again = this.currentMode(repos, trade);
+        if (again.mode === 'paused') return finish('hard_skip', 'paused', facts);
+        if (again.mode !== 'live') return finish('soft_skip', 'mode_changed', facts);
+        const orderGroupId = (await this.options.orderGroups?.currentId()) ?? null;
+        if (orderGroupId === null)
+          return finish('error', 'error', facts, { error: 'No Kalshi order group is available' });
+        return await this.placeLiveOrder(repos, {
+          trade,
+          attempt,
+          ticker,
+          limitBp: result.limitBp,
+          contracts,
+          balanceMicros: balance,
+          stakeMicros: result.stakeMicros,
+          bestAskBp: result.bestAskBp,
+          depthCc: result.depthCc,
+          orderGroupId,
+          kalshi,
+          finish,
+        });
+      }
 
       // 4. Virtual fill at the limit price for min(contracts, contracts offered ≤ limit).
       const multiplierMilli = await this.feeMultiplierMilli(kalshi, trade.league_id, trade.game_id);
@@ -505,13 +628,323 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
         this.changed(filled);
       }
     } catch (err) {
-      finish(
-        'error',
-        'error',
-        {},
-        { error: (err as Error).message.slice(0, 300), name: (err as Error).name },
-      );
+      finish('error', 'error', facts, {
+        error: (err as Error).message.slice(0, 300),
+        name: (err as Error).name,
+      });
     }
+  }
+
+  /** Cost (`requested_cc × limit_price_bp`) of this app's live attempts still `pending`, except `exceptId`. */
+  pendingLiveCostMicros(repos: Repositories, exceptId?: number): number {
+    return repos.tradeAttempts
+      .listByStatus('pending')
+      .filter((a) => a.effective_mode === 'live' && a.id !== exceptId)
+      .reduce((sum, a) => sum + (a.requested_cc ?? 0) * (a.limit_price_bp ?? 0), 0);
+  }
+
+  /**
+   * The live order (§2 Place order, §6 Filling): the trade goes `pending` with the attempt's limit and count
+   * stored first (a crash leaves a findable record), then Create Order V2 is sent and its answer applied.
+   */
+  private async placeLiveOrder(
+    repos: Repositories,
+    o: {
+      trade: Trade;
+      attempt: TradeAttempt;
+      ticker: string;
+      limitBp: number;
+      contracts: number;
+      balanceMicros: number;
+      stakeMicros: number;
+      bestAskBp: number | null;
+      depthCc: number;
+      orderGroupId: string;
+      kalshi: ExecutorKalshi;
+      finish: (
+        status: 'soft_skip' | 'hard_skip' | 'error',
+        reason: AttemptReason,
+        facts?: Partial<EntryFacts>,
+        response?: Record<string, unknown>,
+      ) => void;
+    },
+  ): Promise<void> {
+    const requestedCc = o.contracts * 100;
+    const facts: Partial<EntryFacts> = {
+      bestAskBp: o.bestAskBp,
+      depthCc: o.depthCc,
+      limitBp: o.limitBp,
+      requestedCc,
+    };
+    const at = iso(this.now());
+    let attempt = o.attempt;
+    let pending: Trade | undefined;
+    this.options.transaction(() => {
+      attempt =
+        repos.tradeAttempts.update(
+          { id: attempt.id },
+          {
+            best_ask_bp: o.bestAskBp,
+            depth_cc: o.depthCc,
+            limit_price_bp: o.limitBp,
+            requested_cc: requestedCc,
+          },
+        ) ?? attempt;
+      const current = repos.trades.get({ id: o.trade.id }) ?? o.trade;
+      pending = transitionTrade(
+        repos,
+        at,
+        current,
+        'pending',
+        {
+          effective_mode: 'live',
+          mode_reason: null,
+          skip_reason: null,
+          balance_micros: o.balanceMicros,
+          stake_micros: o.stakeMicros,
+          limit_price_bp: o.limitBp,
+          requested_cc: requestedCc,
+        },
+        { orderGroupId: o.orderGroupId, contracts: o.contracts, limitBp: o.limitBp },
+      );
+    });
+    if (pending) this.changed(pending);
+    const fields = {
+      mode: 'live',
+      tradeId: o.trade.id,
+      attemptNo: attempt.attempt_no,
+      marketTicker: o.ticker,
+      clientOrderId: attempt.client_order_id,
+    };
+    this.log.info(
+      { ...fields, contracts: o.contracts, limitBp: o.limitBp },
+      `Placing a live IOC order: ${o.contracts} contracts of ${o.ticker} at ${o.limitBp / 10_000}`,
+    );
+
+    let result: OrderResult;
+    try {
+      result = await o.kalshi.createOrderV2({
+        ticker: o.ticker,
+        contracts: o.contracts,
+        priceBp: o.limitBp,
+        clientOrderId: attempt.client_order_id,
+        orderGroupId: o.orderGroupId,
+      });
+    } catch (err) {
+      const error = { error: (err as Error).message.slice(0, 300), name: (err as Error).name };
+      if (err instanceof NetworkPaused) return o.finish('error', 'error', facts, error);
+      if (err instanceof KalshiApiError && err.status !== 429 && err.status < 500) {
+        const detail = { ...error, status: err.status, code: err.code };
+        if (isOrderGroupLimit(err)) {
+          this.options.orderGroups?.markLimitHit();
+          this.log.warn(
+            { ...fields, code: err.code },
+            'Live order rejected by the order group limit; reset the group in Settings → Trading',
+          );
+          return o.finish('soft_skip', 'order_group_limit', facts, detail);
+        }
+        if (isUnknownOrderGroup(err)) {
+          this.options.orderGroups?.invalidate();
+          return o.finish('error', 'error', facts, detail);
+        }
+        return o.finish('hard_skip', 'order_rejected', facts, detail);
+      }
+      // The order may or may not exist: look it up by client_order_id before deciding anything.
+      let found: Order | null;
+      try {
+        found = await this.lookupOrder(o.kalshi, o.ticker, attempt);
+      } catch (lookupErr) {
+        this.log.error(
+          { ...fields, err: { message: (lookupErr as Error).message } },
+          'Live order outcome unknown; the attempt stays pending and is resolved on the next settler run',
+        );
+        return;
+      }
+      if (found) {
+        this.recordLiveOutcome(repos, o.trade.id, attempt, outcomeFromOrder(found), 'order_not_found', false);
+        return;
+      }
+      return o.finish('error', 'error', facts, error);
+    }
+    this.recordLiveOutcome(
+      repos,
+      o.trade.id,
+      attempt,
+      outcomeFromResult(result, o.limitBp),
+      'unfilled',
+      false,
+    );
+  }
+
+  /** The order of a live attempt, by `client_order_id` among the orders of its ticker since `at − 60 s`. */
+  private async lookupOrder(
+    kalshi: Pick<ExecutorKalshi, 'getOrders' | 'getHistoricalOrders'>,
+    ticker: string,
+    attempt: TradeAttempt,
+  ): Promise<Order | null> {
+    const filter = { ticker, minTs: Date.parse(attempt.at) - ORDER_LOOKUP_SLACK_MS };
+    const match = (orders: Order[]) => orders.find((x) => x.client_order_id === attempt.client_order_id);
+    return match(await kalshi.getOrders(filter)) ?? match(await kalshi.getHistoricalOrders(filter)) ?? null;
+  }
+
+  /**
+   * Applies a live order's outcome in one transaction: a fill → attempt and trade `filled` with the exchange's
+   * count, average price, cost and fee; nothing filled (or no order: `notFoundReason`) → attempt `unfilled`,
+   * trade `waiting` — or `skipped` with `window_expired` when `expireClosedWindow` and the window has ended.
+   */
+  private recordLiveOutcome(
+    repos: Repositories,
+    tradeId: string,
+    attempt: TradeAttempt,
+    outcome: LiveOutcome | null,
+    notFoundReason: AttemptReason,
+    expireClosedWindow: boolean,
+  ): Trade | undefined {
+    const nowMs = this.now();
+    const at = iso(nowMs);
+    let updated: Trade | undefined;
+    this.options.transaction(() => {
+      const current = repos.trades.get({ id: tradeId });
+      if (!current) return;
+      if (outcome && outcome.fillCc > 0) {
+        updateAttempt(repos, at, attempt, {
+          status: 'filled',
+          reason: null,
+          fill_cc: outcome.fillCc,
+          avg_fill_price_bp: outcome.avgFillPriceBp,
+          fee_micros: outcome.feeMicros,
+          kalshi_order_id: outcome.orderId,
+          response: JSON.stringify(outcome.response),
+        });
+        updated = transitionTrade(
+          repos,
+          at,
+          current,
+          'filled',
+          {
+            effective_mode: 'live',
+            mode_reason: null,
+            skip_reason: null,
+            fill_cc: outcome.fillCc,
+            avg_fill_price_bp: outcome.avgFillPriceBp,
+            cost_micros: outcome.costMicros,
+            fee_micros: outcome.feeMicros,
+            kalshi_order_id: outcome.orderId,
+          },
+          {
+            fillCc: outcome.fillCc,
+            avgBp: outcome.avgFillPriceBp,
+            costMicros: outcome.costMicros,
+            feeMicros: outcome.feeMicros,
+            orderId: outcome.orderId,
+          },
+        );
+        return;
+      }
+      const reason: AttemptReason = outcome ? 'unfilled' : notFoundReason;
+      updateAttempt(repos, at, attempt, {
+        status: 'unfilled',
+        reason,
+        fill_cc: 0,
+        kalshi_order_id: outcome?.orderId ?? null,
+        ...(outcome ? { response: JSON.stringify(outcome.response) } : {}),
+      });
+      const open = !expireClosedWindow || Date.parse(current.window_ends_at) > nowMs;
+      updated = transitionTrade(
+        repos,
+        at,
+        current,
+        open ? 'waiting' : 'skipped',
+        { skip_reason: reason, ...(open ? {} : { window_expired: 1 }) },
+        expireClosedWindow ? { recovered: true } : {},
+      );
+    });
+    if (!updated) return undefined;
+    const fields = {
+      mode: 'live',
+      tradeId,
+      attemptNo: attempt.attempt_no,
+      clientOrderId: attempt.client_order_id,
+      marketTicker: updated.market_ticker,
+    };
+    if (updated.status === 'filled')
+      this.log.info(
+        {
+          ...fields,
+          fillCc: updated.fill_cc,
+          avgFillPriceBp: updated.avg_fill_price_bp,
+          costMicros: updated.cost_micros,
+          feeMicros: updated.fee_micros,
+          orderId: updated.kalshi_order_id,
+        },
+        `Live fill: ${(updated.fill_cc ?? 0) / 100} contracts of ${updated.market_ticker ?? ''} at ${(updated.avg_fill_price_bp ?? 0) / 10_000}`,
+      );
+    else
+      this.log.info(
+        { ...fields, reason: updated.skip_reason },
+        `Live attempt ${attempt.attempt_no}: nothing filled (${updated.skip_reason ?? ''}); trade ${updated.status}`,
+      );
+    this.changed(updated);
+    return updated;
+  }
+
+  /**
+   * Resolves `pending` live attempts (§4 restart recovery; also every settler run for attempts whose outcome
+   * was unknown): the order is looked up by `client_order_id` (`GET /portfolio/orders?ticker&min_ts`, then
+   * `/historical/orders`) and applied; no order → `unfilled` with `notFoundReason`. Attempts whose lookup fails
+   * stay `pending` (counted as `unresolved`).
+   */
+  async resolvePendingLive(
+    notFoundReason: 'restart_no_order' | 'order_not_found',
+    minAgeMs = 0,
+  ): Promise<{ filled: number; unfilled: number; unresolved: number }> {
+    const out = { filled: 0, unfilled: 0, unresolved: 0 };
+    const repos = this.options.repos();
+    const nowMs = this.now();
+    const pending = repos.tradeAttempts
+      .listByStatus('pending')
+      .filter(
+        (a) =>
+          a.effective_mode === 'live' && !this.busy.has(a.trade_id) && nowMs - Date.parse(a.at) >= minAgeMs,
+      );
+    if (pending.length === 0) return out;
+    const kalshi = this.options.kalshi();
+    for (const a of pending) {
+      const trade = repos.trades.get({ id: a.trade_id });
+      if (!trade?.market_ticker || !kalshi) {
+        out.unresolved++;
+        continue;
+      }
+      let found: Order | null;
+      try {
+        found = await this.lookupOrder(kalshi, trade.market_ticker, a);
+      } catch (err) {
+        out.unresolved++;
+        this.log.warn(
+          {
+            mode: 'live',
+            tradeId: a.trade_id,
+            clientOrderId: a.client_order_id,
+            err: { message: (err as Error).message },
+          },
+          'A pending live order could not be looked up; retried later',
+        );
+        continue;
+      }
+      const updated = this.recordLiveOutcome(
+        repos,
+        a.trade_id,
+        a,
+        found ? outcomeFromOrder(found) : null,
+        notFoundReason,
+        true,
+      );
+      if (updated?.status === 'filled') out.filled++;
+      else out.unfilled++;
+    }
+    if (out.filled + out.unfilled + out.unresolved > 0)
+      this.log.info({ mode: 'live', ...out }, 'Resolved pending live attempts');
+    return out;
   }
 
   /** Keeps the `markets` row current (status, close time, bid / ask, grid). */
@@ -596,23 +1029,30 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
   }
 
   /**
-   * Start-up recovery (§4), before the scheduler starts: `pending` dry-run attempts become `unfilled`
-   * (`restart`); their trades — and trades left `signalled` / `pending` — return to `waiting` while the
-   * window is still open, else `skipped` (`window_expired = 1`). Live attempts are recovered in T13.
+   * Start-up recovery (§4), before the scheduler starts. First every `pending` **live** attempt is resolved
+   * against Kalshi by its `client_order_id` (`resolvePendingLive`): a fill is applied, no order →
+   * `unfilled/restart_no_order`; an attempt whose lookup fails stays `pending` (retried by the settler loop).
+   * Then `pending` dry-run attempts become `unfilled` (`restart`); their trades — and trades left `signalled` /
+   * `pending` without a pending live attempt — return to `waiting` while the window is still open, else
+   * `skipped` (`window_expired = 1`).
    */
-  recoverOnStart(): { attempts: number; waiting: number; skipped: number } {
+  async recoverOnStart(): Promise<{
+    attempts: number;
+    waiting: number;
+    skipped: number;
+    live: { filled: number; unfilled: number; unresolved: number };
+  }> {
+    const live = await this.resolvePendingLive('restart_no_order');
     const repos = this.options.repos();
     const nowMs = this.now();
     const at = iso(nowMs);
-    const out = { attempts: 0, waiting: 0, skipped: 0 };
+    const out = { attempts: 0, waiting: 0, skipped: 0, live };
     const touched = new Set<string>();
     this.options.transaction(() => {
+      const unresolvedLive = new Set<string>();
       for (const a of repos.tradeAttempts.listByStatus('pending')) {
         if (a.effective_mode === 'live') {
-          this.log.warn(
-            { mode: 'live', tradeId: a.trade_id, clientOrderId: a.client_order_id },
-            'A pending live attempt was found at start-up; live recovery arrives with live trading (T13)',
-          );
+          unresolvedLive.add(a.trade_id);
           continue;
         }
         updateAttempt(repos, at, a, { status: 'unfilled', reason: 'restart' });
@@ -620,7 +1060,7 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
         out.attempts++;
       }
       for (const t of repos.trades.listByStatus(['signalled', 'pending', 'waiting'])) {
-        if (t.effective_mode === 'live' && t.status === 'pending') continue;
+        if (unresolvedLive.has(t.id)) continue;
         if (t.status === 'waiting' && !touched.has(t.id) && Date.parse(t.window_ends_at) > nowMs) continue;
         const open = Date.parse(t.window_ends_at) > nowMs;
         const updated = open
@@ -648,7 +1088,10 @@ export class Executor extends EventEmitter<{ trade: [TradeEvent] }> {
       }
     });
     if (out.attempts + out.waiting + out.skipped > 0) {
-      this.log.info({ mode: 'dry_run', ...out }, 'Recovered dry-run trades after a restart');
+      this.log.info(
+        { mode: 'dry_run', attempts: out.attempts, waiting: out.waiting, skipped: out.skipped },
+        'Recovered open trades after a restart',
+      );
     }
     return out;
   }

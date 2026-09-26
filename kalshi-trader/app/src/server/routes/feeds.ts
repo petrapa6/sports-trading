@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { ZodError, z } from 'zod';
 import type { Executor } from '../../core/executor.js';
+import type { OrderGroupManager } from '../../core/orderGroup.js';
 import type { Settler } from '../../core/settler.js';
 import type { StrategyEngine } from '../../core/engine.js';
 import type { Scheduler } from '../../core/scheduler.js';
@@ -25,6 +26,8 @@ export interface LiveServices {
   /** Executor and settler (T09): their trade changes are pushed over `/api/live`. */
   executor?: Pick<Executor, 'on'>;
   settler?: Pick<Settler, 'on'>;
+  /** The Kalshi order group (T13): Settings → Trading shows its status and resets it. */
+  orderGroups?: Pick<OrderGroupManager, 'status' | 'reset'>;
 }
 
 const FeedPatch = z.object({ enabled: z.boolean() }).strict();

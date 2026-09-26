@@ -1,4 +1,8 @@
 /**
+ * `npm run replay -- --live-mock [--file <replay.jsonl>]` (T13): runs the file through an in-process app with a
+ * live strategy against the msw Kalshi stand-in (`scripts/live-mock-lib.ts`) and prints the live trade, its
+ * settlement, the balance snapshots and `/api/stats`.
+ *
  * `npm run replay -- --file test/fixtures/replay/<name>.jsonl --speed 100 [--url http://127.0.0.1:8099]`
  * (SPEC.md §14 T07) — plays a recorded feed evening back into a running development server
  * (`npm run dev`): each line is posted to `POST /api/dev/replay` after the recorded gap divided by
@@ -11,6 +15,20 @@ import { parseReplayFile } from '../src/core/replay.js';
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i === -1 ? undefined : process.argv[i + 1];
+}
+
+if (process.argv.includes('--live-mock')) {
+  const { runLiveMockReplay, DEFAULT_REPLAY } = await import('./live-mock-lib.js');
+  const r = await runLiveMockReplay({ file: arg('file') ?? DEFAULT_REPLAY, print: (l) => console.log(l) });
+  const live = r.trades.filter((t) => t.effectiveMode === 'live');
+  const ok =
+    live.length === 1 &&
+    live[0]?.status.startsWith('settled_') === true &&
+    r.balanceSnapshots.afterSettlement > r.balanceSnapshots.before &&
+    (r.stats.live?.tiles.trades ?? 0) === 1 &&
+    (r.stats.dry_run?.tiles.trades ?? 0) === 0;
+  console.log(ok ? 'live mock replay: OK' : 'live mock replay: FAILED');
+  process.exit(ok ? 0 : 1);
 }
 
 const file = arg('file');

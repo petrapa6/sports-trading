@@ -356,6 +356,22 @@ export class KalshiClient {
     );
   }
 
+  /** One page of markets (the fee check of `npm run e2e:demo` looks for the cheapest open one). */
+  async listMarkets(
+    filter: { status?: string; seriesTicker?: string; cursor?: string; limit?: number } = {},
+  ): Promise<Page<S.Market>> {
+    const r = await this.request('GET', '/markets', {
+      query: {
+        status: filter.status,
+        series_ticker: filter.seriesTicker,
+        cursor: filter.cursor,
+        limit: filter.limit ?? 200,
+      },
+      schema: S.MarketsListSchema,
+    });
+    return { items: (r.markets ?? []).map(S.toMarket), cursor: r.cursor ?? null };
+  }
+
   async getHistoricalMarket(ticker: string): Promise<S.Market> {
     return S.toMarket(
       (await this.request('GET', `/historical/markets/${enc(ticker)}`, { schema: S.MarketResponseSchema }))
@@ -423,7 +439,7 @@ export class KalshiClient {
     });
   }
 
-  // ---- orders (nothing in the app calls these before T13) ----------------------------------
+  // ---- orders (the executor's live path, restart recovery and the settler, T13) ------------
 
   /** Create Order V2: an immediate-or-cancel buy of YES (`side: "bid"`) at a limit price. */
   async createOrderV2(input: CreateOrderInput): Promise<S.OrderResult> {

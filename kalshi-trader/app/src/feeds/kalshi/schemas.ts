@@ -186,6 +186,9 @@ export function toMarket(m: RawMarket): Market {
 }
 
 export const MarketResponseSchema = z.object({ market: MarketSchema }).passthrough();
+export const MarketsListSchema = z
+  .object({ markets: z.array(MarketSchema).nullish(), cursor: optStr })
+  .passthrough();
 
 export const EventSchema = z
   .object({

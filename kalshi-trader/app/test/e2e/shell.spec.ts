@@ -114,6 +114,11 @@ test('switches: on needs no prompt; off without recent re-auth asks for the pass
   await expect(lock).toHaveAttribute('aria-readonly', 'true');
   await expect(lock.locator('input')).toHaveCount(0);
 
+  // Order group (T13): unused while live orders are locked; its reset is disabled.
+  await expect(page.getByRole('heading', { name: 'Order group' })).toBeVisible();
+  await expect(page.getByTestId('order-group-state')).toContainText('live orders are disabled');
+  await expect(page.getByRole('button', { name: 'Reset order group' })).toBeDisabled();
+
   ageAuthentication(); // the login is no longer a recent authentication
 
   // Kill switch ON: no prompt; persists; audited.

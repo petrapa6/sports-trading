@@ -470,6 +470,17 @@ export interface PublicSettings {
   order_group_contract_limit: number;
 }
 
+/** `GET /api/settings/order-group` (T13): the Kalshi order group every live order carries. */
+export interface OrderGroupStatus {
+  enabled: boolean;
+  id: string | null;
+  contractsLimit: number;
+  state: 'disabled' | 'unknown' | 'active' | 'limit_hit' | 'error';
+  lastError: string | null;
+  checkedAt: string | null;
+  limitHitAt: string | null;
+}
+
 // ---- Settings → Data (T11) ------------------------------------------------------------------
 
 export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles';

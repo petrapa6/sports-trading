@@ -126,6 +126,19 @@ describe('every method against a fixture returns typed integers', () => {
     expect((await c.getSeries('KXNHLGAME')).fee_multiplier).toBe(1);
   });
 
+  it('listMarkets (one page, status and series filters)', async () => {
+    const page = await c.listMarkets({ status: 'open', seriesTicker: 'KXNHLGAME' });
+    expect(page.items.map((m) => [m.ticker, m.yes_ask_bp])).toEqual([
+      ['KXNHLGAME-26OCT10UTAVGK-VGK', 9300],
+      ['KXNHLGAME-26OCT10UTAVGK-UTA', 800],
+      ['KXNHLGAME-26OCT10UTAVGK-XXX', 0],
+    ]);
+    expect(page.cursor).toBe('');
+    expect(last().url.pathname).toBe('/trade-api/v2/markets');
+    expect(last().url.searchParams.get('status')).toBe('open');
+    expect(last().url.searchParams.get('series_ticker')).toBe('KXNHLGAME');
+  });
+
   it('listEvents (one page, cursor) / listAllEvents / getEvent', async () => {
     const page = await c.listEvents('KXNHLGAME', 'open', true);
     expect(page.cursor).toBe('cursor-nhl-2');
@@ -358,6 +371,7 @@ describe('network gate', () => {
       ['getEvent', () => c.getEvent('E')],
       ['listMilestones', () => c.listMilestones({ relatedEventTicker: 'E' })],
       ['getMarket', () => c.getMarket('T')],
+      ['listMarkets', () => c.listMarkets({ status: 'open' })],
       ['getHistoricalMarket', () => c.getHistoricalMarket('T')],
       ['getOrderbook', () => c.getOrderbook('T')],
       ['getCandlesticks', () => c.getCandlesticks('S', 'T', { startMs: 0, endMs: 1 })],
