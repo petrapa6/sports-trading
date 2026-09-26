@@ -1225,16 +1225,25 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** anything trading related; HAOS installation.
 
 **Acceptance (verify locally)**
-- [ ] `npm run check:addon` exits 0; removing `slug`, adding an option without a schema entry, or setting `ports: 8099/tcp: 8099` makes it exit 1 naming the key.
-- [ ] `docker compose up --build -d` → health `healthy` within 90 s; `curl localhost:8099/healthz` (compose maps the port for local testing only) → `{"ok":true,…}`; `.local/data/db/trader.db` exists and is owned by uid 1000; `.local/data/options.json` is still owned by root.
-- [ ] `docker compose exec kalshi-trader sh -c 'stat -c %u /proc/$(pgrep -f dist/server/main.js)'` → `1000`; `touch /app/x` fails with `Read-only file system`; the app writes `/data/db` and `/data/app` and cannot write `/data/options.json`.
-- [ ] Key never in the environment: `tr '\0' '\n' < /proc/<node pid>/environ | grep -c -e KALSHI_PRIVATE -e 'BEGIN .*PRIVATE KEY'` → `0`; `ls -l /proc/<node pid>/fd/3` → no such fd after boot; a development-only endpoint returns the loaded key's SHA-256 public-key fingerprint, equal to `openssl pkey -in key.pem -pubout | sha256sum` of the fixture key.
-- [ ] `run.sh` test (container with a fixture `/data/options.json`): exported `KALSHI_ENV`, `KALSHI_KEY_ID`, `KALSHI_SUBACCOUNT`, `ALLOW_LIVE_ORDERS`, `LOG_LEVEL`, `TRUSTED_PROXIES` match the options; `timezone` absent → `TZ` unchanged, present → exported.
-- [ ] `docker buildx build --platform linux/arm64 -t kalshi-trader:arm64 --load kalshi-trader/` succeeds and `docker run --rm --platform linux/arm64 --entrypoint node kalshi-trader:arm64 -e "require('/app/node_modules/better-sqlite3')(':memory:').prepare('select 1').get()"` exits 0.
-- [ ] amd64 image < 350 MB; no dev dependencies in `/app/node_modules` (`ls /app/node_modules | grep -c vitest` → 0).
-- [ ] `config.yaml` matches §11 field for field (diff in the verification doc).
-- [ ] `DOCS.md` has a heading for every Scope item; `translations/en.yaml` has `name` and `description` for every option.
-- [ ] CI `image.yml` green for both platforms.
+- [x] `npm run check:addon` exits 0; removing `slug`, adding an option without a schema entry, or setting `ports: 8099/tcp: 8099` makes it exit 1 naming the key.
+- [x] `docker compose up --build -d` → health `healthy` within 90 s; `curl localhost:8099/healthz` (compose maps the port for local testing only) → `{"ok":true,…}`; `.local/data/db/trader.db` exists and is owned by uid 1000; `.local/data/options.json` is still owned by root.
+- [x] `docker compose exec kalshi-trader sh -c 'stat -c %u /proc/$(pgrep -f dist/server/main.js)'` → `1000`; `touch /app/x` fails with `Read-only file system`; the app writes `/data/db` and `/data/app` and cannot write `/data/options.json`.
+- [x] Key never in the environment: `tr '\0' '\n' < /proc/<node pid>/environ | grep -c -e KALSHI_PRIVATE -e 'BEGIN .*PRIVATE KEY'` → `0`; `ls -l /proc/<node pid>/fd/3` → no such fd after boot; a development-only endpoint returns the loaded key's SHA-256 public-key fingerprint, equal to `openssl pkey -in key.pem -pubout | sha256sum` of the fixture key.
+- [x] `run.sh` test (container with a fixture `/data/options.json`): exported `KALSHI_ENV`, `KALSHI_KEY_ID`, `KALSHI_SUBACCOUNT`, `ALLOW_LIVE_ORDERS`, `LOG_LEVEL`, `TRUSTED_PROXIES` match the options; `timezone` absent → `TZ` unchanged, present → exported.
+- [x] `docker buildx build --platform linux/arm64 -t kalshi-trader:arm64 --load kalshi-trader/` succeeds and `docker run --rm --platform linux/arm64 --entrypoint node kalshi-trader:arm64 -e "require('/app/node_modules/better-sqlite3')(':memory:').prepare('select 1').get()"` exits 0.
+- [x] amd64 image < 350 MB; no dev dependencies in `/app/node_modules` (`ls /app/node_modules | grep -c vitest` → 0).
+- [x] `config.yaml` matches §11 field for field (diff in the verification doc).
+- [x] `DOCS.md` has a heading for every Scope item; `translations/en.yaml` has `name` and `description` for every option.
+- [x] CI `image.yml` green for both platforms.
+
+**Implementation notes (T05, deviations and clarifications)**
+- Base image: `ghcr.io/home-assistant/base:3.22-2026.08.0` pinned by digest for both stages (Alpine 3.22, `nodejs` 22.23.2); `docs/decisions/0002-base-image.md`.
+- `run.sh` reads `/data/options.json` with `jq` (the reference app's approach) instead of `bashio::config`, which queries the Supervisor API and fails outside Home Assistant (compose and the fixture test); the Supervisor writes the same file, so behaviour on HAOS is unchanged. It fails fast with `[kalshi-trader] ERROR: …` when the file is missing.
+- The key fd number reaches Node as the argument `--kalshi-private-key-fd=3`, not `KALSHI_PRIVATE_KEY_FD=3` in the environment, because the acceptance grep for `KALSHI_PRIVATE` in `/proc/<pid>/environ` must return 0; the variable still works elsewhere. Node reads fd 3 at boot but closes it only after the database and the listening socket are open, so no long-lived file is numbered 3.
+- Dockerfile additions to §11: `scripts/install-hooks.mjs` is copied before `npm ci` (the `prepare` script), `migrations/` is copied into the runtime stage (read at start-up since T02), and empty scope directories left by `npm prune` (e.g. `@vitest`) are removed.
+- The container checks (items 2–7, 10) ran in GitHub Actions (`image.yml`), not in the development session: that session's egress policy blocks the GHCR blob host and the Alpine CDN, so the base image cannot be pulled there. `verify:T05` is the same script either way. Observations about the literal commands (the `pgrep -f` self-match, and reading `/proc` of uid 1000 as root without `CAP_SYS_PTRACE`) are in `docs/verification/T05.md`.
+- The fixture key is generated per run with `openssl genpkey` (never committed). The development-only endpoint is `GET /api/dev/key-fingerprint`: registered only with `NODE_ENV=development`, answering only class `dev` (loopback).
+- `yaml` added as a dev dependency (for `check:addon` and tests). `publish.yml` is manual-only and its job runs only when the repository variable `PUBLISH_IMAGES` is `true`.
 
 ### T06 — Kalshi API client, network gate, market discovery
 
