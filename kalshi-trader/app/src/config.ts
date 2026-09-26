@@ -7,7 +7,10 @@ import { z } from 'zod';
  * Process configuration.
  *
  * Sources, highest precedence first:
- *   1. environment variables (set by `run.sh` inside Home Assistant),
+ *   1. environment variables (set by `run.sh` inside Home Assistant) — except the private-key
+ *      descriptor, which `run.sh` passes as the argument `--kalshi-private-key-fd=3` so that no
+ *      `KALSHI_PRIVATE*` name appears in `/proc/<pid>/environ` (T05); the argument wins over the
+ *      `KALSHI_PRIVATE_KEY_FD` variable, which still works elsewhere,
  *   2. `config.local.json` (local development only, git-ignored),
  *   3. built-in defaults.
  *
@@ -88,6 +91,7 @@ const FIELDS = {
   kalshiKeyId: { env: 'KALSHI_KEY_ID', schema: nonEmptyString, default: undefined },
   kalshiPrivateKeyFd: {
     env: 'KALSHI_PRIVATE_KEY_FD',
+    arg: '--kalshi-private-key-fd',
     schema: intFromEnv(0, 1_000_000),
     default: undefined,
   },
@@ -144,6 +148,8 @@ export interface LoadConfigOptions {
   env?: NodeJS.ProcessEnv;
   /** Path of the local JSON config; defaults to `$CONFIG_LOCAL_PATH` or `./config.local.json`. */
   configLocalPath?: string;
+  /** Command-line arguments (`--kalshi-private-key-fd=N`); defaults to `process.argv.slice(2)`. */
+  argv?: readonly string[];
 }
 
 export interface LoadedConfig {
@@ -175,6 +181,7 @@ function describe(value: unknown): string {
 /** Loads and validates the configuration. Throws `ConfigError` naming every offending key. */
 export function loadConfig(options: LoadConfigOptions = {}): LoadedConfig {
   const env = options.env ?? process.env;
+  const argv = options.argv ?? process.argv.slice(2);
   const localPath = resolve(options.configLocalPath ?? env['CONFIG_LOCAL_PATH'] ?? DEFAULT_CONFIG_LOCAL_PATH);
   const local = readConfigLocal(localPath);
   const localName = options.configLocalPath ?? env['CONFIG_LOCAL_PATH'] ?? DEFAULT_CONFIG_LOCAL_PATH;
@@ -195,9 +202,17 @@ export function loadConfig(options: LoadConfigOptions = {}): LoadedConfig {
   for (const [name, field] of Object.entries(FIELDS) as [FieldName, Fields[FieldName]][]) {
     const envName = field.env;
     const envValue = envName !== undefined ? env[envName] : undefined;
+    const argName = 'arg' in field ? field.arg : undefined;
+    const argValue =
+      argName === undefined
+        ? undefined
+        : argv.findLast((a) => a.startsWith(`${argName}=`))?.slice(argName.length + 1);
     let raw: unknown;
     let source: string;
-    if (envName !== undefined && envValue !== undefined && envValue !== '') {
+    if (argName !== undefined && argValue !== undefined && argValue !== '') {
+      raw = argValue;
+      source = argName;
+    } else if (envName !== undefined && envValue !== undefined && envValue !== '') {
       raw = envValue;
       source = envName;
     } else if (local && local[name] !== undefined && local[name] !== null && local[name] !== '') {
@@ -237,27 +252,27 @@ export function missingKalshiCredentials(config: Config): string[] {
 
 /**
  * Reads the Kalshi private key (PEM) once, from the file descriptor handed over by `run.sh`
- * (closed afterwards) or from the local PEM path. Returns `undefined` when no key is configured
- * or the source is empty. The key is kept in memory only and must never be logged.
+ * or from the local PEM path. Returns `undefined` when no key is configured or the source is
+ * empty. The key is kept in memory only and must never be logged.
+ *
+ * The descriptor is closed afterwards unless `closeFd` is `false`; `main.ts` keeps the (drained)
+ * descriptor until the database and the listening socket are open and then calls
+ * `closePrivateKeyFd`, so those long-lived files do not reuse fd 3 (T05: no fd 3 after boot).
  */
-export function readPrivateKey(config: Config): string | undefined {
+export function readPrivateKey(config: Config, options: { closeFd?: boolean } = {}): string | undefined {
   let pem: string;
   if (config.kalshiPrivateKeyFd !== undefined) {
     const fd = config.kalshiPrivateKeyFd;
     try {
       pem = readFileSync(fd, 'utf8');
     } catch (err) {
+      closePrivateKeyFd(config);
       throw new ConfigError(
         `Invalid configuration: KALSHI_PRIVATE_KEY_FD ${fd} cannot be read (${(err as NodeJS.ErrnoException).code ?? 'error'})`,
         ['KALSHI_PRIVATE_KEY_FD'],
       );
-    } finally {
-      try {
-        closeSync(fd);
-      } catch {
-        // already closed or never opened
-      }
     }
+    if (options.closeFd !== false) closePrivateKeyFd(config);
   } else if (config.kalshiPrivateKeyPath !== undefined) {
     try {
       pem = readFileSync(config.kalshiPrivateKeyPath, 'utf8');
@@ -276,4 +291,21 @@ export function readPrivateKey(config: Config): string | undefined {
     throw new ConfigError(`Invalid configuration: ${key} does not contain a PEM private key`, [key]);
   }
   return pem;
+}
+
+const closedKeyFds = new WeakSet<Config>();
+
+/**
+ * Closes the private-key descriptor handed over by `run.sh`, if any. Idempotent per loaded config:
+ * the descriptor is closed at most once, so a second call can never close an unrelated file that reused the number.
+ */
+export function closePrivateKeyFd(config: Config): void {
+  const fd = config.kalshiPrivateKeyFd;
+  if (fd === undefined || closedKeyFds.has(config)) return;
+  closedKeyFds.add(config);
+  try {
+    closeSync(fd);
+  } catch {
+    // never opened
+  }
 }

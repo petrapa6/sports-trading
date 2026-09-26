@@ -1,0 +1,25 @@
+# Local runs of the production image (SPEC.md §12), amd64. Not used by Home Assistant.
+#
+#   cd kalshi-trader/app && npm run compose:options   # writes .local/data/options.json from config.local.json
+#   docker compose up --build -d                        # then: curl localhost:8099/healthz
+#
+# Mirrors what the Supervisor does: `/data` is the app's data directory with a root-owned options.json,
+# Docker's init is PID 1 (config.yaml `init: true`), and the root filesystem is read-only here (Home
+# Assistant has no such option). KST_DATA_DIR / KST_NODE_ENV / KST_HOST_PORT let `npm run verify:T05` use a
+# scratch data directory, the development-only diagnostics and another port without touching yours.
+services:
+  kalshi-trader:
+    build:
+      context: kalshi-trader
+    image: kalshi-trader:local
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ${KST_DATA_DIR:-./.local/data}:/data
+    environment:
+      NODE_ENV: ${KST_NODE_ENV:-production}
+    # Mapped for local testing only; in Home Assistant 8099/tcp stays unmapped (config.yaml `ports: null`).
+    ports:
+      - "127.0.0.1:${KST_HOST_PORT:-8099}:8099"

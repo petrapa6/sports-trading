@@ -13,6 +13,7 @@ import { LiveHub, registerLiveRoutes, type RuntimeInfo } from './live.js';
 import { LogRing } from './logRing.js';
 import { registerApiRoutes } from './routes/api.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerDevRoutes } from './routes/dev.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
 import { registerWeb, WEB_DIR } from './web.js';
 
@@ -49,6 +50,8 @@ export interface AppOptions {
   webDir?: string;
   /** SSE heartbeat interval (tests); defaults to 10 s. */
   heartbeatMs?: number;
+  /** Fingerprint of the loaded Kalshi key, served by the development-only `/api/dev/key-fingerprint`. */
+  privateKeyFingerprint?: string | undefined;
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -131,6 +134,9 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
   registerApiRoutes(app, database, hub);
+  if (options.nodeEnv === 'development') {
+    registerDevRoutes(app, { privateKeyFingerprint: options.privateKeyFingerprint });
+  }
   registerLiveRoutes(app, hub, repos, {
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
     ...(options.now ? { now: options.now } : {}),

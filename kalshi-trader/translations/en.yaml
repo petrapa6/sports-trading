@@ -1,0 +1,41 @@
+configuration:
+  kalshi_env:
+    name: Kalshi environment
+    description: >-
+      Which Kalshi exchange to use: "demo" (paper money, for testing) or "prod" (real money).
+  kalshi_key_id:
+    name: Kalshi API key ID
+    description: >-
+      The key ID shown by Kalshi when you created the API key. Use a key restricted to the
+      subaccount below.
+  kalshi_private_key_b64:
+    name: Kalshi private key (base64)
+    description: >-
+      The RSA private key file Kalshi gave you, as one base64 line (base64 -w0 key.pem). It is
+      handed to the app in memory only and never written anywhere else.
+  kalshi_subaccount:
+    name: Kalshi subaccount
+    description: >-
+      Subaccount number the app trades in (0 = primary account). A dedicated subaccount limits
+      what the app can ever spend.
+  allow_live_orders:
+    name: Allow live orders
+    description: >-
+      Outer safety lock. While off, the app never places a real order, whatever the web UI says;
+      strategies can still run in dry run.
+  log_level:
+    name: Log level
+    description: How much the app writes to the Log tab (debug, info, warn or error).
+  trusted_proxies:
+    name: Trusted proxies
+    description: >-
+      Comma-separated IPs or CIDR ranges allowed to forward Cloudflare Tunnel traffic
+      (CF-Connecting-IP). The default is the Home Assistant internal network, where the
+      cloudflared app runs.
+  timezone:
+    name: Time zone
+    description: >-
+      Optional IANA time zone (for example Europe/Prague) for dates in the UI and the nightly
+      maintenance. Default: the container time zone, else UTC.
+network:
+  8099/tcp: Web UI (map only if cloudflared runs outside Home Assistant)

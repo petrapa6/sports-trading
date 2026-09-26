@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
+import { closePrivateKeyFd, ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
 import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
 import { buildApp } from './app.js';
 import { loadConfigOrExit } from './boot.js';
+import { publicKeyFingerprint } from './routes/dev.js';
 import { createLogger } from './logger.js';
 import { LogRing } from './logRing.js';
 import { loadOrCreateSecretKey, type LoadedSecret } from './secrets.js';
@@ -24,9 +25,11 @@ const version = (
 // and global rate limits are raised so the suite's many sign-ins and page loads do not trip them.
 const e2e = process.env['KST_E2E'] === '1' && process.env['NODE_ENV'] !== 'production';
 
+// The key is read now; the (drained) fd 3 stays open until the server listens, so the database
+// and the listening socket are not handed fd 3 by the kernel and nothing holds it after boot.
 let privateKey: string | undefined;
 try {
-  privateKey = readPrivateKey(config);
+  privateKey = readPrivateKey(config, { closeFd: false });
 } catch (err) {
   if (err instanceof ConfigError) {
     log.fatal({ keys: err.keys }, err.message);
@@ -100,6 +103,15 @@ if (secret.generated) {
   }
 }
 
+let privateKeyFingerprint: string | undefined;
+if (privateKey !== undefined && process.env['NODE_ENV'] === 'development') {
+  try {
+    privateKeyFingerprint = publicKeyFingerprint(privateKey);
+  } catch (err) {
+    log.error({ err: { message: (err as Error).message } }, 'The Kalshi private key cannot be parsed');
+  }
+}
+
 const maintenance = startMaintenance({ getDb: () => database.current, log });
 
 const app = await buildApp({
@@ -116,6 +128,7 @@ const app = await buildApp({
     kalshiSubaccount: config.kalshiSubaccount,
     dbPath: resolve(config.dbPath),
   },
+  privateKeyFingerprint,
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
 
@@ -143,3 +156,4 @@ try {
   log.fatal({ err }, 'Failed to start HTTP server');
   process.exit(1);
 }
+closePrivateKeyFd(config);

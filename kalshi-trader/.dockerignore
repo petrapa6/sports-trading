@@ -1,0 +1,17 @@
+# Build context is kalshi-trader/ (Dockerfile, run.sh, app/). Same secret exclusions as .gitignore
+# (SPEC.md §10 Secrets), at any depth, plus local build output and docs (§14: `*.md` except DOCS.md).
+**/*.key
+**/*.pem
+**/config.local.json
+**/*.db*
+**/.local/
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/*.tsbuildinfo
+**/*.md
+!DOCS.md

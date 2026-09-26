@@ -35,3 +35,16 @@ and in `kalshi-trader/CHANGELOG.md`.
 
 - The reference app's facts are now inlined in SPEC.md §14 (Reference app facts); its repository no longer needs to be read, so T05 applies that table instead of re-checking the repository.
 - Storage moved from `/share/kalshi-trader` to `/data/db` (SPEC.md §11), matching the reference app.
+
+## Update (T05)
+
+- Base image chosen: `ghcr.io/home-assistant/base:3.22-2026.08.0` pinned by digest, same for both stages
+  (`docs/decisions/0002-base-image.md`).
+- Adopted from §14 Reference app facts: `repository.yaml` with `name` / `url` / `maintainer`; the `url` key in
+  `config.yaml`; the native-build toolchain (`python3 make g++`) in the build stage only; the two OCI labels
+  (`org.opencontainers.image.title`, `org.opencontainers.image.source`) in the Dockerfile `LABEL`; `DOCS.md` with an
+  `Option | Description` table plus *Data Storage* and *Backup* sections; the `*.md` / `!DOCS.md` pattern in
+  `kalshi-trader/.dockerignore` on top of the §10 secret paths; `exec` so Node receives signals.
+- Deviation: the private-key descriptor is passed to Node as the argument `--kalshi-private-key-fd=3` instead of
+  the environment variable `KALSHI_PRIVATE_KEY_FD=3`, so that no `KALSHI_PRIVATE*` name is in
+  `/proc/<pid>/environ` (T05 acceptance); recorded in SPEC.md §11 and the T05 implementation notes.

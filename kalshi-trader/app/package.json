@@ -27,7 +27,10 @@
     "verify:T02": "tsx scripts/verify-T02.ts",
     "verify:T03": "tsx scripts/verify-T03.ts",
     "verify:T04": "tsx scripts/verify-T04.ts",
-    "prepare": "node scripts/install-hooks.mjs"
+    "prepare": "node scripts/install-hooks.mjs",
+    "check:addon": "tsx scripts/check-addon-config.ts",
+    "compose:options": "tsx scripts/compose-options.ts",
+    "verify:T05": "tsx scripts/verify-T05.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
@@ -68,6 +71,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "yaml": "^2.9.1"
   }
 }
