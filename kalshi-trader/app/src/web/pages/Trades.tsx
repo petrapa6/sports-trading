@@ -8,9 +8,10 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { Fragment, useMemo, useState } from 'react';
-import { api, type TradeDetail, type TradeView } from '../api';
+import { api, type StrategyView, type TradeDetail, type TradeView } from '../api';
 import { FilterBar, useFilters } from '../components/FilterBar';
 import { ModeBadge } from '../components/ModeBadge';
+import { TradeCharts } from '../components/TradeCharts';
 import { downloadCsv, toCsv } from '../csv';
 import { serializeFilters } from '../filters';
 import { formatContracts, formatPrice, formatUsd, formatUsdExact } from '../format';
@@ -320,6 +321,18 @@ export function TradesPage() {
     refetchInterval: 30_000,
   });
   const rows = useMemo(() => list.data?.trades ?? [], [list.data]);
+  // The histogram ends at the highest maxPrice among the listed trades' strategies (§8).
+  const strategies = useQuery({
+    queryKey: ['strategies'],
+    queryFn: () => api.get<StrategyView[]>('api/strategies'),
+  });
+  const maxPriceBp = useMemo(() => {
+    const ids = new Set(rows.map((t) => t.strategyId));
+    const prices = (strategies.data ?? [])
+      .filter((s) => ids.has(s.id) && typeof s.execution?.maxPrice === 'number')
+      .map((s) => Math.round((s.execution?.maxPrice ?? 0) * 10_000));
+    return prices.length > 0 ? Math.max(...prices) : null;
+  }, [rows, strategies.data]);
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -505,6 +518,7 @@ export function TradesPage() {
           </div>
         )}
       </section>
+      {list.data && <TradeCharts rows={rows} maxPriceBp={maxPriceBp} />}
     </>
   );
 }

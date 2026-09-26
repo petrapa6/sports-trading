@@ -214,3 +214,18 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
 - Trades page (TanStack table, status filter, mode badges, expandable snapshot / attempts / fill / settlement /
   audit trail, CSV with mode columns); Settings → Trading: dry-run bankroll and fee precision.
 - `npm run verify:T09`; `docs/verification/T09.md`. Deviations: SPEC.md §14 T09 implementation notes.
+
+### T10 — Stats endpoint and Recharts dashboard, split by mode
+
+- `GET /api/stats?sport&leagues&strategies&mode&env&range` (`src/server/routes/stats.ts`, `src/core/stats.ts`):
+  `{ live: {tiles, series}, dry_run: {tiles, series} }`, a mode filtered out is absent; every aggregate is computed
+  per mode in SQL (`src/db/stats.ts`, window functions for the equity curve); unknown league → `400`.
+- Tiles: trades, win rate (void excluded), net P&L, ROI, max drawdown, avg price, avg fee, implied vs actual,
+  forced-dry-run share (dry run only). Series: equity (total + per strategy), bankroll / balance line, daily P&L,
+  drawdown, implied-vs-actual points, price histogram, trades per minute, skip reasons (final and per attempt).
+- Dashboard: per-mode tiles (two values side by side with mode = both) and the eight Recharts charts (live solid,
+  dry run dashed / hatched, legends "Live" / "Dry run", one tooltip format naming the mode, empty and loading
+  states, light / dark palette). Trades page: price-paid histogram and P&L per trade, split by mode.
+- `test/fixtures/db/stats-seed.sql` with `stats-seed.expected.json` and `stats-seed.md`;
+  `npm run seed:demo -- --trades 500`; `npm run verify:T10`; `docs/verification/T10.md`.
+  Deviations: SPEC.md §14 T10 implementation notes.

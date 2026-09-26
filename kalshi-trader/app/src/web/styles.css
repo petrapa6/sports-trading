@@ -909,3 +909,116 @@ table.trades-table {
 .bankroll-form .field {
   flex: 0 1 12rem;
 }
+
+/* Dashboard tiles and charts (T10) */
+.stats-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  min-width: 0;
+}
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+.stat-values {
+  display: grid;
+  gap: 0.5rem;
+}
+.stat-values--2 {
+  grid-template-columns: 1fr 1fr;
+}
+.stat-value {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--live);
+}
+.stat-value--dry_run {
+  border-left: 3px dashed var(--dry-run);
+}
+.stat-mode {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.stat-number {
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+.stat-hint {
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 1rem;
+}
+.chart-card h3 {
+  margin: 0;
+}
+.chart-caption {
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0.5rem;
+}
+.chart-body {
+  width: 100%;
+  min-width: 0;
+}
+.chart-empty {
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+.chart-tooltip {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.chart-tooltip-label {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.chart-tooltip-swatch {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  margin-right: 0.35rem;
+}
+.segmented.small button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+}
+.segmented.small button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.recharts-legend-item-text {
+  color: var(--text) !important;
+}
+@media (min-width: 768px) {
+  .chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

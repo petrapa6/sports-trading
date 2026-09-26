@@ -1425,15 +1425,24 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** backtests.
 
 **Acceptance (verify locally)**
-- [ ] With `stats-seed.sql`, `GET /api/stats` equals `stats-seed.expected.json` for: unfiltered; `strategies=A`; `leagues=epl`; `mode=dry_run` (no `live` key); `mode=live` (no `dry_run` key); a date range covering half the trades. Win rate excludes `settled_void`, `skipped`, `waiting`; ROI divides by Σ (cost + fee) of settled trades; max drawdown equals the documented value per mode.
-- [ ] Mode separation: changing the outcome of one live trade in the seed changes only values under `live`; no field anywhere in the response equals a sum over both modes (test compares against per-mode recomputation).
-- [ ] Equity points are ordered by `settled_at`; the bankroll line has one point per `bankroll_snapshots` row in range; the live balance line one point per `balance_snapshots` row.
-- [ ] Implied vs actual returns one point per (strategy, league) within each mode with `x`, `y`, `n`.
-- [ ] Empty DB → `200` with zeroed tiles and empty arrays for both modes; unknown league id → `400`.
-- [ ] 500 seeded trades → response < 200 KB and contains no per-trade rows (`JSON.stringify(res).includes('trigger_snapshot') === false`).
-- [ ] 10 000 generated trades → `/api/stats` median < 300 ms over 20 calls (numbers recorded).
-- [ ] e2e on the seeded DB: eight `.recharts-wrapper` elements; with mode = both every chart legend contains both "Live" and "Dry run" and every tile shows two values; with mode = live no "Dry run" text appears in any chart; empty DB shows empty states; no horizontal overflow at 390 px; dark mode changes series colours.
-- [ ] Trades page histogram and per-trade bars follow the same filter; hovering a bar shows the trade id and its mode.
+- [x] With `stats-seed.sql`, `GET /api/stats` equals `stats-seed.expected.json` for: unfiltered; `strategies=A`; `leagues=epl`; `mode=dry_run` (no `live` key); `mode=live` (no `dry_run` key); a date range covering half the trades. Win rate excludes `settled_void`, `skipped`, `waiting`; ROI divides by Σ (cost + fee) of settled trades; max drawdown equals the documented value per mode.
+- [x] Mode separation: changing the outcome of one live trade in the seed changes only values under `live`; no field anywhere in the response equals a sum over both modes (test compares against per-mode recomputation).
+- [x] Equity points are ordered by `settled_at`; the bankroll line has one point per `bankroll_snapshots` row in range; the live balance line one point per `balance_snapshots` row.
+- [x] Implied vs actual returns one point per (strategy, league) within each mode with `x`, `y`, `n`.
+- [x] Empty DB → `200` with zeroed tiles and empty arrays for both modes; unknown league id → `400`.
+- [x] 500 seeded trades → response < 200 KB and contains no per-trade rows (`JSON.stringify(res).includes('trigger_snapshot') === false`).
+- [x] 10 000 generated trades → `/api/stats` median < 300 ms over 20 calls (numbers recorded).
+- [x] e2e on the seeded DB: eight `.recharts-wrapper` elements; with mode = both every chart legend contains both "Live" and "Dry run" and every tile shows two values; with mode = live no "Dry run" text appears in any chart; empty DB shows empty states; no horizontal overflow at 390 px; dark mode changes series colours.
+- [x] Trades page histogram and per-trade bars follow the same filter; hovering a bar shows the trade id and its mode.
+
+**Implementation notes (T10, deviations and clarifications)**
+- Filters: the same parameters as `GET /api/trades` (`sport, leagues, strategies, mode, env, range`); trades are selected by `triggered_at` in range and `kalshi_env` (default: the running environment). The bankroll line is the shared dry-run bankroll (not narrowed by strategy / league); the balance line is narrowed by environment. Both use snapshots taken in range.
+- Tiles: "trades" counts settled trades; avg price and avg fee are per-trade means over trades with a fill (open or settled); implied vs actual uses won + lost trades only; forced-dry-run share is over every dry-run trade in the filter. Ratios are fractions rounded to 4 decimals and are 0 without a denominator (the UI shows "—"); integer averages round half away from zero.
+- Drawdown is plotted and reported in dollars from the running peak of the equity curve (which starts at $0), not in %: realized P&L has no capital base to divide by.
+- Price histogram: the upper end is the highest `maxPrice` among the strategies the filter covers (default $0.97); fills outside the 15¢ range are counted in `below` / `above`. Empty series have no bins.
+- The Trades page charts are computed in the browser from the listed trades (so they also follow the status filter), not from `/api/stats`.
+- Response size grows with settled trades (one equity point per settled trade and strategy): 10 000 trades → 1.9 MB, 500 → well under 200 KB.
+- `docker compose up --build` was not run in the development session (no Docker daemon was available); the `Image` workflow covers it on the pushed branch.
 
 ### T11 — Historical importers, candle collector, backfill, price model
 

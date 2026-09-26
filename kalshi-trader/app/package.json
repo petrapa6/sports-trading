@@ -39,7 +39,9 @@
     "fixtures:record:feeds": "tsx scripts/record-feed-fixtures.ts",
     "verify:T07": "tsx scripts/verify-T07.ts",
     "verify:T08": "tsx scripts/verify-T08.ts",
-    "verify:T09": "tsx scripts/verify-T09.ts"
+    "verify:T09": "tsx scripts/verify-T09.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "verify:T10": "tsx scripts/verify-T10.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
