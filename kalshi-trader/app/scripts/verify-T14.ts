@@ -249,13 +249,20 @@ if (want('drills')) {
         body: JSON.stringify({ username: 'verify', password: 'verify T14 password' }),
       });
       assert(login.status === 200, `login → ${login.status}`);
-      const cookie = login.headers
-        .getSetCookie()
-        .map((c) => c.split(';')[0])
-        .join('; ');
-      const csrf = (await (await fetch(`${base}/api/csrf`, { headers: { cookie } })).json()) as {
-        token: string;
+      const jar = new Map<string, string>();
+      const keep = (res: Response) => {
+        for (const c of res.headers.getSetCookie()) {
+          const [pair = ''] = c.split(';');
+          const i = pair.indexOf('=');
+          if (i > 0) jar.set(pair.slice(0, i), pair.slice(i + 1));
+        }
       };
+      const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
+      keep(login);
+      const csrfRes = await fetch(`${base}/api/csrf`, { headers: { cookie: cookieHeader() } });
+      keep(csrfRes);
+      const csrf = (await csrfRes.json()) as { token: string };
+      const cookie = cookieHeader();
       const results: string[] = [];
       for (const path of ['/api/dev/drills/stall-scheduler', '/api/dev/drills/resume-scheduler']) {
         const r = await fetch(`${base}${path}`, {

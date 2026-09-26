@@ -131,17 +131,17 @@ In live mode the fee is taken from the exchange: Create Order V2 returns **`aver
 | Place order | `POST /portfolio/events/orders` (Create Order V2, returns `201`): `{ticker, side:"bid", count:"2", price:"0.9400", time_in_force:"immediate_or_cancel", self_trade_prevention_type:"taker_at_cross", client_order_id, order_group_id, subaccount}` (`subaccount` omitted when 0; `exchange_index` omitted → auto-routed). Response: `order_id`, `client_order_id`, `fill_count`, `remaining_count`, `average_fill_price` and `average_fee_paid` (both only when `fill_count > 0`), `ts_ms`. The legacy `/portfolio/orders` create endpoint is deprecated. |
 | Order lookup | `GET /portfolio/orders?ticker=&min_ts=&status=` (**no `client_order_id` filter** — the app filters by ticker and time and matches `client_order_id` itself); orders older than the cutoff via `GET /historical/orders`. Order objects carry `fill_count_fp`, `taker_fill_cost_dollars`, `taker_fees_dollars`, `yes_price_dollars`. |
 | Positions / fills / settlements | `GET /portfolio/positions`, `/portfolio/fills`, `/portfolio/settlements` (and `/historical/fills`) — reconciliation of live trades |
-| Order groups | `POST /portfolio/order_groups` etc. — an exchange-enforced cap on contracts matched in a rolling 15-second window; every live order carries the app's `order_group_id` (§10) |
+| Order groups | `POST /portfolio/order_groups/create`, `GET /portfolio/order_groups/{id}`, `PUT /portfolio/order_groups/{id}/reset` (subaccounts need the Advanced tier: `POST /account/api_usage_level/upgrade`) — an exchange-enforced cap on contracts matched in a rolling 15-second window; every live order carries the app's `order_group_id` (§10) |
 | Subaccounts | Numbered subaccounts (1–63) with API keys restricted to one subaccount; available from the Advanced API tier, which any account gets with one call to the upgrade endpoint once one of its last 100 orders was placed via the API (§10) |
 | Milestones | `GET /milestones?related_event_ticker=<event>` → `id`, `start_date`, `details` (team ids), `source_ids` (e.g. Sportradar id) |
-| Live game data | `GET /live_data/milestone/{milestone_id}` and the batch endpoint "Get Multiple Live Data" (exact path taken from `openapi.yaml` at build time) → `details.home_points`, `away_points`, `status` (`none`/`live`/`finished`), `round`, `final_round_time_left`, `tileLiveText`, `widgetLiveText`, `home_id`/`away_id`, soccer `home_significant_events`/`away_significant_events`. `details` is an open object — validate at runtime. |
+| Live game data | `GET /live_data/milestone/{milestone_id}` and the batch endpoint `GET /live_data/batch?milestone_ids=a,b` (response `live_datas`) → `details.home_points`, `away_points`, `status` (`none`/`live`/`finished`), `round`, `final_round_time_left`, `tileLiveText`, `widgetLiveText`, `home_id`/`away_id`, soccer `home_significant_events`/`away_significant_events`. `details` is an open object — validate at runtime. |
 | Game play-by-play | `GET /live_data/milestone/{milestone_id}/game_stats` → `pbp.periods[].events[]` (soccer and pro hockey supported) — candidate free source of goal timelines for Kalshi-era games (§3) |
 | Candlesticks | `GET /series/{series_ticker}/markets/{ticker}/candlesticks?start_ts&end_ts&period_interval=1` → per minute `yes_ask`, `yes_bid` (OHLC, `*_dollars`), `price` (trade OHLC, nullable), `volume_fp`; settled before the cutoff: `GET /historical/markets/{ticker}/candlesticks` |
 | Historical cutoff | `GET /historical/cutoff` → `market_settled_ts`, `trades_created_ts`, `orders_updated_ts`, `market_positions_last_updated_ts` (each data type has its own cutoff) |
 | Exchange status | `GET /exchange/status` (`trading_active`, `exchange_active`), `GET /exchange/schedule` |
 | Maintenance | Every **Thursday 03:00–05:00 ET** a trading pause (no new orders); rare unscheduled exchange pauses |
 | Rate limit (Basic tier) | Read 200 tokens/s (bucket holds 3 s), write 100 tokens/s (bucket holds 1 s); default cost 10 tokens/request (`GET /account/endpoint_costs` lists exceptions) → 20 reads/s sustained. `429` carries no `Retry-After`; back off exponentially. |
-| SDK | The official `kalshi-typescript` SDK lags the API; the app uses a thin hand-written client (~300 lines) validated against `openapi.yaml`, which also keeps the dependency surface small |
+| SDK | The official `kalshi-typescript` SDK lags the API; the app uses a hand-written client (`feeds/kalshi/client.ts`) whose responses are validated by Zod schemas (`feeds/kalshi/schemas.ts`) written from the API documentation and recorded payloads, which also keeps the dependency surface small |
 | Docs | https://docs.kalshi.com/llms.txt (index) |
 
 Day-one check in the demo environment: whether demo lists live sports milestones with real-time scores. If demo live data is sparse, dry-run validation runs against **production read endpoints** with orders disabled (`allow_live_orders: false`), which is safe because reads cannot move money.
@@ -169,7 +169,12 @@ interface GameState {
   observedAt: Date;             // when this app received it
   feedUpdatedAt?: Date;         // timestamp reported by the feed, if any
 }
-interface ScoreFeed { listLive(leagueId: string): Promise<GameState[]>; get(gameId: string): Promise<GameState>; }
+interface ScoreFeed {
+  id: FeedId; sports: readonly Sport[];
+  poll(games: readonly TrackedGame[]): Promise<FeedObservation[]>;   // one call per tick for all tracked games
+  listLive(leagueId: string): Promise<GameState[]>; get(gameId: string): Promise<GameState>;
+  test(games: readonly TrackedGame[]): Promise<string>;               // Settings → Feeds "Test"
+}
 ```
 
 | Adapter | Sport | Default | What it gives | Notes |
@@ -272,7 +277,8 @@ kalshi-trader/app/src/
     pricing.ts       fee, cost, P&L math (pure, integer)
     maintenance.ts   WAL checkpoint, snapshot pruning
   feeds/
-    kalshi/        client (signing, token buckets, backoff, network gate), discovery, live data
+    kalshi/        client (signing, token buckets, backoff), discovery, live data
+    network.ts     network gate (global kill switch → no outgoing request), used by every client and feed
     nhl/           NHL Web API adapter
     apiFootball/   API-Football adapter (T15)
   backtest/      importers, candle collector, simulator (worker), price model
@@ -289,7 +295,7 @@ kalshi-trader/app/src/
 - One trading loop; feed polls run concurrently with `Promise.allSettled`, strategy evaluation and order attempts run serially.
 - **Once per game per strategy:** `UNIQUE(strategy_id, game_id)` on `trades`. The row is inserted when the rule first matches (status `signalled`), before any orderbook read or order.
 - **Every order attempt** (live or virtual) first inserts a `trade_attempts` row with status `pending` and a fresh unique `client_order_id` (`<trade.id>-<attempt_no>`), **then** calls Kalshi, then updates the row. A crash mid-order therefore always leaves a findable record.
-- **Restart recovery** runs before the scheduler starts: for each `pending` live attempt, `GET /portfolio/orders?ticker=<market>&min_ts=<attempt time − 60 s>` (then `/historical/orders` if past the cutoff), match on `client_order_id`, apply the outcome; not found → `unfilled` with reason `restart_no_order`. Pending dry-run attempts are marked `unfilled` (`restart`).
+- **Restart recovery** runs before the scheduler starts: for each `pending` live attempt, `GET /portfolio/orders?ticker=<market>&min_ts=<attempt time − 60 s>` (then always `/historical/orders` when that has no match), match on `client_order_id`, apply the outcome; not found in either → `unfilled` with reason `restart_no_order`; a lookup that fails leaves the attempt `pending` for the settler loop to resolve. Pending dry-run attempts are marked `unfilled` (`restart`).
 - Switches are read from the DB on every evaluation and before every attempt; `allow_live_orders` comes from the process configuration (changing it restarts the app).
 - **Global kill switch:** the Kalshi client and every feed adapter call a single `assertNetworkAllowed()` gate before any request; while the switch is on the gate rejects, the scheduler is `paused`, and in-flight requests are allowed to finish.
 - The dry-run bankroll is updated inside the same SQLite transaction as the trade state change, so concurrent fills cannot lose an update.
@@ -353,7 +359,7 @@ The rule **matches** when `phase === 'live'`, the game is not `blocked`, `|home 
 | # | Guard | Class | Skip reason |
 | --- | --- | --- | --- |
 | 1 | Effective mode is `paused` (a kill switch was turned on mid-window) | hard | `paused` |
-| 2 | Market `status` is `open` and `close_time` in the future | hard | `market_closed` |
+| 2 | Market `status` is `open` (or `active`) and `close_time` (when known) in the future | hard | `market_closed` |
 | 3 | Exchange `trading_active` (`GET /exchange/status`) | soft | `exchange_paused` |
 | 4 | Newest feed observation for the game is at most `maxFeedAgeSec` old | soft | `stale_feed` |
 | 5 | Game not `blocked` by feed disagreement | soft | `feed_blocked` |
@@ -365,6 +371,8 @@ The rule **matches** when `phase === 'live'`, the game is not `blocked`, `|home 
 | 11 | Live only: exchange rejected the order because the order group limit was hit | soft | `order_group_limit` |
 | 12 | Live only: exchange rejected the order (4xx other than rate limit) | hard | `order_rejected` |
 | 13 | Transient error (network, 5xx, 429 after backoff) | soft | `error` |
+
+Other reasons written by the executor outside the guard chain: `no_market` (no market for the leading side), `window_expired` (the window closed with no earlier soft reason; `trades.window_expired = 1` either way), `restart` / `restart_no_order` / `order_not_found` (restart recovery, §4) and `mode_changed` (the effective mode left `live` between the reads and the order).
 
 There is no daily loss limit or trades-per-day cap in v1 (decided 25 Sep 2026). The safety controls are the switches (§1), per-strategy `maxStakeUsd`, the order group and the dedicated subaccount (§10).
 
@@ -417,7 +425,7 @@ The settler runs every 60 s (not while the global kill switch is on) for trades 
 3. Dry run: credit the payout to the shared bankroll and write a `bankroll_snapshots` row in the same transaction.
 4. Live: reconcile against `GET /portfolio/settlements` for the ticker; if the exchange's `revenue` differs from `payout_micros` by more than 10 000 micros ($0.01), set `trades.reconcile_warning` and log `warn`.
 
-P&L per trade: `realized_pnl_micros = payout_micros − cost_micros − fee_micros` where `cost_micros = fill_cc × avg_fill_price_bp`. Unrealized P&L for open trades = `fill_cc × (current yes_bid_bp − avg_fill_price_bp)` from the latest `GET /markets/{ticker}`.
+P&L per trade: `realized_pnl_micros = payout_micros − cost_micros − fee_micros` where `cost_micros = fill_cc × avg_fill_price_bp`. Unrealized P&L for open trades = `fill_cc × (current yes_bid_bp − avg_fill_price_bp)` (`pricing.ts` `unrealizedPnlMicros`; v1 shows no unrealized P&L in the UI).
 
 ### Metrics (computed per mode for every filter: strategy × league × date range × Kalshi environment)
 
@@ -553,7 +561,7 @@ CREATE TABLE bankroll_snapshots (                -- shared dry-run bankroll afte
 CREATE TABLE audit_log (
   id INTEGER PRIMARY KEY, at TEXT NOT NULL,
   actor TEXT NOT NULL,                           -- 'system' | 'user:<name>'
-  ip TEXT, channel TEXT,                         -- 'ingress' | 'tunnel' | 'dev' | null
+  ip TEXT, channel TEXT,                         -- 'ingress' | 'tunnel' | 'dev' | 'other' | null
   mode TEXT,                                     -- 'live' | 'dry_run' | null (not trade-related)
   action TEXT NOT NULL, entity TEXT, entity_id TEXT, detail TEXT   -- JSON
 );
@@ -644,14 +652,14 @@ Layout: one dark/light-aware responsive layout; on a phone the status strip and 
 | --- | --- | --- |
 | Equity curve | `LineChart` | x = time, y = cumulative realized P&L ($); per selected strategy and per mode; dry-run bankroll line (dashed) and live Kalshi balance line (solid) |
 | Daily P&L | `BarChart` | x = day, y = realized P&L, positive/negative colours; live solid, dry run hatched; stacked by strategy within a mode |
-| Drawdown | `AreaChart` | x = time, y = drawdown from peak (%), one area per mode |
+| Drawdown | `AreaChart` | x = time, y = drawdown from the running peak of cumulative net P&L ($), one area per mode |
 | Implied vs actual | `ScatterChart` + reference line y = x | x = mean price paid, y = win rate; one point per (strategy, league, mode); point size = trade count; live filled markers, dry run hollow |
 | Price paid distribution | `BarChart` (histogram) | 1¢ bins from `maxPrice − 15¢` to `maxPrice`, grouped by mode |
 | Trades per minute triggered | `BarChart` | x = clock minute at entry, y = count, colour by outcome, grouped by mode |
 | Skip reasons | horizontal `BarChart` | one bar per reason, grouped by mode (final skips and per-attempt skips toggle) |
 | Balance history | `LineChart` | live Kalshi balance from `balance_snapshots` and dry-run bankroll from `bankroll_snapshots`, two clearly labelled lines |
 
-Every chart takes the same `{ filters }` props and uses one endpoint, `GET /api/stats?…`, which returns pre-aggregated data keyed by mode — `{ live: {...}, dry_run: {...} }` — so the browser never receives raw trade rows for charts.
+Every chart takes the same `{ filters }` props and uses one endpoint, `GET /api/stats?…`, which returns pre-aggregated data keyed by mode — `{ live: {...}, dry_run: {...} }` — so the Dashboard never receives raw trade rows for charts. (The Trades page's own small charts are computed in the browser from the trade rows it already lists.)
 
 ## 9. Backtesting
 
@@ -661,7 +669,7 @@ The backtester replays the **same `engine.ts`, `guards.ts` and `pricing.ts`** th
 
 For each game in (league, season), in date order:
 
-1. Build a minute-by-minute timeline from `goal_events` (soccer: minutes 1–90; hockey: elapsed minutes 1–60 from period + clock).
+1. Build a minute-by-minute timeline from `goal_events` (soccer: minutes 1–90; hockey: elapsed minutes 1–59 from period + clock).
 2. Step the engine through the timeline. When the rule first matches at minute M, ask the **price provider** for the leader market's YES ask at M; apply the guards (`maxPrice`, `minPrice`, `too_small`; depth is not modelled). If a soft guard blocks, retry at M+1 … until the window closes, exactly like the live retry.
 3. Size with the running bankroll (percent sizing compounds), compute `limit_bp = min(ask + maxSlippage, maxPrice)`, contracts, fee (same formula and precision setting).
 4. Decide the outcome from the final score using the sport's settlement rule (soccer: 90' + stoppage result; hockey: final incl. OT/SO, which `final_home/final_away` store; an NHL tie settles at $0.50).
@@ -706,7 +714,7 @@ Every request is classified once, by the socket peer and headers, before any rou
 | Secret | Where it lives | How it gets there | Never |
 | --- | --- | --- | --- |
 | Kalshi API key id + RSA private key (PEM) | Home Assistant app options (`/data/options.json`, root-only) as `kalshi_key_id` and `kalshi_private_key_b64` (schema type `password`) | Pasted once in the app's **Configuration** tab | In git, in the image, in the database or any app-written file under `/data` (backed up to Google Drive; only the Supervisor-written `options.json` holds it, protected by the backup password), in logs, in environment variables |
-| Private key at runtime | Node process memory only | `run.sh` (root) decodes it and hands it to Node on **file descriptor 3**; Node reads fd 3 once at boot and closes it | `process.env`, `/proc/<pid>/environ`, disk |
+| Private key at runtime | Node process memory only | `run.sh` (root) decodes it and hands it to Node on **file descriptor 3**; Node reads fd 3 once at boot and closes it once the database and the listening socket are open (§11) | `process.env`, `/proc/<pid>/environ`, disk |
 | Session/encryption secret | `/data/app/secret.key` (mode 600, owned by the app user), 32 random bytes generated on first start | Automatic | Regenerated unless deleted (which logs everyone out and makes encrypted settings unreadable) |
 | API-Football key (T15) | `settings.api_football_key_enc`, AES-256-GCM under a key derived from `secret.key` | Settings page | Plaintext in the DB |
 | App user password | `users.password_hash`, argon2id (m = 64 MiB, t = 3) | First-run setup, only from `ingress` (or `dev`) while `users` is empty | — |
@@ -720,7 +728,7 @@ No `.env` files exist in any environment. Local development reads the same setti
 - Sessions: opaque 256-bit id (only its SHA-256 is stored), idle timeout 12 h, absolute lifetime 7 days, revocable from Settings, id rotated on login.
   - Tunnel/other: cookie `kst_session`, `HttpOnly; Secure; SameSite=Strict; Path=/`.
   - Ingress: cookie `kst_session_ingress`, `HttpOnly; SameSite=Strict; Path=<X-Ingress-Path>`, `Secure` only when the browser-facing scheme is HTTPS (`X-Forwarded-Proto`), so ingress login works when Home Assistant is opened over plain http on the LAN.
-- **Brute-force protection** (tunnel/other only): 10 failed attempts per client IP or per username within 15 minutes → 15-minute lockout, doubling on each repeat; ingress is never locked out (the only account cannot be locked out by an internet attacker, because you can always log in via the sidebar). All attempts are written to `login_attempts` and `audit_log` with IP and channel.
+- **Brute-force protection** (tunnel/other only): 10 failed attempts per client IP or per username within 15 minutes → 15-minute lockout, doubling when an earlier lockout started within the last 24 h (capped at 24 h); ingress is never locked out (the only account cannot be locked out by an internet attacker, because you can always log in via the sidebar). All attempts are written to `login_attempts` and `audit_log` with IP and channel.
 - **Step-up authentication** (password re-entered within the last 5 minutes): turning the global kill switch off, turning global dry run off, turning a strategy kill switch off, switching a strategy to live, resetting the dry-run bankroll, CSV import, changing the password or TOTP.
 - CSRF: `SameSite=Strict` plus a per-session token checked on every state-changing request (`@fastify/csrf-protection`).
 
@@ -753,7 +761,7 @@ No `.env` files exist in any environment. Local development reads the same setti
 
 - Built and run from the same pinned Home Assistant base image; the Node process runs as the non-root user `trader` (uid 1000); `run.sh` alone runs as root to read options, prepare directories and hand over the key. `apparmor: true` (default profile), no `host_network`, no `privileged`, no `full_access`, no `hassio_api`; `homeassistant_api` only from T15.
 - Read-only root filesystem is enforced in local `docker compose` runs (`read_only: true`); Home Assistant has no equivalent option, so on HAOS the protections are non-root, AppArmor and the absence of extra privileges.
-- `npm ci` with a committed lockfile; `npm audit` and Dependabot in CI; dependencies limited to §4.
+- `npm ci` with a committed lockfile; `npm audit` and Dependabot in CI; runtime dependencies limited to §4 (dev-only additions: `msw`, `qrcode`, `yaml`).
 - Outbound egress by design: Kalshi hosts, `api-web.nhle.com`, API-Football (T15), `supervisor` (T15). Documented so it can be enforced at the router/Pi-hole.
 - Every money- or security-related action (order attempt, fill, settlement, switch change, mode change, limits change, login, failed login, lockout, key/session events) goes to `audit_log` with actor, IP, channel and mode, and cannot be deleted from the UI.
 
@@ -773,7 +781,7 @@ sports-trading/                 (git repo root = HA app repository)
     run.sh
     DOCS.md  README.md  CHANGELOG.md  icon.png  logo.png
     translations/en.yaml        option labels and descriptions
-    app/                        the Node project (package.json, src/, web/, test/)
+    app/                        the Node project (package.json, src/ incl. src/web/, migrations/, public/, scripts/, test/)
   docker-compose.yml            local runs (§12)
   .github/workflows/            ci.yml, image.yml, (optional, disabled) publish.yml
 ```
@@ -903,7 +911,7 @@ Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor once
 ### Behaviour inside Home Assistant
 
 - **Ingress:** the UI is in the HA sidebar; requests come from `172.30.32.2` with `X-Ingress-Path`, and the app serves assets and cookies under that path (§10).
-- **Health:** `/healthz` returns `200 {"ok":true,"loop":"running"|"idle"|"paused"}` if the DB opens and the trading loop has ticked within 2 minutes or is intentionally paused by the global kill switch; otherwise `503`. The Supervisor watchdog restarts the container on `503`.
+- **Health:** `/healthz` returns `200 {"ok":true,"loop":"running"|"idle"|"paused"|"starting"}` if the DB opens and the trading loop has ticked within 2 minutes or is intentionally paused by the global kill switch; otherwise `503 {"ok":false,"loop":"stale"}` or `503 {"ok":false,"db":"<code>"}` (a database that cannot be opened does not stop the server; each probe retries the open). A database locked by another process past `busy_timeout` makes API requests answer `503 {"error":"db_busy"}` (T14). The Supervisor watchdog restarts the container on `503`.
 - **Backups:** the DB is under `/data`, which Home Assistant includes in every backup of the app, so the Google Drive Backup app captures it; `PRAGMA wal_checkpoint(TRUNCATE)` runs nightly at 02:30 local time (`TZ`); WAL keeps hot backups consistent.
 - **Logs:** Pino JSON lines in the app's Log tab; `log_level` is an option; trading lines carry `mode`.
 - **Updates:** bump `version` in `config.yaml` (it must equal `package.json`); migrations run on start and stay backward-compatible for one version so a rollback is possible.
@@ -911,15 +919,15 @@ Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor once
 
 ## 12. Local development and testing
 
-`git clone && npm install && npm run dev` (in `kalshi-trader/app`) starts the API on `:8099` and Vite on `:5173` with hot reload, against `./.local/trader.db`. Configuration comes from environment variables or `config.local.json` (git-ignored; `kalshiPrivateKeyPath` points to a PEM outside the repo), so the code path is the same as in the container.
+`git clone && npm install && npm run dev` (in `kalshi-trader/app`) starts the API on `:8099` with reload-on-save (`npm run dev:web` adds the Vite dev server on `:5173`), against `./.local/trader.db`. Configuration comes from environment variables or `config.local.json` (git-ignored; `kalshiPrivateKeyPath` points to a PEM outside the repo), so the code path is the same as in the container.
 
 ### Environments
 
 | Env | Kalshi | Score feeds | Purpose |
 | --- | --- | --- | --- |
 | `test` | `msw` mocks with recorded fixtures | Recorded fixtures | Unit and integration tests, CI |
-| `replay` | Recorded orderbooks / msw | `game_snapshots` replayed at up to 100× | Reproduce an evening deterministically |
-| `demo` | Kalshi demo | Live feeds | End-to-end including real order placement with paper money (`allow_live_orders` true in `config.local.json`) |
+| `replay` | Recorded orderbooks / msw | JSONL feed recordings (`npm run replay -- --speed N`, up to 100×) posted to the development-only `/api/dev/replay`; `--live-mock` runs the live path in-process | Reproduce an evening deterministically |
+| `demo` | Kalshi demo | Live feeds | End-to-end including real order placement with paper money (`allowLiveOrders: true` in `config.local.json`) |
 | `prod` | Kalshi production | Live feeds | The Pi |
 
 `docker compose up --build` builds the same Dockerfile locally (amd64) with `./.local/data` mounted as `/data`, `read_only: true`, `tmpfs: /tmp`, and an `options.json` generated from `config.local.json` by `npm run compose:options`. `docker buildx build --platform linux/arm64` verifies the Pi build under QEMU.
@@ -943,7 +951,7 @@ CI (GitHub Actions): lint, typecheck, tests, e2e, `npm audit --audit-level=high`
 | Late-game prices of $0.94–$0.98: one loss erases ~16–49 wins (more after fees) | Strategy can be net negative even at a 95 % win rate; these markets are liquid and efficient (a settled NHL game checked on 2026-09-25 traded ~290k contracts per side) | Expect near-zero or negative EV until proven otherwise; implied-vs-actual chart, `maxPrice`, exact backtests, dry run → demo → prod with `maxStakeUsd` ≤ $5 |
 | Score feed lags the market (buying right after the opponent scores) | Adverse selection | `maxFeedAgeSec`, optional `minPrice`, feed cross-check for NHL, snapshot timestamps on every trade |
 | Thin orderbooks | Partial fills or none | `minDepthContracts`, IOC orders, retry within the window, partial fills recorded honestly |
-| Kalshi API changes (V2 orders, fixed-point fields, open `details` schema) | Breakage | Zod-validated payloads that fail loudly; client pinned to an `openapi.yaml` version; changelog watch |
+| Kalshi API changes (V2 orders, fixed-point fields, open `details` schema) | Breakage | Zod-validated payloads that fail loudly; recorded fixtures (`npm run fixtures:record:kalshi`); changelog watch |
 | Fee rounding differs from the model | Dry-run P&L off by up to ~1¢ per order | `fee_balance_precision_micros` setting; T13 checks real fills |
 | Exchange pauses (Thursday 03:00–05:00 ET, rare outages) | Orders rejected | `GET /exchange/status` guard (soft, retried) |
 | Regulatory / account terms | Kalshi restricts some jurisdictions and automated behaviour patterns | Only your own account and key; read Kalshi's API terms; personal tool, not a service |
@@ -1580,15 +1588,15 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** new features.
 
 **Acceptance (verify locally)**
-- [ ] `npm run audit:security` exits 0 with one line per check; a permissive CSP (`unsafe-inline`) or `X-Frame-Options` missing on tunnel responses in a scratch branch makes it exit 1.
-- [ ] `/proc/<node pid>/status` CapEff shows no added capabilities; `touch /app/x` → read-only error.
-- [ ] Drill scripts under `scripts/drills/`: (a) `stall-scheduler` → `/healthz` 503 within 2 min; (b) exclusive SQLite lock for 10 s → `503 {"error":"db_busy"}` then recovery; (c) Kalshi 503 for 10 min of fake time → feeds still polled, attempts `error`, first successful call after recovery logged; (d) global kill switch → zero requests (msw + feed mocks) and `/healthz` `paused`. Drill endpoints return 404 in a production build.
-- [ ] Maintenance: fake time crossing 02:30 logs `wal_checkpoint` and `pruned N snapshots`; `-wal` shrinks to < 1 MB on the seeded DB; snapshots of non-archived games survive.
-- [ ] `npm run db:migrate:down && npm run db:migrate` on a seeded DB keeps row counts.
-- [ ] `npm run seed:season` then checkpoint → `trader.db` < 200 MB (recorded).
-- [ ] `npm run e2e` green at both widths; Lighthouse a11y ≥ 90 on Dashboard and Trades.
-- [ ] `config.yaml` version, `package.json` version and the top `CHANGELOG.md` heading all read `1.0.0`; `npm run check:addon` passes; arm64 and amd64 images build in CI.
-- [ ] `docs/verification/HAOS.md` exists with this checklist:
+- [x] `npm run audit:security` exits 0 with one line per check; a permissive CSP (`unsafe-inline`) or `X-Frame-Options` missing on tunnel responses in a scratch branch makes it exit 1.
+- [x] `/proc/<node pid>/status` CapEff shows no added capabilities; `touch /app/x` → read-only error.
+- [x] Drill scripts under `scripts/drills/`: (a) `stall-scheduler` → `/healthz` 503 within 2 min; (b) exclusive SQLite lock for 10 s → `503 {"error":"db_busy"}` then recovery; (c) Kalshi 503 for 10 min of fake time → feeds still polled, attempts `error`, first successful call after recovery logged; (d) global kill switch → zero requests (msw + feed mocks) and `/healthz` `paused`. Drill endpoints return 404 in a production build.
+- [x] Maintenance: fake time crossing 02:30 logs `wal_checkpoint` and `pruned N snapshots`; `-wal` shrinks to < 1 MB on the seeded DB; snapshots of non-archived games survive.
+- [x] `npm run db:migrate:down && npm run db:migrate` on a seeded DB keeps row counts.
+- [x] `npm run seed:season` then checkpoint → `trader.db` < 200 MB (recorded).
+- [x] `npm run e2e` green at both widths; Lighthouse a11y ≥ 90 on Dashboard and Trades.
+- [x] `config.yaml` version, `package.json` version and the top `CHANGELOG.md` heading all read `1.0.0`; `npm run check:addon` passes; arm64 and amd64 images build in CI.
+- [x] `docs/verification/HAOS.md` exists with this checklist:
   1. In Kalshi: create a dedicated subaccount, transfer only the trading bankroll to it, upgrade to the Advanced API tier if needed, and create an API key restricted to that subaccount (demo first).
   2. Add `https://github.com/petrapa6/sports-trading` under Settings → Apps → Repositories; install *Kalshi Sports Trader*.
   3. Configuration: `kalshi_key_id`, base64 PEM, `kalshi_env: demo`, `kalshi_subaccount`, `allow_live_orders: false`; start; the Log tab shows `listening on 8099` and `migrations applied`.
@@ -1599,6 +1607,19 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
   8. On the next NHL evening the Dashboard cards update live; a dry-run strategy fires and settles with `DRY RUN` badges everywhere; RAM from the Info tab is recorded.
   9. Toggle the global kill switch on for a live game and confirm the loop shows "paused" and the cards stop updating; toggle it off.
   10. Switch `kalshi_env` to `prod` with a prod key (restricted to the prod subaccount); keep everything in dry run for at least a week; then set `allow_live_orders: true`, turn global dry run off (step-up) and enable one live strategy with `maxStakeUsd` ≤ 5.
+
+**Implementation notes (T14, deviations and clarifications)**
+
+- Reconciliation record: `docs/decisions/0003-spec-reconciliation.md`, not `0002-…`, because `0002` was already the base-image decision from T05. The §1–§13 corrections it lists were made in this commit.
+- `npm run audit:security` (`scripts/audit-security.ts`) runs its header checks against the production build (`dist/server/main.js`) on a scratch database with `NODE_ENV=development` and `KST_E2E=1`, so that all four request classes can be produced locally. Loopback + `X-Ingress-Path` gives ingress, `TRUSTED_PROXIES=127.0.0.1/32` + `CF-Connecting-IP` gives tunnel, plain loopback gives dev, and the machine's own non-loopback address gives other. `--skip-gitleaks` prints SKIP. The two mutations run inside `verify:T14`, which restores the file afterwards; they are recorded in `docs/verification/T14.md`.
+- A lock held past `busy_timeout` (`SQLITE_BUSY` / `SQLITE_LOCKED`) now answers `503 {"error":"db_busy"}` with `Retry-After: 1`. Before this ticket it was a 500. better-sqlite3 waits synchronously, so the event loop is blocked during that wait.
+- Drill endpoints: `POST /api/dev/drills/stall-scheduler` and `/resume-scheduler` (`Scheduler.resume()`). They are registered only with `NODE_ENV=development` and answer only class `dev`. In other modes the path is unknown: 401 without a session, 404 with one.
+- Drills (c) and (d) need fake time and msw, so their bodies are Vitest files (`test/drills/*.test.ts`, also part of `npm test`). `scripts/drills/kalshi-down.ts` and `kill-switch.ts` run those files and print what was observed. Drills (a) and (b) run against a real scratch instance. Drill (a) takes about 2 minutes of real time.
+- Kalshi client: it logs `Kalshi reachable again` (`downForMs`, `failedCalls`) on the first non-429/5xx answer after an outage. The body of a 429/5xx answer is now cancelled without awaiting, because under msw that cancel never settled.
+- The maintenance log message is now `Maintenance done: wal_checkpoint(TRUNCATE), pruned N snapshots`.
+- `npm run seed:season` (`scripts/seed-season-lib.ts`) puts its 400 trades under the `seed:demo` generator's ids (`demo-*`). Those trades reference generated game ids, not the season's games.
+- Lighthouse is not a dependency. `npm run lighthouse:a11y` runs `npx --yes lighthouse@12.8.2`, so it needs network access. The container check (CapEff / CapPrm 0, `NoNewPrivs` 1, read-only root) runs in CI (`image.yml`, amd64 job), because this session could not pull the base image. `docker-compose.yml` now also sets `no-new-privileges:true`.
+- Every acceptance item was run and seen passing: locally, or in CI for the container item and the arm64/amd64 build.
 
 ### T15 — API-Football adapter, Home Assistant notifications, extra rule parameters
 
