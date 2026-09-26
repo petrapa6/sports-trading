@@ -1,0 +1,62 @@
+{
+  "description": "Synthetic EPL game for the T12 parity test (SPEC.md §14 T12): Arsenal 2-1 Chelsea, goals at 12' (home), 55' (away), 78' (home). Candles are YES ask closes in price units at game minutes; their wall-clock minute is candleMinuteMs('soccer', kickoff, minute). 'retryCandles' replaces the home candles for the retry-parity case (ask above maxPrice at 80' and 81', below at 82').",
+  "leagueId": "epl",
+  "event": "KXEPLGAME-26OCT17ARSCHE",
+  "kickoff": "2026-10-17T14:00:00.000Z",
+  "home": { "name": "Arsenal", "abbreviation": "ARS" },
+  "away": { "name": "Chelsea", "abbreviation": "CHE" },
+  "goals": [
+    { "side": "home", "period": 1, "minute": 12, "second": 0 },
+    { "side": "away", "period": 2, "minute": 55, "second": 0 },
+    { "side": "home", "period": 2, "minute": 78, "second": 0 }
+  ],
+  "final": [2, 1],
+  "strategy": {
+    "name": "EPL 1-goal lead at 80'",
+    "sport": "soccer",
+    "leagueIds": ["epl"],
+    "rule": { "type": "lead_at_time", "minLead": 1, "atMinute": 80, "windowMinutes": 5, "leaderSide": "any" },
+    "sizing": { "percent": 2, "minStakeUsd": 1, "maxStakeUsd": 50 },
+    "execution": { "maxPrice": 0.97, "maxSlippage": 0.01, "minDepthContracts": 20, "maxFeedAgeSec": 15 }
+  },
+  "candles": {
+    "home": {
+      "76": 6400,
+      "77": 6500,
+      "78": 8600,
+      "79": 8700,
+      "80": 8800,
+      "81": 8900,
+      "82": 9000,
+      "83": 9100,
+      "84": 9200,
+      "85": 9300
+    },
+    "away": {
+      "76": 3700,
+      "77": 3600,
+      "78": 1500,
+      "79": 1400,
+      "80": 1300,
+      "81": 1200,
+      "82": 1100,
+      "83": 1000,
+      "84": 900,
+      "85": 800
+    }
+  },
+  "retryCandles": {
+    "home": {
+      "76": 6400,
+      "77": 6500,
+      "78": 9750,
+      "79": 9800,
+      "80": 9800,
+      "81": 9800,
+      "82": 9400,
+      "83": 9400,
+      "84": 9500,
+      "85": 9500
+    }
+  }
+}

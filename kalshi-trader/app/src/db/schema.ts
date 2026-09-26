@@ -364,5 +364,7 @@ export type NewTradeAttempt = typeof trade_attempts.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type LoginAttempt = typeof login_attempts.$inferSelect;
+export type Backtest = typeof backtests.$inferSelect;
+export type BacktestTrade = typeof backtest_trades.$inferSelect;
 export type AuditLogEntry = typeof audit_log.$inferSelect;
 export type NewAuditLogEntry = typeof audit_log.$inferInsert;

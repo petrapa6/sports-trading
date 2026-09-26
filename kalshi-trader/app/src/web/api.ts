@@ -452,3 +452,109 @@ export interface PublicSettings {
   fee_balance_precision_micros: number;
   order_group_contract_limit: number;
 }
+
+// ---- Backtests (T12) ---------------------------------------------------------------------------------
+
+export type BacktestPriceMode = 'exact' | 'modelled';
+export type BacktestStatus = 'running' | 'done' | 'failed' | 'interrupted';
+
+export interface BacktestProgress {
+  id: string;
+  status: 'running' | 'done' | 'failed';
+  done: number;
+  total: number;
+  error?: string;
+}
+
+export interface BacktestTiles {
+  priceMode: BacktestPriceMode;
+  minSampleSize: number | null;
+  seededPrices: number;
+  games: number;
+  matched: number;
+  trades: number;
+  won: number;
+  lost: number;
+  void: number;
+  winRate: number;
+  netPnlMicros: number;
+  investedMicros: number;
+  roi: number;
+  maxDrawdownMicros: number;
+  avgPriceBp: number;
+  avgFeeMicros: number;
+  impliedVsActual: { impliedBp: number; actualWinRate: number; n: number };
+  initialBankrollMicros: number;
+  finalBankrollMicros: number;
+  skips: { reason: string; count: number }[];
+}
+
+export interface BacktestSummary extends BacktestTiles {
+  series: {
+    equity: { t: string; gameId: string; cumMicros: number; bankrollMicros: number }[];
+    drawdown: { t: string; drawdownMicros: number }[];
+    monthly: { month: string; pnlMicros: number }[];
+  };
+}
+
+export interface BacktestItem {
+  id: string;
+  createdAt: string | null;
+  name: string | null;
+  saved: boolean;
+  quick: boolean;
+  sport: string | null;
+  leagueIds: string[];
+  seasons: string[];
+  sinceIso: string | null;
+  strategy: { id: string; name: string; version: number } | null;
+  strategyName: string | null;
+  priceMode: BacktestPriceMode;
+  initialBankrollMicros: number | null;
+  status: BacktestStatus;
+  progress?: { done: number; total: number };
+  error?: string;
+  summary: BacktestTiles | null;
+}
+
+export interface BacktestTradeView {
+  id: number;
+  histGameId: string | null;
+  playedAt: string | null;
+  home: string | null;
+  away: string | null;
+  final: string | null;
+  minute: number | null;
+  side: string | null;
+  priceSource: string | null;
+  priceBp: number | null;
+  contractsCc: number | null;
+  stakeMicros: number | null;
+  feeMicros: number | null;
+  settlementValueBp: number | null;
+  pnlMicros: number | null;
+  bankrollAfterMicros: number | null;
+  skipReason: string | null;
+}
+
+export interface BacktestDetail extends Omit<BacktestItem, 'summary'> {
+  definition: {
+    name: string;
+    leagueIds: string[];
+    rule: StrategyRule;
+    sizing: StrategySizing;
+    execution: StrategyExecution;
+  } | null;
+  summary: BacktestSummary | null;
+  trades: BacktestTradeView[];
+}
+
+export interface BacktestOptions {
+  leagues: {
+    id: string;
+    name: string;
+    sport: string;
+    seasons: { season: string; games: number; withKalshi: number }[];
+  }[];
+  priceModel: { built: boolean; builtAt: string | null };
+}

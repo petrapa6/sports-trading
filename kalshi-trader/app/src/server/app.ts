@@ -13,6 +13,8 @@ import { LiveHub, registerLiveRoutes, type RuntimeInfo } from './live.js';
 import { LogRing } from './logRing.js';
 import { registerApiRoutes } from './routes/api.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerBacktestRoutes } from './routes/backtests.js';
+import { BacktestRunner } from '../backtest/runner.js';
 import { OnceSet } from '../feeds/gameState.js';
 import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
 import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
@@ -34,7 +36,12 @@ const DEFAULT_RUNTIME: RuntimeInfo = {
 export interface AppOptions {
   logger: FastifyBaseLogger;
   /** The database (`DatabaseManager`): health probe and repositories (throws while unavailable). */
-  database: { health(): DbHealth; readonly repositories: Repositories };
+  database: {
+    health(): DbHealth;
+    readonly repositories: Repositories;
+    /** The open database file (the backtest worker opens its own connection to it). */
+    readonly current?: { readonly path: string } | undefined;
+  };
   /** The 32-byte secret from `${DATA_DIR}/secret.key`. */
   secretKey: Buffer;
   /** `TRUSTED_PROXIES`. */
@@ -67,6 +74,8 @@ export interface AppOptions {
    * `allowLoopback` is set (the e2e server, `KST_E2E=1`), where it also accepts loopback peers.
    */
   replay?: { allowLoopback: boolean; transaction?: (fn: () => void) => void };
+  /** Backtest runner (T12); by default one on the app's database file. */
+  backtests?: BacktestRunner;
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -173,12 +182,28 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     hub.on('switches', () => live.scheduler.wake());
   }
 
+  const backtests =
+    options.backtests ??
+    new BacktestRunner({
+      repos,
+      dbPath: () => {
+        const path = database.current?.path;
+        if (!path) throw new DatabaseUnavailableError('closed', { cause: undefined });
+        return path;
+      },
+      log: logger,
+      ...(options.now ? { now: options.now } : {}),
+    });
+  backtests.on('progress', (p) => hub.backtestProgress(p));
+  app.addHook('onClose', async () => backtests.close());
+
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
   registerApiRoutes(app, database, hub, options.now);
   registerStrategyRoutes(app, database, hub, options.now);
   registerTradeRoutes(app, database, hub, options.now);
   registerStatsRoutes(app, database, hub, options.now);
+  registerBacktestRoutes(app, database, hub, backtests, options.now);
   registerKalshiRoutes(
     app,
     database,

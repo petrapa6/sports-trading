@@ -229,3 +229,22 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
 - `test/fixtures/db/stats-seed.sql` with `stats-seed.expected.json` and `stats-seed.md`;
   `npm run seed:demo -- --trades 500`; `npm run verify:T10`; `docs/verification/T10.md`.
   Deviations: SPEC.md §14 T10 implementation notes.
+
+### T12 — Backtest simulator and Backtest page
+
+- `src/backtest/simulator.ts`: pure, deterministic replay of a strategy over `hist_games` goal timelines with the
+  production `evaluateLeadAtTime` (engine), `evaluateEntry` (guards) and `pricing.ts`; minute ticks
+  (`src/backtest/clock.ts`), window retry exactly like the executor, compounding bankroll, settlement from the final
+  score (NHL tie $0.50), §6 metrics with equity, drawdown and monthly P&L.
+- Price providers: `exact` (`hist_prices.ask_close_bp` at the candle minute, else the next candle within 3 minutes,
+  else `skipped_no_price`) and `modelled` (`src/backtest/priceModel.ts`: `settings.price_model` cells with ≥ 20
+  observations, else the seed table; the summary reports `minSampleSize`).
+- `worker_threads` worker (`src/backtest/worker.ts`) with its own database connection; `BacktestRunner` relays
+  progress as SSE `backtest` events on `/api/live`.
+- API: `GET /api/backtests/options`, `POST /api/backtests` (strategy version or ad-hoc, seasons or last N days,
+  exact / modelled), `GET /api/backtests[/:id]`, `POST /api/backtests/:id/save|delete|promote`, `DELETE
+  /api/backtests/:id`.
+- Backtest page: form, progress, tiles, equity / drawdown / monthly charts, trades table with CSV, modelled badge,
+  save, compare up to 3 saved runs, promote to strategy. Strategies page "Test against last 30 days" enabled.
+- `test/fixtures/parity/game-a.json` parity test (tracker → engine → executor vs simulator); `npm run verify:T12`;
+  `docs/verification/T12.md`. Deviations: SPEC.md §14 T12 implementation notes.

@@ -431,6 +431,49 @@ export class LoginAttemptsRepository extends Repository<typeof s.login_attempts,
   }
 }
 
+export class BacktestsRepository extends Repository<typeof s.backtests, 'id'> {
+  constructor(orm: Orm) {
+    super(orm, s.backtests, ['id']);
+  }
+  /** Every run, newest first. */
+  listNewest(): s.Backtest[] {
+    return this.orm
+      .select()
+      .from(s.backtests)
+      .orderBy(desc(s.backtests.created_at), asc(s.backtests.id))
+      .all();
+  }
+  /** Replayable data per league and season: games, and games with a Kalshi event (exact prices possible). */
+  seasons(): { leagueId: string; season: string; games: number; withKalshi: number }[] {
+    return this.orm
+      .select({
+        leagueId: s.hist_games.league_id,
+        season: s.hist_games.season,
+        games: count(),
+        withKalshi: count(s.hist_games.kalshi_event_ticker),
+      })
+      .from(s.hist_games)
+      .groupBy(s.hist_games.league_id, s.hist_games.season)
+      .orderBy(asc(s.hist_games.league_id), asc(s.hist_games.season))
+      .all()
+      .flatMap((r) => (r.leagueId && r.season ? [{ ...r, leagueId: r.leagueId, season: r.season }] : []));
+  }
+}
+
+export class BacktestTradesRepository extends Repository<typeof s.backtest_trades, 'id'> {
+  constructor(orm: Orm) {
+    super(orm, s.backtest_trades, ['id']);
+  }
+  /** The rows of one backtest in simulation order. */
+  listByBacktest(backtestId: string): s.BacktestTrade[] {
+    return this.list(eq(s.backtest_trades.backtest_id, backtestId));
+  }
+  deleteByBacktest(backtestId: string): number {
+    return this.orm.delete(s.backtest_trades).where(eq(s.backtest_trades.backtest_id, backtestId)).run()
+      .changes;
+  }
+}
+
 export class AuditLogRepository extends Repository<typeof s.audit_log, 'id'> {
   constructor(orm: Orm) {
     super(orm, s.audit_log, ['id']);
@@ -483,8 +526,8 @@ export function createRepositories(orm: Orm, now: () => number = Date.now) {
     settings: new SettingsRepository(orm, now),
     histGames: new Repository(orm, s.hist_games, ['id']),
     histPrices: new Repository(orm, s.hist_prices, ['market_ticker', 'minute_ts']),
-    backtests: new Repository(orm, s.backtests, ['id']),
-    backtestTrades: new Repository(orm, s.backtest_trades, ['id']),
+    backtests: new BacktestsRepository(orm),
+    backtestTrades: new BacktestTradesRepository(orm),
     /** Read-only aggregates for `GET /api/stats` (T10). */
     stats: new StatsRepository(orm),
   };

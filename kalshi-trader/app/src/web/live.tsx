@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   api,
+  type BacktestProgress,
   type GameView,
   type LogEntry,
   type LoopStatus,
@@ -24,6 +25,8 @@ export interface LiveState {
   loop: LoopStatus | null;
   /** Recent strategy signals, newest last (T08). */
   signals: Signal[];
+  /** Progress of the backtests running or finished since the stream opened, by id (T12). */
+  backtests: Record<string, BacktestProgress>;
 }
 
 const KEEP_LOGS = 200;
@@ -35,6 +38,7 @@ const INITIAL: LiveState = {
   games: null,
   loop: null,
   signals: [],
+  backtests: {},
 };
 const KEEP_SIGNALS = 20;
 const LiveContext = createContext<LiveState>(INITIAL);
@@ -101,6 +105,11 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       es.addEventListener('signal', (e) => {
         const signal = JSON.parse((e as MessageEvent<string>).data) as Signal;
         setState((s) => ({ ...s, signals: [...s.signals, signal].slice(-KEEP_SIGNALS) }));
+      });
+      es.addEventListener('backtest', (e) => {
+        const progress = JSON.parse((e as MessageEvent<string>).data) as BacktestProgress;
+        setState((s) => ({ ...s, backtests: { ...s.backtests, [progress.id]: progress } }));
+        if (progress.status !== 'running') void queryClient.invalidateQueries({ queryKey: ['backtests'] });
       });
       es.addEventListener('loop', (e) => {
         const loop = JSON.parse((e as MessageEvent<string>).data) as LoopStatus;
