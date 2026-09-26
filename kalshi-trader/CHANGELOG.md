@@ -168,3 +168,28 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   Settings → Feeds (adapters on/off, Test feed).
 - CI: a `feeds-smoke` job runs `npm run feeds:smoke` against the real NHL API. `npm run verify:T07`;
   `docs/verification/T07.md`. Deviations: SPEC.md §14 T07 implementation notes.
+
+### T08 — Strategy model, effective mode, engine, Strategies page
+
+- `src/core/strategy.ts`: Zod schemas for the §5 strategy JSON (`rule.version`, `minLead ≥ 1`, soccer `atMinute`
+  1–90 / hockey 1–59, sport-default `windowMinutes` 5 / 3, `leaderSide`, `percent_of_balance` sizing,
+  `execution` with `maxSlippage` default 0.01, optional `minPrice` < `maxPrice`, `maxFeedAgeSec` default 15);
+  amounts limited to the precision the integer units hold (prices 4 decimals). Shared with the web editor.
+- `src/core/modes.ts`: `effectiveMode(...)` exactly per §1 (table-tested over all 32 switch combinations).
+- `src/core/engine.ts`: `lead_at_time` evaluator (soccer match minute with stoppage = 45 / 90, hockey elapsed
+  minute from period and clock; never in a break, after regulation / in OT, or while `blocked` — logged at
+  `debug`) and `StrategyEngine`: on every `stateUpdated`, strategies whose effective mode is not `paused`, whose
+  leagues include the game's and whose sport matches are evaluated; the first match per (strategy, game) emits a
+  `Signal` (`strategyId`, `version`, `gameId`, `marketTicker`, `snapshot`, `configuredMode`, `effectiveMode`,
+  `modeReason`), logged with its `mode` and pushed over SSE; none when a `trades` row exists.
+- `src/core/strategyStore.ts` + `src/server/routes/strategies.ts`: create (kill switch on, `dry_run`, version 1),
+  edit (a new `strategy_versions` row; earlier versions untouched), kill switch and mode toggles (no version;
+  audited `strategy_kill_switch_changed` / `strategy_mode_changed`; step-up for kill switch **off** and mode →
+  **live**), soft delete, list with `?includeDeleted=1`, 30-day trades / P&L per mode.
+- SSE `/api/live` adds `strategies` (effective-mode badges), `signals` (recent) and `signal` events; live game
+  cards list the armed strategies with their badges; Dashboard "Recent signals".
+- Strategies page: TanStack table (sort, CSV export) with kill switch and mode toggles and the effective-mode
+  badge, editor drawer with every §5 field and inline validation, version history, "Test against last 30 days"
+  disabled until T12.
+- Replayed games get `<event>-<ABBR>` markets so replay signals carry a market ticker.
+- `npm run verify:T08`; `docs/verification/T08.md`. Deviations: SPEC.md §14 T08 implementation notes.

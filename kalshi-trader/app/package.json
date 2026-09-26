@@ -37,7 +37,8 @@
     "replay": "tsx scripts/replay.ts",
     "feeds:smoke": "tsx scripts/feeds-smoke.ts",
     "fixtures:record:feeds": "tsx scripts/record-feed-fixtures.ts",
-    "verify:T07": "tsx scripts/verify-T07.ts"
+    "verify:T07": "tsx scripts/verify-T07.ts",
+    "verify:T08": "tsx scripts/verify-T08.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

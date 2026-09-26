@@ -126,6 +126,22 @@ again. While the **global kill switch** is on, no feed is polled at all and `/he
 `{"ok":true,"loop":"paused"}`; if the loop stops ticking for 2 minutes, `/healthz` answers `503` (`"loop":"stale"`)
 and the Supervisor watchdog restarts the app. When a game finishes, its goal timeline is kept for backtesting.
 
+## Strategies
+
+**Strategies** lists every strategy with its **kill switch**, its **mode** (dry run / live) and the **effective
+mode** it runs in right now, which also follows the global switches (Settings → Trading) and the
+`allow_live_orders` option: a strategy set to live shows `LIVE → DRY RUN (add-on lock)` while
+`allow_live_orders` is `false`, and `LIVE → DRY RUN (global)` while global dry run is on. New strategies start
+with the kill switch **on** and in **dry run**. Turning a kill switch off or switching a strategy to live asks for
+your password again; the way back to safety does not.
+
+v1 has one rule, *lead at time*: the strategy may enter when a team leads by at least `minLead` goals from
+`atMinute` to `atMinute + windowMinutes` (soccer match minute, stoppage counting as 45 / 90; hockey elapsed minute
+1–59, overtime excluded), never during a break and never while the feeds disagree. Editing the rule, sizing,
+execution or leagues creates a new version (listed in the editor); trades keep the version they fired under.
+Deleting a strategy hides it but keeps its trades in the reports. Until the executor arrives (T09) a match is
+only a **signal**, shown on the Dashboard and in the log with its mode.
+
 ## Data Storage
 
 | Path | Contents |

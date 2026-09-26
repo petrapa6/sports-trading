@@ -198,7 +198,111 @@ export interface GameView {
   scheduledAt: string;
   observedAt: string | null;
   source: string | null;
-  strategies: { id: string; name: string; effectiveMode: 'live' | 'dry_run' }[];
+  strategies: ArmedStrategy[];
+}
+
+// ---- Strategies and signals (T08) -----------------------------------------------------------------
+
+export type ConfiguredMode = 'live' | 'dry_run';
+export type DryRunReason = 'addon_lock' | 'global_dry_run' | 'strategy';
+export type PauseReason = 'global_kill_switch' | 'strategy_kill_switch';
+
+/** A strategy armed on a game card (running, league and sport match). */
+export interface ArmedStrategy {
+  id: string;
+  name: string;
+  configuredMode: ConfiguredMode;
+  effectiveMode: ConfiguredMode;
+  modeReason: DryRunReason | null;
+}
+
+export interface ModeStats {
+  trades: number;
+  pnlMicros: number;
+}
+
+export interface StrategyView {
+  id: string;
+  name: string;
+  sport: 'soccer' | 'hockey';
+  leagueIds: string[];
+  mode: ConfiguredMode;
+  killSwitch: boolean;
+  effectiveMode: 'paused' | ConfiguredMode;
+  modeReason: DryRunReason | PauseReason | null;
+  runningMode: ConfiguredMode;
+  currentVersion: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  rule: StrategyRule | null;
+  sizing: StrategySizing | null;
+  execution: StrategyExecution | null;
+  last30d: { live: ModeStats; dry_run: ModeStats };
+}
+
+export interface StrategyRule {
+  type: 'lead_at_time';
+  version: number;
+  minLead: number;
+  atMinute: number;
+  windowMinutes: number;
+  leaderSide: 'any' | 'home' | 'away';
+}
+
+export interface StrategySizing {
+  type: 'percent_of_balance';
+  percent: number;
+  minStakeUsd: number;
+  maxStakeUsd: number;
+}
+
+export interface StrategyExecution {
+  orderType: 'ioc_limit';
+  maxPrice: number;
+  minPrice: number | null;
+  maxSlippage: number;
+  minDepthContracts: number;
+  maxFeedAgeSec: number;
+}
+
+export interface StrategyVersionView {
+  version: number;
+  createdAt: string | null;
+  leagueIds: string[];
+  rule: StrategyRule;
+  sizing: StrategySizing;
+  execution: StrategyExecution;
+}
+
+export interface StrategyDetail extends StrategyView {
+  versions: StrategyVersionView[];
+}
+
+export interface Signal {
+  strategyId: string;
+  strategyName: string;
+  version: number;
+  gameId: string;
+  leagueId: string;
+  sport: 'soccer' | 'hockey';
+  side: 'home' | 'away';
+  marketTicker: string | null;
+  minute: number;
+  snapshot: {
+    gameId: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number;
+    awayScore: number;
+    phase: Phase;
+    clock: GameClock;
+    observedAt: string;
+  };
+  configuredMode: ConfiguredMode;
+  effectiveMode: ConfiguredMode;
+  modeReason: DryRunReason | null;
+  at: string;
 }
 
 export type FeedHealth = 'ok' | 'error' | 'idle' | 'disabled' | 'paused' | 'unavailable';

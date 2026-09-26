@@ -75,7 +75,8 @@ export function GameCard({ game: g }: { game: GameView }) {
         ) : (
           g.strategies.map((s) => (
             <span key={s.id} className="game-strategy">
-              {s.name} <ModeBadge effective={s.effectiveMode} />
+              {s.name}{' '}
+              <ModeBadge effective={s.effectiveMode} configured={s.configuredMode} reason={s.modeReason} />
             </span>
           ))
         )}

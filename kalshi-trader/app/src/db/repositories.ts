@@ -8,6 +8,7 @@ import {
   getTableColumns,
   getTableName,
   inArray,
+  isNull,
   lt,
   ne,
   type InferInsertModel,
@@ -237,6 +238,50 @@ export class GameSnapshotsRepository extends Repository<typeof s.game_snapshots,
 export class StrategiesRepository extends Repository<typeof s.strategies, 'id'> {
   constructor(orm: Orm) {
     super(orm, s.strategies, ['id']);
+  }
+  /** Strategies by creation time; soft-deleted ones only with `includeDeleted`. */
+  listOrdered(includeDeleted = false): s.Strategy[] {
+    return this.orm
+      .select()
+      .from(s.strategies)
+      .where(includeDeleted ? undefined : isNull(s.strategies.deleted_at))
+      .orderBy(asc(s.strategies.created_at), asc(s.strategies.id))
+      .all();
+  }
+  /** Inserts a strategy and its version 1 in one transaction. */
+  createWithVersion(
+    row: InferInsertModel<typeof s.strategies>,
+    version: Omit<InferInsertModel<typeof s.strategy_versions>, 'strategy_id' | 'version'>,
+  ): s.Strategy {
+    const v = { ...version, strategy_id: row.id, version: row.current_version };
+    validateRow(s.strategies, row as Record<string, unknown>);
+    validateRow(s.strategy_versions, v as Record<string, unknown>);
+    return this.orm.transaction((tx) => {
+      const created = tx.insert(s.strategies).values(row).returning().get();
+      tx.insert(s.strategy_versions).values(v).run();
+      return created;
+    });
+  }
+  /**
+   * Adds version `current_version + 1` and bumps `current_version` (plus `patch`) in one transaction;
+   * earlier versions are never touched.
+   */
+  addVersion(
+    id: string,
+    patch: Partial<Pick<s.Strategy, 'name' | 'updated_at'>>,
+    version: Omit<InferInsertModel<typeof s.strategy_versions>, 'strategy_id' | 'version'>,
+  ): s.Strategy | undefined {
+    return this.orm.transaction((tx) => {
+      const current = tx.select().from(s.strategies).where(eq(s.strategies.id, id)).get();
+      if (!current) return undefined;
+      const next = current.current_version + 1;
+      const v = { ...version, strategy_id: id, version: next };
+      const p = { ...patch, current_version: next };
+      validateRow(s.strategy_versions, v as Record<string, unknown>);
+      validateRow(s.strategies, p as Record<string, unknown>);
+      tx.insert(s.strategy_versions).values(v).run();
+      return tx.update(s.strategies).set(p).where(eq(s.strategies.id, id)).returning().get();
+    });
   }
 }
 

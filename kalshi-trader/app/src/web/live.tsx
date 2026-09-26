@@ -1,6 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api, type GameView, type LogEntry, type LoopStatus, type Status, type SwitchStates } from './api';
+import {
+  api,
+  type GameView,
+  type LogEntry,
+  type LoopStatus,
+  type Signal,
+  type Status,
+  type SwitchStates,
+} from './api';
 import { endpoint } from './base';
 
 export type LiveStatus = 'connecting' | 'connected' | 'reconnecting' | 'reconnected';
@@ -14,6 +22,8 @@ export interface LiveState {
   games: GameView[] | null;
   /** Loop state, last poll, feed status and Kalshi balance. */
   loop: LoopStatus | null;
+  /** Recent strategy signals, newest last (T08). */
+  signals: Signal[];
 }
 
 const KEEP_LOGS = 200;
@@ -24,7 +34,9 @@ const INITIAL: LiveState = {
   lastHeartbeat: null,
   games: null,
   loop: null,
+  signals: [],
 };
+const KEEP_SIGNALS = 20;
 const LiveContext = createContext<LiveState>(INITIAL);
 
 /**
@@ -46,6 +58,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, switches }));
       queryClient.setQueryData<Status>(['status'], (old) => (old ? { ...old, ...switches } : old));
     };
+    // Effective modes change with the switches and with every strategy change (possibly in another tab).
+    const onStrategies = () => void queryClient.invalidateQueries({ queryKey: ['strategies'] });
 
     const connect = () => {
       const es = new EventSource(endpoint('api/live'));
@@ -73,6 +87,15 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       es.addEventListener('games', (e) => {
         const { games } = JSON.parse((e as MessageEvent<string>).data) as { games: GameView[] };
         setState((s) => ({ ...s, games }));
+      });
+      es.addEventListener('strategies', onStrategies);
+      es.addEventListener('signals', (e) => {
+        const { signals } = JSON.parse((e as MessageEvent<string>).data) as { signals: Signal[] };
+        setState((s) => ({ ...s, signals }));
+      });
+      es.addEventListener('signal', (e) => {
+        const signal = JSON.parse((e as MessageEvent<string>).data) as Signal;
+        setState((s) => ({ ...s, signals: [...s.signals, signal].slice(-KEEP_SIGNALS) }));
       });
       es.addEventListener('loop', (e) => {
         const loop = JSON.parse((e as MessageEvent<string>).data) as LoopStatus;

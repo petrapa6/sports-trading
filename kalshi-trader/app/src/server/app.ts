@@ -17,6 +17,7 @@ import { OnceSet } from '../feeds/gameState.js';
 import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
 import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
 import { registerKalshiRoutes, type KalshiServices } from './routes/kalshi.js';
+import { registerStrategyRoutes } from './routes/strategies.js';
 import { DEFAULT_RATE_LIMITS, registerSecurity, type RateLimits } from './security.js';
 import { registerWeb, WEB_DIR } from './web.js';
 
@@ -57,7 +58,7 @@ export interface AppOptions {
   privateKeyFingerprint?: string | undefined;
   /** Kalshi client and discovery (T06); without them every Kalshi action answers `kalshi_not_configured`. */
   kalshi?: KalshiServices;
-  /** Tracker, scheduler and feeds (T07): `/healthz` loop state, SSE games, Settings → Feeds. */
+  /** Tracker, scheduler, feeds (T07) and engine (T08): `/healthz` loop state, SSE games and signals, Settings → Feeds. */
   live?: LiveServices;
   /**
    * `POST /api/dev/replay` (needs `live`): registered with `NODE_ENV=development`, or when
@@ -147,11 +148,18 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     options.logRing ?? new LogRing(),
     { ...DEFAULT_RUNTIME, ...options.runtime },
     repos,
+    options.now ?? Date.now,
   );
 
   const live = options.live;
   if (live) {
-    hub.setSource({ games: () => live.tracker.displayGames(), loop: () => live.scheduler.status() });
+    const engine = live.engine;
+    hub.setSource({
+      games: () => live.tracker.displayGames(),
+      loop: () => live.scheduler.status(),
+      signals: () => engine?.recent() ?? [],
+    });
+    engine?.on('signal', (signal) => hub.signalEmitted(signal));
     live.tracker.on('stateUpdated', () => hub.gamesChanged());
     live.scheduler.on('status', (status) => {
       hub.loopChanged(status);
@@ -164,6 +172,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   await registerWeb(app, options.webDir ?? WEB_DIR, rateLimits);
   registerAuthRoutes(app, rateLimits);
   registerApiRoutes(app, database, hub);
+  registerStrategyRoutes(app, database, hub, options.now);
   registerKalshiRoutes(
     app,
     database,

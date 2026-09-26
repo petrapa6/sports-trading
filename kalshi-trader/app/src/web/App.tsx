@@ -4,9 +4,10 @@ import { api, resetCsrf, setUnauthorizedHandler, type Me } from './api';
 import { appPath } from './base';
 import { LiveIndicator, LiveProvider } from './live';
 import { LoginPage } from './pages/Login';
-import { BacktestPage, DashboardPage, NotFoundPage, StrategiesPage, TradesPage } from './pages/Placeholders';
+import { BacktestPage, DashboardPage, NotFoundPage, TradesPage } from './pages/Placeholders';
 import { SettingsPage } from './pages/Settings';
 import { SetupPage } from './pages/Setup';
+import { StrategiesPage } from './pages/Strategies';
 import { ReauthProvider } from './reauth';
 import { Link, navigate, useLocation } from './router';
 

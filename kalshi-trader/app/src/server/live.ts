@@ -3,7 +3,15 @@ import type { ServerResponse } from 'node:http';
 import type { FastifyInstance } from 'fastify';
 import type { KalshiEnv } from '../config.js';
 import type { Repositories } from '../db/repositories.js';
+import type { Signal } from '../core/engine.js';
 import type { LoopStatus } from '../core/scheduler.js';
+import {
+  armedStrategies,
+  loadStrategies,
+  readGlobalSwitches,
+  strategyViews,
+  type StrategyView,
+} from '../core/strategyStore.js';
 import type { GameView } from '../core/tracker.js';
 import { LOG_RING_SIZE, type LogEntry, type LogMode, type LogRing } from './logRing.js';
 import { authOf } from './security.js';
@@ -38,22 +46,26 @@ export const globalMode = (
 
 export const HEARTBEAT_MS = 10_000;
 
-/** Where the tracked games and the loop status come from (the tracker and scheduler, T07). */
+/** Where the tracked games, the loop status and the recent signals come from (tracker, scheduler, engine). */
 export interface LiveSource {
   games(): GameView[];
   loop(): LoopStatus | null;
+  signals?(): Signal[];
 }
 
 const NO_SOURCE: LiveSource = { games: () => [], loop: () => null };
 
 /**
  * Fan-out point for everything `/api/live` streams: log lines (from the ring), switch changes, the
- * tracked games (after every tracker update, coalesced per event-loop turn) and the loop status.
+ * tracked games (after every tracker update, coalesced per event-loop turn) with the strategies armed on
+ * them, the loop status, the strategies with their effective mode, and signals (T08).
  */
 export class LiveHub extends EventEmitter<{
   switches: [SwitchStates];
   games: [GameView[]];
   loop: [LoopStatus];
+  strategies: [StrategyView[]];
+  signal: [Signal];
 }> {
   private source: LiveSource = NO_SOURCE;
   private gamesPending = false;
@@ -62,6 +74,7 @@ export class LiveHub extends EventEmitter<{
     readonly ring: LogRing,
     readonly runtime: RuntimeInfo,
     private readonly repos: () => Repositories,
+    private readonly now: () => number = Date.now,
   ) {
     super();
     this.setMaxListeners(0);
@@ -71,13 +84,49 @@ export class LiveHub extends EventEmitter<{
     this.source = source;
   }
 
-  /** Tracked games for the dashboard cards (empty while the database is unavailable). */
+  /**
+   * Tracked games for the dashboard cards, each with the strategies armed on it (effective mode not
+   * `paused`, league and sport match); empty while the database is unavailable.
+   */
   games(): GameView[] {
     try {
-      return this.source.games();
+      const games = this.source.games();
+      if (games.length === 0) return games;
+      const repos = this.repos();
+      const switches = readGlobalSwitches(repos, this.runtime.allowLiveOrders);
+      const strategies = loadStrategies(repos);
+      return games.map((g) => ({
+        ...g,
+        strategies: armedStrategies(strategies, switches, g.leagueId, g.sport),
+      }));
     } catch {
       return [];
     }
+  }
+
+  /** Strategies with their effective mode (empty while the database is unavailable). */
+  strategies(): StrategyView[] {
+    try {
+      const repos = this.repos();
+      return strategyViews(repos, readGlobalSwitches(repos, this.runtime.allowLiveOrders), this.now());
+    } catch {
+      return [];
+    }
+  }
+
+  /** The most recent signals (newest last). */
+  signals(): Signal[] {
+    return this.source.signals?.() ?? [];
+  }
+
+  /** Called after a strategy was created, edited, toggled or deleted. */
+  strategiesChanged(): void {
+    this.emit('strategies', this.strategies());
+    this.gamesChanged();
+  }
+
+  signalEmitted(signal: Signal): void {
+    this.emit('signal', signal);
   }
 
   loop(): LoopStatus | null {
@@ -110,9 +159,10 @@ export class LiveHub extends EventEmitter<{
     };
   }
 
-  /** Called after a switch changed, so every open stream sees it immediately. */
+  /** Called after a switch changed, so every open stream sees it immediately (and the new effective modes). */
   switchesChanged(): void {
     this.emit('switches', this.switches());
+    this.strategiesChanged();
   }
 }
 
@@ -123,9 +173,11 @@ export function sseEvent(event: string, data: unknown): string {
 
 /**
  * `GET /api/live` (SPEC.md §4 Live status): `retry`, then `switches`, `logs` (the last 50 lines,
- * each with its `mode`), `games` (`{games: GameView[]}`, the tracked games with score and clock) and
- * `loop` (loop state, last poll, feed status, Kalshi balance); then a `log` event per new line,
- * `switches` / `games` / `loop` on every change and a `heartbeat` (with the switch states) every 10 s.
+ * each with its `mode`), `games` (`{games: GameView[]}`, the tracked games with score, clock and armed
+ * strategies), `loop` (loop state, last poll, feed status, Kalshi balance), `strategies`
+ * (`{strategies: StrategyView[]}` with effective modes) and `signals` (`{signals: Signal[]}`, the recent
+ * ones); then a `log` event per new line, `switches` / `games` / `loop` / `strategies` on every change, a
+ * `signal` event per new signal and a `heartbeat` (with the switch states) every 10 s.
  * Each heartbeat re-checks the session, so a revoked or expired session stops receiving data within
  * one interval.
  */
@@ -169,6 +221,8 @@ export function registerLiveRoutes(
     const onSwitches = (s: SwitchStates) => send('switches', s);
     const onGames = (games: GameView[]) => send('games', { games });
     const onLoop = (loop: LoopStatus) => send('loop', loop);
+    const onStrategies = (strategies: StrategyView[]) => send('strategies', { strategies });
+    const onSignal = (signal: Signal) => send('signal', signal);
 
     const sessionActive = (): boolean => {
       try {
@@ -185,6 +239,8 @@ export function registerLiveRoutes(
       hub.off('switches', onSwitches);
       hub.off('games', onGames);
       hub.off('loop', onLoop);
+      hub.off('strategies', onStrategies);
+      hub.off('signal', onSignal);
       open.delete(res);
     };
 
@@ -211,10 +267,14 @@ export function registerLiveRoutes(
     send('games', { games: hub.games() });
     const loop = hub.loop();
     if (loop) send('loop', loop);
+    send('strategies', { strategies: hub.strategies() });
+    send('signals', { signals: hub.signals() });
     hub.ring.on('line', onLine);
     hub.on('switches', onSwitches);
     hub.on('games', onGames);
     hub.on('loop', onLoop);
+    hub.on('strategies', onStrategies);
+    hub.on('signal', onSignal);
     req.raw.on('close', cleanup);
     res.on('close', cleanup);
   });

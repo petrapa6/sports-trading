@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { ZodError, z } from 'zod';
+import type { StrategyEngine } from '../../core/engine.js';
 import type { Scheduler } from '../../core/scheduler.js';
 import type { GameTracker } from '../../core/tracker.js';
 import type { DatabaseManager } from '../../db/database.js';
@@ -17,6 +18,8 @@ export interface LiveServices {
   scheduler: Scheduler;
   /** The adapters that can run (the Kalshi one only with credentials). */
   feeds: readonly ScoreFeed[];
+  /** The strategy engine (T08): its signals are pushed over `/api/live`. */
+  engine?: StrategyEngine;
 }
 
 const FeedPatch = z.object({ enabled: z.boolean() }).strict();

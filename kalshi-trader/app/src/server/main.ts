@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { closePrivateKeyFd, ConfigError, missingKalshiCredentials, readPrivateKey } from '../config.js';
 import { startMaintenance } from '../core/maintenance.js';
+import { StrategyEngine } from '../core/engine.js';
 import { Scheduler } from '../core/scheduler.js';
 import { GameTracker } from '../core/tracker.js';
 import type { ScoreFeed } from '../feeds/gameState.js';
@@ -169,6 +170,12 @@ const transaction = (fn: () => void) => {
   else fn();
 };
 const tracker = new GameTracker({ repos: () => database.repositories, log, transaction });
+// Strategy engine (T08): evaluates every merged game state; switches are read from the database each time.
+const engine = new StrategyEngine({
+  repos: () => database.repositories,
+  log,
+  allowLiveOrders: config.allowLiveOrders,
+}).attach(tracker);
 const trackedGames = () => tracker.pollTargets();
 const feeds: ScoreFeed[] = [];
 if (kalshiClient) feeds.push(new KalshiLiveFeed({ client: kalshiClient, log, games: trackedGames }));
@@ -206,7 +213,7 @@ const app = await buildApp({
     client: kalshiClient,
     discovery,
   },
-  live: { tracker, scheduler, feeds },
+  live: { tracker, scheduler, feeds, engine },
   replay: { allowLoopback: e2e, transaction },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });

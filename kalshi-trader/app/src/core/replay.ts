@@ -128,6 +128,18 @@ function ensureGame(ctx: ReplayContext, line: ReplayLine, opts: ApplyOptions): v
   repos.histGames.delete({ id: `live:${g.id}` });
   if (existing) repos.games.update({ id: g.id }, fresh);
   else repos.games.insert({ id: g.id, ...fresh });
+  // Replayed games get their home / away (and soccer tie) markets like discovered ones, so strategies
+  // matching a replayed game signal with a market ticker (`<event>-<ABBR>`, `<event>-TIE`, T08).
+  const sport = repos.leagues.get({ id: g.leagueId })?.sport;
+  const markets: [string, 'home' | 'away' | 'tie'][] = [
+    [`${g.id}-${g.home.abbreviation.toUpperCase()}`, 'home'],
+    [`${g.id}-${g.away.abbreviation.toUpperCase()}`, 'away'],
+    ...(sport === 'soccer' ? [[`${g.id}-TIE`, 'tie'] as [string, 'tie']] : []),
+  ];
+  for (const [ticker, outcome] of markets) {
+    if (!repos.markets.get({ ticker }))
+      repos.markets.insert({ ticker, game_id: g.id, outcome, status: 'open', updated_at: nowIso });
+  }
   ctx.tracker.forget(g.id);
 }
 

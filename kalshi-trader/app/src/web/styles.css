@@ -695,3 +695,142 @@ td {
   display: grid;
   gap: 0.25rem;
 }
+
+/* Strategies (T08) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.section-head h2 {
+  margin: 0;
+}
+.section-head .actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+button.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+button.link-button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+th button.link-button {
+  color: inherit;
+}
+button.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.per-mode {
+  white-space: nowrap;
+}
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 5;
+}
+.drawer {
+  background: var(--surface);
+  width: 100%;
+  max-width: 36rem;
+  height: 100%;
+  overflow-y: auto;
+  padding: 1rem;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.drawer-head h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.strategy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.strategy-form h3 {
+  margin: 0.75rem 0 0.25rem;
+}
+.strategy-form fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.field input,
+.field select {
+  width: 100%;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+.field-error {
+  font-size: 0.8rem;
+}
+.strategy-form .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.tooltip-wrap {
+  display: inline-flex;
+}
+.version-list {
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+}
+.version-list li {
+  margin-bottom: 0.4rem;
+}
+.signal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}

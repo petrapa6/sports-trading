@@ -1,5 +1,6 @@
 import { FilterBar } from '../components/FilterBar';
 import { GameCards } from '../components/GameCards';
+import { RecentSignals } from '../components/RecentSignals';
 import { StatusStrip } from '../components/StatusStrip';
 
 export function DashboardPage() {
@@ -8,22 +9,11 @@ export function DashboardPage() {
       <h1>Dashboard</h1>
       <StatusStrip />
       <GameCards />
+      <RecentSignals />
       <FilterBar />
       <section className="card placeholder">
         <h2>Tiles and charts</h2>
         <p className="muted">The per-mode tiles and the Recharts charts arrive with the stats endpoint.</p>
-      </section>
-    </>
-  );
-}
-
-export function StrategiesPage() {
-  return (
-    <>
-      <h1>Strategies</h1>
-      <FilterBar />
-      <section className="card placeholder">
-        <p className="muted">The strategy table and editor arrive with the strategy engine.</p>
       </section>
     </>
   );

@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { and, eq, gte, inArray, lte, or } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Repositories } from '../db/repositories.js';
+import type { ArmedStrategy } from './strategyStore.js';
 import { games as gamesTable, type Game, type GameSnapshot, type Team } from '../db/schema.js';
 import {
   derivedSoccerMinute,
@@ -81,8 +82,8 @@ export interface GameView {
   scheduledAt: string;
   observedAt: string | null;
   source: string | null;
-  /** Strategies armed on the game with their effective mode (filled from T08 on). */
-  strategies: { id: string; name: string; effectiveMode: 'live' | 'dry_run' }[];
+  /** Strategies armed on the game with their configured / effective mode (filled by the app, T08). */
+  strategies: ArmedStrategy[];
 }
 
 export interface TrackerOptions {
@@ -177,6 +178,8 @@ export function goalEventsFromSnapshots(snapshots: readonly GameSnapshot[], spor
 export class GameTracker extends EventEmitter<{
   stateUpdated: [TrackedState];
   phaseChanged: [PhaseChange];
+  /** A game was started over (replay reset); listeners drop what they remember about it. */
+  gameReset: [string];
 }> {
   private readonly latest = new Map<string, Map<string, GameState>>();
   private readonly merged = new Map<string, TrackedState>();
@@ -206,6 +209,7 @@ export class GameTracker extends EventEmitter<{
     this.merged.delete(gameId);
     this.disagreeSince.delete(gameId);
     this.lastAgreed.delete(gameId);
+    this.emit('gameReset', gameId);
   }
 
   private toTracked(row: Game, sports: Map<string, Sport>, teams: Map<string, Team>): TrackedGame {

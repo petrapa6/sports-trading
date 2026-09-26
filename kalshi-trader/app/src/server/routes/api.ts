@@ -1,9 +1,7 @@
 import { statSync } from 'node:fs';
 import type { FastifyInstance } from 'fastify';
-import { isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DatabaseManager } from '../../db/database.js';
-import { strategies } from '../../db/schema.js';
 import { SETTINGS } from '../../db/settings.js';
 import { userActor } from '../audit.js';
 import { parseBody } from '../http.js';
@@ -114,11 +112,4 @@ export function registerApiRoutes(
     dbPath: hub.runtime.dbPath,
     dbSizeBytes: dbSizeBytes(hub.runtime.dbPath),
   }));
-
-  /** Strategies for the filter bar (id and name only; the Strategies page arrives in T08). */
-  app.get('/api/strategies', async () =>
-    database.repositories.strategies
-      .list(isNull(strategies.deleted_at))
-      .map((s) => ({ id: s.id, name: s.name, sport: s.sport })),
-  );
 }
