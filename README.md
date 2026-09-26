@@ -48,6 +48,9 @@ banner off stdout; add `--loglevel=warn` to any npm command to see npm's own dia
 | `npm run verify:T02` | T02 acceptance checks (database, migrations, repositories, maintenance, `/healthz`) |
 | `npm run verify:T03` | T03 acceptance checks (request classes, login, sessions, CSRF, step-up, headers, rate limits) |
 | `npm run verify:T04` | T04 acceptance checks (web build, e2e shell, filter bar, SSE, switches, account, ingress, diagnostics) |
+| `npm run check:addon` | Static checks of `kalshi-trader/config.yaml` (keys, options ↔ schema, ports, init, privileges, version) |
+| `npm run compose:options` | Write `.local/data/options.json` for `docker compose` from `config.local.json` (`-- --out <file>`) |
+| `npm run verify:T05` | T05 acceptance checks (check:addon, compose health, non-root, read-only, key hand-over, run.sh, image size; `-- --arm64` adds the arm64 build) |
 
 ### Signing in (SPEC.md §10)
 
@@ -82,14 +85,30 @@ to use another file), then defaults. There are **no `.env` files**.
 
 Keys, PEMs, `config.local.json`, databases and `.local/` are git-ignored and blocked by the pre-commit hook.
 
+## Container (Home Assistant image, SPEC.md §11–§12)
+
+```bash
+cd kalshi-trader/app && npm run compose:options && cd ../..   # .local/data/options.json from config.local.json
+docker compose up --build -d                                   # production image, read-only root, /data = .local/data
+curl -s localhost:8099/healthz
+docker buildx build --builder <name> --platform linux/arm64 kalshi-trader/   # Pi image under QEMU
+```
+
+Never run `docker buildx use <builder>` on a shared machine; pass `--builder` per build. Installing the app in Home
+Assistant is described in [`kalshi-trader/DOCS.md`](kalshi-trader/DOCS.md).
+
 ## Repository layout
 
 ```
 SPEC.md                    specification (source of truth)
 docs/decisions/            architecture decision records
 docs/verification/         per-ticket verification notes (TXX.md)
-kalshi-trader/             the Home Assistant app (config.yaml, Dockerfile, run.sh arrive in T05)
+repository.yaml            Home Assistant app repository metadata
+docker-compose.yml         local runs of the production image (§12)
+kalshi-trader/             the Home Assistant app: config.yaml, Dockerfile, run.sh, DOCS.md, translations/, icons
   CHANGELOG.md
   app/                     the Node project (src/, test/, scripts/, migrations/)
 .github/workflows/ci.yml   lint, typecheck, test, e2e, npm audit, gitleaks
+.github/workflows/image.yml  arm64 + amd64 image build (QEMU), verify:T05 container checks
+.github/workflows/publish.yml  optional GHCR publish (disabled)
 ```

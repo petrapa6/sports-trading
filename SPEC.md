@@ -826,21 +826,25 @@ The private key is entered as **one base64 line** (`base64 -w0 key.pem`) because
 ### `Dockerfile` (multi-stage, aarch64 + amd64)
 
 ```dockerfile
-# Both stages use the SAME pinned base (tag + digest chosen in T05; the reference app has no HA base tag to copy, see §14).
-FROM ghcr.io/home-assistant/base:<PINNED_TAG>@sha256:<DIGEST> AS build
+# Both stages use the SAME pinned base (chosen in T05, docs/decisions/0002-base-image.md).
+FROM ghcr.io/home-assistant/base:3.22-2026.08.0@sha256:0eda502b4d16e0433ace512d857ec3e86497d4214091ee459078ee4df6373f63 AS build
 RUN apk add --no-cache nodejs npm python3 make g++
 WORKDIR /app
 COPY app/package*.json ./
+# `npm ci` runs the `prepare` script (git hook installer, a no-op without git), so it must exist first.
+COPY app/scripts/install-hooks.mjs ./scripts/
 RUN npm ci
 COPY app/ .
 RUN npm run build && npm prune --omit=dev
 
-FROM ghcr.io/home-assistant/base:<PINNED_TAG>@sha256:<DIGEST>
+FROM ghcr.io/home-assistant/base:3.22-2026.08.0@sha256:0eda502b4d16e0433ace512d857ec3e86497d4214091ee459078ee4df6373f63
 RUN apk add --no-cache nodejs su-exec \
  && adduser -D -u 1000 trader
 WORKDIR /app
 COPY --from=build --chown=trader:trader /app/dist ./dist
 COPY --from=build --chown=trader:trader /app/node_modules ./node_modules
+# Drizzle migrations are read at start-up (T02).
+COPY --from=build /app/migrations ./migrations
 COPY --from=build /app/package.json ./
 COPY run.sh /run.sh
 RUN chmod 755 /run.sh
@@ -867,15 +871,15 @@ export ALLOW_LIVE_ORDERS="$(bashio::config 'allow_live_orders')"
 export LOG_LEVEL="$(bashio::config 'log_level')"
 export TRUSTED_PROXIES="$(bashio::config 'trusted_proxies')"
 if bashio::config.has_value 'timezone'; then export TZ="$(bashio::config 'timezone')"; fi
-export DATA_DIR=/data/app DB_PATH=/data/db/trader.db PORT=8099 KALSHI_PRIVATE_KEY_FD=3
+export DATA_DIR=/data/app DB_PATH=/data/db/trader.db PORT=8099
 mkdir -p /data/db /data/app
 chown -R trader:trader /data/db /data/app
 chmod 700 /data/db /data/app
-exec su-exec trader:trader node /app/dist/server/main.js \
+exec su-exec trader:trader node /app/dist/server/main.js --kalshi-private-key-fd=3 \
   3< <(bashio::config 'kalshi_private_key_b64' | base64 -d)
 ```
 
-Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor, and keeps the key only in memory. The app writes only `/data/db` (database, WAL, SHM) and `/data/app` (`secret.key`, `cache/`); `/data` itself and `options.json` stay root-owned, which is why the database has its own subdirectory instead of sitting directly in `/data`.
+Node reads the PEM with `fs.readFileSync(3)` at boot, closes the descriptor once the database and the listening socket are open (so no long-lived file inherits fd 3), and keeps the key only in memory. The descriptor number is passed as the argument `--kalshi-private-key-fd=3` rather than as `KALSHI_PRIVATE_KEY_FD=3` in the environment, so no `KALSHI_PRIVATE*` name appears in `/proc/<pid>/environ` (T05); the `KALSHI_PRIVATE_KEY_FD` variable still works outside the container. The app writes only `/data/db` (database, WAL, SHM) and `/data/app` (`secret.key`, `cache/`); `/data` itself and `options.json` stay root-owned, which is why the database has its own subdirectory instead of sitting directly in `/data`.
 
 ### Behaviour inside Home Assistant
 

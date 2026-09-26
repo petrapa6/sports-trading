@@ -81,3 +81,28 @@ All notable changes to the Kalshi Sports Trader app. Versions follow `config.yam
   filter.
 - Playwright suite `test/e2e/shell.spec.ts` at 1280 px and 390 px (zero CSP console messages, no sideways
   scrolling, ingress through a local prefix-stripping proxy); `npm run verify:T04`; `docs/verification/T04.md`.
+
+### T05 — Home Assistant app packaging
+
+- The repository is a Home Assistant app repository: `repository.yaml`; `kalshi-trader/config.yaml` (exactly
+  SPEC.md §11: ingress on 8099, `ports: 8099/tcp: null`, `init: true`, no `map`, options incl.
+  `allow_live_orders`, `kalshi_subaccount`, `trusted_proxies`, optional `timezone`), `translations/en.yaml`,
+  `DOCS.md`, `README.md`, `icon.png`, `logo.png`.
+- Two-stage `Dockerfile` on the pinned `ghcr.io/home-assistant/base:3.22-2026.08.0@sha256:0eda502b…` (Alpine 3.22,
+  `nodejs` 22) for both stages (`docs/decisions/0002-base-image.md`); native modules compiled in the build stage;
+  production dependencies only; Node runs as `trader` (uid 1000) via `su-exec`; healthcheck on `/healthz`.
+- `run.sh` (bashio, root): exports the options, prepares `/data/db` and `/data/app` (uid 1000, mode 700), hands the
+  private key to Node on fd 3. Deviation from §11: the descriptor number is passed as `--kalshi-private-key-fd=3`
+  (not `KALSHI_PRIVATE_KEY_FD=3` in the environment), so no `KALSHI_PRIVATE*` name is in `/proc/<pid>/environ`.
+  Node reads fd 3 at boot and closes it once the database and the listening socket are open, so fd 3 is free
+  after boot.
+- Development-only `GET /api/dev/key-fingerprint` (only with `NODE_ENV=development`, only from loopback): the
+  SHA-256 of the loaded key's SPKI public key, equal to `openssl pkey -in key.pem -pubout | sha256sum`.
+- `docker-compose.yml` for local runs (`./.local/data:/data`, `read_only: true`, `tmpfs: /tmp`, init) and
+  `npm run compose:options` (writes the root-owned `options.json` from `config.local.json`).
+- `npm run check:addon` (`scripts/check-addon-config.ts`): required keys, options ↔ schema parity,
+  `ingress_port` = `PORT`, `ports` 8099 = `null`, `init: true`, no `map`, no privileged keys, version =
+  `package.json`. New dev dependency `yaml` for it.
+- CI `image.yml`: `docker buildx build --platform linux/arm64,linux/amd64` under QEMU plus the arm64
+  `better-sqlite3` check, and the amd64 container checks of `npm run verify:T05`; `publish.yml` (GHCR) present but
+  disabled. `docs/verification/T05.md`.
