@@ -1,6 +1,6 @@
 {
   "name": "kalshi-trader",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "In-game sports strategy trader for Kalshi with dry-run mode and backtesting",
   "type": "module",
@@ -47,7 +47,9 @@
     "verify:T12": "tsx scripts/verify-T12.ts",
     "e2e:demo": "tsx scripts/e2e-demo.ts",
     "verify:T13": "tsx scripts/verify-T13.ts",
-    "seed:season": "tsx scripts/seed-season.ts"
+    "seed:season": "tsx scripts/seed-season.ts",
+    "lighthouse:a11y": "tsx scripts/lighthouse-a11y.ts",
+    "verify:T14": "tsx scripts/verify-T14.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

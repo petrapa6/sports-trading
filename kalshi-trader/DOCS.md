@@ -18,7 +18,8 @@ the app's Settings, and a strategy set to live. Out of the box none of them is s
 5. Open the app from the sidebar. The first visit through the sidebar shows **Set up**: create the app's single
    user (username + password). Setup is only possible through the Home Assistant sidebar, never through the
    tunnel.
-6. The **Log** tab shows JSON lines; `Server listening` means the app is up.
+6. The **Log** tab shows JSON lines; `Database ready (N migration(s) applied)` and
+   `Server listening at http://0.0.0.0:8099` mean the app is up.
 
 ## Kalshi API key: generation and base64
 
@@ -199,6 +200,59 @@ Backtests (a later version) need goal timelines and Kalshi prices. **Settings �
 
 Long jobs show their progress and can be cancelled (what they already stored stays). While the global kill switch
 is on they pause without making any request and continue when it is turned off.
+
+## Outbound network access (egress)
+
+The app only ever connects to these hosts, all over HTTPS on port 443. If your router, firewall or Pi-hole
+restricts outbound traffic from the Pi, allow exactly these:
+
+| Host | Used for | When |
+| --- | --- | --- |
+| `external-api.demo.kalshi.co` | Kalshi API (demo): markets, orderbooks, live data, orders, portfolio, candles | `kalshi_env: demo` |
+| `external-api.kalshi.com` | Kalshi API (production), same calls | `kalshi_env: prod` |
+| `api-web.nhle.com` | NHL official API: live scores and clock; season schedule and play-by-play for Settings → Data | NHL games tracked, NHL import |
+
+Nothing else: no telemetry, no CDN (the web UI is bundled into the image), no update checks. While the global
+kill switch is on the app makes **no** outgoing request at all. The planned API-Football feed and Home Assistant
+notifications (T15) will add `v3.football.api-sports.io` and the internal `supervisor` host; they are not part of
+1.0.0.
+
+## Health, watchdog and maintenance
+
+- `GET /healthz` (no login) answers `200 {"ok":true,"loop":"running"|"idle"|"paused"}` when the database opens and
+  the trading loop has ticked within the last 2 minutes (`paused` = global kill switch on, which is healthy).
+  Otherwise `503` — `{"ok":false,"loop":"stale"}` for a stuck loop, `{"ok":false,"db":"<code>"}` for a database
+  that cannot be opened. With **Watchdog** enabled the Supervisor restarts the app on a `503`.
+- If another process holds a lock on the database (for example a manual `sqlite3` session on the file) for longer
+  than 5 seconds, requests answer `503 {"error":"db_busy"}` instead of failing, and work again as soon as the lock
+  is released. Stop the app before editing the database by hand.
+- Kalshi outages: the feeds keep polling (the NHL feed keeps the scores fresh), entry attempts are recorded as
+  `error` and retried every tick while the entry window is open, and the first successful call afterwards is
+  logged as `Kalshi reachable again` with the outage length.
+- Every night at 02:30 (`timezone`) the app checkpoints the WAL and prunes live snapshots older than 90 days of
+  games whose timeline is already archived; the Log shows
+  `Maintenance done: wal_checkpoint(TRUNCATE), pruned N snapshots`. A season (≈2 000 games, 60 000 snapshots)
+  takes about 45 MB.
+
+## Container hardening
+
+- The app process runs as the unprivileged user `trader` (uid 1000) with no Linux capabilities; only the start
+  script runs as root, to read `options.json`, prepare `/data/db` and `/data/app` and hand over the key.
+- The app declares no `privileged`, `host_network`, `full_access`, `hassio_api` or `homeassistant_api` access,
+  maps no port (`8099/tcp` stays unmapped: reachable only through ingress and the `cloudflared` app) and runs
+  under Home Assistant's default AppArmor profile.
+- Local `docker compose` runs additionally use a read-only root filesystem and `no-new-privileges`; Home Assistant
+  has no read-only option, so on the Pi the protections are the ones above.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| The app restarts every few minutes | The Log shortly before the restart: `Database health check failed` (disk full, `/data` not writable), or a stalled trading loop (`/healthz` answered `{"ok":false,"loop":"stale"}`). |
+| `kalshi_not_configured` in the UI | `kalshi_key_id` and `kalshi_private_key_b64` are both set, and the key matches `kalshi_env` (demo and prod keys differ). |
+| `order_group_limit` on live trades | The exchange-side order group was triggered; reset it in Settings → Trading (password prompt). |
+| The tunnel shows `403` on `/setup` | Expected: first-run setup is only possible from the Home Assistant sidebar. |
+| Everything is `paused` | The global kill switch is on (Settings → Trading, or the switch in the header). |
 
 ## Data Storage
 

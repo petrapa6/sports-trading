@@ -782,7 +782,7 @@ sports-trading/                 (git repo root = HA app repository)
 
 ```yaml
 name: Kalshi Sports Trader
-version: "0.1.0"
+version: "1.0.0"
 slug: kalshi-trader
 description: In-game sports strategy trader for Kalshi with dry-run mode and backtesting
 url: https://github.com/petrapa6/sports-trading
@@ -851,7 +851,7 @@ COPY run.sh /run.sh
 RUN chmod 755 /run.sh
 ENV NODE_ENV=production
 HEALTHCHECK CMD wget -qO- http://127.0.0.1:8099/healthz || exit 1
-LABEL io.hass.version="0.1.0" io.hass.type="app" io.hass.arch="aarch64|amd64" \
+LABEL io.hass.version="1.0.0" io.hass.type="app" io.hass.arch="aarch64|amd64" \
       org.opencontainers.image.title="Kalshi Sports Trader" \
       org.opencontainers.image.source="https://github.com/petrapa6/sports-trading"
 ENTRYPOINT []
