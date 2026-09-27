@@ -4,7 +4,7 @@ import { loadSimInput, saveFailure, saveResult, type ResolvedRequest } from './d
 import { simulate } from './simulator.js';
 
 /**
- * Backtest worker (SPEC.md §9 Performance, T12): runs in a `worker_threads` thread with its own database
+ * Backtest worker (SPEC.md §9 Performance): runs in a `worker_threads` thread with its own database
  * connection, so loading thousands of games and candles and simulating them never blocks the trading loop
  * or the HTTP server. Messages to the parent: `progress {done, total}`, then `done {summary}` or
  * `error {message}`. The result is written by the worker in one transaction.

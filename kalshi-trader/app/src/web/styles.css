@@ -578,7 +578,7 @@ td {
   }
 }
 
-/* Settings → Leagues (T06) */
+/* Settings → Leagues */
 .league-list {
   list-style: none;
   padding: 0;
@@ -622,7 +622,7 @@ td {
   padding-left: 1.2rem;
 }
 
-/* Status strip feed list and live game cards (T07) */
+/* Status strip feed list and live game cards */
 .feed-states {
   list-style: none;
   margin: 0.2rem 0 0;
@@ -696,7 +696,7 @@ td {
   gap: 0.25rem;
 }
 
-/* Strategies (T08) */
+/* Strategies */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -835,7 +835,7 @@ button.danger {
   font-size: 0.9rem;
 }
 
-/* Trades page (T09) */
+/* Trades page */
 .trade-mode {
   display: inline-flex;
   flex-wrap: wrap;
@@ -910,7 +910,7 @@ table.trades-table {
   flex: 0 1 12rem;
 }
 
-/* Dashboard tiles and charts (T10) */
+/* Dashboard tiles and charts */
 .stats-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
@@ -1023,7 +1023,7 @@ table.trades-table {
   }
 }
 
-/* Settings → Data (T11) */
+/* Settings → Data */
 .data-form {
   display: flex;
   flex-wrap: wrap;
@@ -1074,7 +1074,7 @@ table.trades-table {
   color: var(--danger);
 }
 
-/* Backtest page (T12): its own category, no live / dry-run styling */
+/* Backtest page: its own category, no live / dry-run styling */
 .backtest-run {
   display: grid;
   gap: 1rem;

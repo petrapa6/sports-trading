@@ -15,7 +15,7 @@ import type { KalshiClient } from './client.js';
 import type { LiveData } from './schemas.js';
 
 /**
- * `kalshi-live` adapter (SPEC.md §3, T07): one batch live-data call per tick for every tracked
+ * `kalshi-live` adapter (SPEC.md §3): one batch live-data call per tick for every tracked
  * milestone → `GameState`. `details` is an open object, so every field is checked here at runtime.
  *
  * - Hockey: `round` = period, `final_round_time_left` = clock; `00:00` in round 1 or 2 = intermission.

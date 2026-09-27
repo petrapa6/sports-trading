@@ -16,7 +16,7 @@ import { captureLogger, kalshiMockServer, must, TEST_BASE, testClient } from '..
 import { AWAY_TICKER, GAME, hockeyState, HOME_TICKER, KalshiScript } from '../helpers/trading.js';
 
 /**
- * Failure drill (c) (SPEC.md §14 T14, run by `scripts/drills/kalshi-down.ts`): Kalshi answers 503 to everything for
+ * Failure drill (c) (run by `scripts/drills/kalshi-down.ts`): Kalshi answers 503 to everything for
  * 10 minutes of fake time while an NHL game is live and a dry-run strategy's entry window is open. The real
  * scheduler, tracker, engine and executor run against the msw Kalshi stand-in and a stand-in for the NHL feed.
  *

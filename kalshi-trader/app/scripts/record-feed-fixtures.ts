@@ -1,7 +1,6 @@
 /**
- * `npm run fixtures:record:feeds -- [--minutes 240] [--interval 5] [--out <file.jsonl>]` (SPEC.md §14
- * T07) — records a real evening in the replay format (`src/core/replay.ts`): every `--interval`
- * seconds it reads the NHL Web API (`/v1/score/now`, every game in progress or just finished) and,
+ * `npm run fixtures:record:feeds -- [--minutes 240] [--interval 5] [--out <file.jsonl>]` — records a
+ * real evening in the replay format (`src/core/replay.ts`): every `--interval` seconds it reads the NHL Web API (`/v1/score/now`, every game in progress or just finished) and,
  * when a Kalshi key is configured, one batch of Kalshi live data for the games the local database
  * tracks. A line is written when a game's payload changed. Play it back with `npm run replay`.
  */

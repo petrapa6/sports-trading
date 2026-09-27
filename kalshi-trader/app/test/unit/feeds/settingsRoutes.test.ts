@@ -7,7 +7,7 @@ import { FixtureSchema, GoalEventSchema, type Fixture } from '../../../src/feeds
 import { decryptSetting } from '../../../src/server/secrets.js';
 import { createTestApp, setupUser, TEST_SECRET, type Client, type TestApp } from '../../helpers/app.js';
 
-/** T15 HTTP surface: Settings → Feeds (API-Football key, quota), Settings → Notifications, the import job. */
+/** HTTP surface of Settings → Feeds (API-Football key, quota), Settings → Notifications, the import job. */
 
 // Built at runtime so no key-like literal is committed (gitleaks generic-api-key).
 const KEY = 'z'.repeat(28);

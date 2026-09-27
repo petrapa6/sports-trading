@@ -1,5 +1,5 @@
 /**
- * Drill (b) `db-lock` (SPEC.md §14 T14): another process holds an exclusive SQLite lock on the app's database for
+ * Drill (b) `db-lock`: another process holds an exclusive SQLite lock on the app's database for
  * 10 s. Requests that need the database answer `503 {"error":"db_busy"}` (after the 5 s `busy_timeout`), never a
  * 500; `/healthz` stays up; once the lock is released the same requests succeed again.
  *

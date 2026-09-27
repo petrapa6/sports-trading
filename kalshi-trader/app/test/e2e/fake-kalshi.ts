@@ -3,9 +3,9 @@
  * `/trade-api/v2/*` from the recorded fixtures in `test/fixtures/kalshi/` (the same routing as the
  * `msw` unit tests). The e2e server reaches it through `KST_E2E_KALSHI_URL`, honoured only with
  * `KST_E2E=1` outside production. It also stands in for the NHL Web API under `/nhl/v1/*`
- * (`test/fixtures/nhl/`, reached through `KST_E2E_NHL_URL`, T07), for API-Football under `/api-football/*`
- * (`test/fixtures/api-football/`, `KST_E2E_API_FOOTBALL_URL`, T15) and for the Supervisor's Core API
- * under `/supervisor/core/api/*` (`KST_E2E_SUPERVISOR_URL`, T15), so no e2e request leaves the machine.
+ * (`test/fixtures/nhl/`, reached through `KST_E2E_NHL_URL`), for API-Football under `/api-football/*`
+ * (`test/fixtures/api-football/`, `KST_E2E_API_FOOTBALL_URL`) and for the Supervisor's Core API
+ * under `/supervisor/core/api/*` (`KST_E2E_SUPERVISOR_URL`), so no e2e request leaves the machine.
  */
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -51,7 +51,7 @@ createServer((req, res) => {
         ? routeKalshi(req.method ?? 'GET', path, url.searchParams)
         : { status: 401, body: { error: { code: 'unauthorized', message: 'missing signature' } } }
       : { status: 404, body: { error: { code: 'not_found' } } };
-    // T09: `GET /markets/{ticker}` answers for the requested ticker and stays open for another day, so the
+    // `GET /markets/{ticker}` answers for the requested ticker and stays open for another day, so the
     // executor's dry-run fills in the e2e replay pass the market guard whatever the date.
     const market = /^\/markets\/([^/]+)$/.exec(path);
     if (req.method === 'GET' && market && r.status === 200) {

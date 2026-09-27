@@ -15,7 +15,7 @@ import {
 import type { NetworkGate } from '../network.js';
 
 /**
- * `api-football` adapter (SPEC.md §3, T15): `GET /fixtures?live=all` of API-Football v3 → `GameState`,
+ * `api-football` adapter (SPEC.md §3): `GET /fixtures?live=all` of API-Football v3 → `GameState`,
  * with `fixture.status.elapsed` as the soccer minute (`minuteSource: 'feed'`) and the status codes mapped
  * to phases. Off by default (Settings → Feeds) and unavailable until a key is stored.
  *
@@ -312,7 +312,7 @@ export function quotaUsage(settings: Pick<SettingsRepository, 'get'>, now: numbe
 }
 
 /**
- * The daily request guard (T15): a counter in `settings.api_football_quota` for the local calendar day,
+ * The daily request guard: a counter in `settings.api_football_quota` for the local calendar day,
  * limit `settings.api_football_daily_limit` (default 100). At the limit no request is made: `take()` throws
  * `FeedQuotaExhausted` and logs one `warn` per day. The counter starts over at local midnight.
  */

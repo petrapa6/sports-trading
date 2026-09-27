@@ -1,4 +1,4 @@
--- Reverts 0000_initial_schema: drops every table of SPEC.md §7 (children before parents).
+-- Reverts 0000_initial: drops every table of SPEC.md §7 (children before parents), seeded leagues included.
 DROP TABLE `trade_attempts`;
 --> statement-breakpoint
 DROP TABLE `trades`;

@@ -7,7 +7,7 @@ import type { KalshiClient } from './client.js';
 import type { KalshiEvent, Market, Milestone } from './schemas.js';
 
 /**
- * Kalshi market discovery (SPEC.md §3 "Kalshi market discovery", T06). For each enabled league:
+ * Kalshi market discovery (SPEC.md §3 "Kalshi market discovery"). For each enabled league:
  *
  *   1. `GET /events?series_ticker={series}&status=open&with_nested_markets=true` (all pages);
  *   2. skip events whose `product_metadata.competition` contains `Preseason` unless the league has
@@ -204,7 +204,7 @@ async function discoverLeague(
 }
 
 /**
- * Upserts one event's teams, game and markets. With `historical` (the T11 backfill of settled events)
+ * Upserts one event's teams, game and markets. With `historical` (the backfill of settled events)
  * a new game is stored as `phase = 'finished'`, `historical = 1` (never tracked or traded) with
  * `finished_at` = the markets' latest close time; a game the app already knows as a regular
  * (non-historical) game keeps its row, and only its markets are refreshed.

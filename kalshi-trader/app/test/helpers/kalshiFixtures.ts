@@ -41,7 +41,7 @@ export function routeKalshi(method: string, path: string, query: URLSearchParams
     if (a === 'series' && seg.length === 2) return ok(`series_${b ?? ''}`);
     if (key === 'GET /events') {
       const series = query.get('series_ticker');
-      // Settled events (T11 backfill): `events_settled_<series>`, or none.
+      // Settled events (backfill): `events_settled_<series>`, or none.
       if (query.get('status') === 'settled')
         return existsSync(resolve(FIXTURE_DIR, `events_settled_${series ?? ''}.json`))
           ? ok(`events_settled_${series ?? ''}`)

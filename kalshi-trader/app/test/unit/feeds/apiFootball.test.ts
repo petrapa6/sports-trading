@@ -95,7 +95,7 @@ const fixture = (short: string, elapsed: number | null, home = 2, away = 0): Fix
     goals: { home, away },
   });
 
-describe('API-Football mapping (T15 acceptance 1)', () => {
+describe('API-Football mapping', () => {
   const now = Date.parse('2026-10-17T15:30:00Z');
 
   it("status.short '2H', elapsed 78, goals 2-0 → live, minute 78 from the feed, homeScore 2", () => {
@@ -213,7 +213,7 @@ describe('API-Football mapping (T15 acceptance 1)', () => {
   });
 });
 
-describe('API-Football quota guard (T15 acceptance 2)', () => {
+describe('API-Football quota guard', () => {
   it('counter at 100 → no call, one warn, feed status quota; resets at local midnight (fake timers)', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     const evening = new Date(2026, 9, 17, 23, 58, 0).getTime(); // local time
@@ -287,7 +287,7 @@ describe('API-Football quota guard (T15 acceptance 2)', () => {
   });
 });
 
-describe('API-Football key (T15 acceptance 3)', () => {
+describe('API-Football key', () => {
   it('stored encrypted: DB value ≠ plaintext, decryptSetting returns it, never logged', async () => {
     const raw = (
       db.db.sqlite.prepare("SELECT value FROM settings WHERE key = 'api_football_key_enc'").get() as {

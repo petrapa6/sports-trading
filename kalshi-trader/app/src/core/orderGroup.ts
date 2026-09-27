@@ -3,7 +3,7 @@ import type { Repositories } from '../db/repositories.js';
 import { KalshiApiError, type KalshiClient } from '../feeds/kalshi/client.js';
 
 /**
- * The Kalshi order group (SPEC.md §10 Blast radius, T13): an exchange-enforced cap on the contracts matched in
+ * The Kalshi order group (SPEC.md §10 Blast radius): an exchange-enforced cap on the contracts matched in
  * a rolling 15-second window. Every live order carries its id.
  *
  * - `ensure()` runs at start-up when live orders are possible (`allow_live_orders` and a Kalshi client): the id

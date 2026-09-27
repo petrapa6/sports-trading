@@ -3,7 +3,7 @@ import type { StatsFilter, StatsMode } from '../db/stats.js';
 import { loadStrategies } from './strategyStore.js';
 
 /**
- * `GET /api/stats` (SPEC.md §6 Metrics, §8 Chart inventory, T10): every tile and chart series of the
+ * `GET /api/stats` (SPEC.md §6 Metrics, §8 Chart inventory): every tile and chart series of the
  * Dashboard, computed **per mode** from the SQL aggregates in `db/stats.ts`. The response is keyed by mode —
  * `{ live: {tiles, series}, dry_run: {tiles, series} }` — and nothing in it is a sum over both modes; a mode
  * the filter leaves out is absent. The browser never receives trade rows for charts.

@@ -1,11 +1,10 @@
 /**
- * `npm run replay -- --live-mock [--file <replay.jsonl>]` (T13): runs the file through an in-process app with a
+ * `npm run replay -- --live-mock [--file <replay.jsonl>]`: runs the file through an in-process app with a
  * live strategy against the msw Kalshi stand-in (`scripts/live-mock-lib.ts`) and prints the live trade, its
  * settlement, the balance snapshots and `/api/stats`.
  *
- * `npm run replay -- --file test/fixtures/replay/<name>.jsonl --speed 100 [--url http://127.0.0.1:8099]`
- * (SPEC.md §14 T07) — plays a recorded feed evening back into a running development server
- * (`npm run dev`): each line is posted to `POST /api/dev/replay` after the recorded gap divided by
+ * `npm run replay -- --file test/fixtures/replay/<name>.jsonl --speed 100 [--url http://127.0.0.1:8099]` plays
+ * a recorded feed evening back into a running development server (`npm run dev`): each line is posted to `POST /api/dev/replay` after the recorded gap divided by
  * `--speed`, so the tracker, the snapshots, the archive and the dashboard's live cards see it exactly
  * like live polling. The first line of every game resets that game and schedules it now.
  */

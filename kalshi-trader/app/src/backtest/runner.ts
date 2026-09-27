@@ -6,7 +6,7 @@ import type { ResolvedRequest } from './data.js';
 import type { WorkerInput, WorkerMessage } from './worker.js';
 
 /**
- * Starts backtests in `worker_threads` workers (SPEC.md §9 Performance, T12) and relays their progress (SSE
+ * Starts backtests in `worker_threads` workers (SPEC.md §9 Performance) and relays their progress (SSE
  * `backtest` events on `/api/live`). The `backtests` row is inserted before the worker starts
  * (`result_summary` `NULL` while running); the worker writes the trades and the summary itself.
  */

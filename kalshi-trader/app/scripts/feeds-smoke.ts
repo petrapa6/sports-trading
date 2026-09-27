@@ -1,5 +1,5 @@
 /**
- * `npm run feeds:smoke` (SPEC.md §14 T07) — reads today's games from the real NHL Web API
+ * `npm run feeds:smoke` — reads today's games from the real NHL Web API
  * (`/v1/score/now`, no key) and prints one line per game, or `no games today`; exits 0. A failure to
  * reach the API prints the error and exits 1. `NHL_SCRIPT_BASE_URL` points it at a stand-in.
  */

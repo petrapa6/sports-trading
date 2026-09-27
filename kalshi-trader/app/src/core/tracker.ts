@@ -18,7 +18,7 @@ import {
 } from '../feeds/gameState.js';
 
 /**
- * GameTracker (SPEC.md §3 Polling plan, §4, T07): turns feed observations into the one `GameState` per
+ * GameTracker (SPEC.md §3 Polling plan, §4): turns feed observations into the one `GameState` per
  * game that the rest of the app sees.
  *
  * - Every observation is written to `game_snapshots` (one row per observation, with `minute_source`).
@@ -26,9 +26,9 @@ import {
  *   `second_half_observed_at`); a derived soccer minute is recomputed from them.
  * - Feed merge: the score is the value the fresh feeds agree on; a disagreement lasting more than 20 s
  *   sets `games.blocked = 1` (logged at `warn`, emitted as `blockedChanged`) until the feeds agree again.
- *   For hockey the NHL feed is the authoritative clock; for soccer API-Football is (T15) whenever it has a
+ *   For hockey the NHL feed is the authoritative clock; for soccer API-Football is whenever it has a
  *   fresh minute; a game is finished as soon as any fresh feed says so.
- * - The merged state carries the game's kick-off YES asks (`games.pregame_*_bp`, T15 `underdogOnly`).
+ * - The merged state carries the game's kick-off YES asks (`games.pregame_*_bp`, `underdogOnly`).
  * - `games` is updated, `stateUpdated` (with `blocked`) is emitted for every observation and
  *   `phaseChanged` for every phase change.
  * - On `finished`: goal events are derived from the snapshot score changes and written to `hist_games`
@@ -53,7 +53,7 @@ export interface TrackedState extends GameState {
   pregame?: { homeBp: number | null; awayBp: number | null };
 }
 
-/** A game became blocked by a feed disagreement, or was unblocked (T15 `feed_disagreement` notification). */
+/** A game became blocked by a feed disagreement, or was unblocked (`feed_disagreement` notification). */
 export interface BlockedChange {
   gameId: string;
   leagueId: string;
@@ -96,7 +96,7 @@ export interface GameView {
   scheduledAt: string;
   observedAt: string | null;
   source: string | null;
-  /** Strategies armed on the game with their configured / effective mode (filled by the app, T08). */
+  /** Strategies armed on the game with their configured / effective mode (filled by the app). */
   strategies: ArmedStrategy[];
 }
 
@@ -265,7 +265,7 @@ export class GameTracker extends EventEmitter<{
    * to 6 h after their start, in enabled leagues. Replayed games are never polled.
    */
   pollTargets(now = this.now()): TrackedGame[] {
-    // Backfilled settled events (`historical = 1`, T11) are never tracked.
+    // Backfilled settled events (`historical = 1`) are never tracked.
     const rows = this.repos.games.list(
       and(
         eq(gamesTable.historical, 0),

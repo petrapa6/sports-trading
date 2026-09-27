@@ -21,14 +21,14 @@ import { dbSizeBytes } from './api.js';
 import type { KalshiServices } from './kalshi.js';
 
 /**
- * Settings → Data (SPEC.md §8, T11): historical imports, the candle collector, the price model, the
+ * Settings → Data (SPEC.md §8): historical imports, the candle collector, the price model, the
  * database size and vacuum, and the job list.
  *
  * - `GET  /api/data/summary`: DB size, `hist_games` per source, candle rows, backfilled games, model summary.
  * - `POST /api/data/csv` (`text/csv`, ≤ 20 MB, **step-up**): the §3 CSV importer; `400 invalid_csv` names
  *   the row and column; `413` above 20 MB. Audited `hist_csv_import`.
  * - `POST /api/data/nhl` `{season, includePreseason?, limit?}` → `202` job (`nhl_import`).
- * - `POST /api/data/api-football` `{leagueId, season, limit?}` → `202` job (`api_football_import`, T15; needs a
+ * - `POST /api/data/api-football` `{leagueId, season, limit?}` → `202` job (`api_football_import`; needs a
  *   stored key on a paid plan).
  * - `POST /api/data/kalshi-backfill` `{from, to, leagueIds?, playByPlay?}` → `202` job (`kalshi_backfill`).
  * - `POST /api/data/candles` `{gameIds?, force?}` → `202` job (`candles`).
@@ -50,7 +50,7 @@ export interface DataServices {
   /** Requests per second to the NHL API (default 4). */
   nhlRequestsPerSecond?: number;
   transaction?: (fn: () => void) => void;
-  /** The API-Football client (T15 bulk import); absent → `409 api_football_not_configured`. */
+  /** The API-Football client (bulk import); absent → `409 api_football_not_configured`. */
   apiFootball?: Pick<ApiFootballClient, 'configured' | 'status' | 'fixtures' | 'goalEvents'>;
 }
 

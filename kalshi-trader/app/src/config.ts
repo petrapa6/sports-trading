@@ -9,7 +9,7 @@ import { z } from 'zod';
  * Sources, highest precedence first:
  *   1. environment variables (set by `run.sh` inside Home Assistant) — except the private-key
  *      descriptor, which `run.sh` passes as the argument `--kalshi-private-key-fd=3` so that no
- *      `KALSHI_PRIVATE*` name appears in `/proc/<pid>/environ` (T05); the argument wins over the
+ *      `KALSHI_PRIVATE*` name appears in `/proc/<pid>/environ`; the argument wins over the
  *      `KALSHI_PRIVATE_KEY_FD` variable, which still works elsewhere,
  *   2. `config.local.json` (local development only, git-ignored),
  *   3. built-in defaults.
@@ -257,7 +257,7 @@ export function missingKalshiCredentials(config: Config): string[] {
  *
  * The descriptor is closed afterwards unless `closeFd` is `false`; `main.ts` keeps the (drained)
  * descriptor until the database and the listening socket are open and then calls
- * `closePrivateKeyFd`, so those long-lived files do not reuse fd 3 (T05: no fd 3 after boot).
+ * `closePrivateKeyFd`, so those long-lived files do not reuse fd 3 (no fd 3 after boot).
  */
 export function readPrivateKey(config: Config, options: { closeFd?: boolean } = {}): string | undefined {
   let pem: string;

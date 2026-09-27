@@ -5,7 +5,7 @@ import type { GoalEvent } from '../../src/core/tracker.js';
 import type { Repositories } from '../../src/db/repositories.js';
 import type { Sport } from '../../src/feeds/gameState.js';
 
-/** Shared fixtures of the T12 backtest tests: goal timelines, hist games with markets and candles. */
+/** Shared fixtures of the backtest tests: goal timelines, hist games with markets and candles. */
 
 export const SOCCER_DEF: StrategyDefinitionInput = {
   name: 'EPL lead at 80',
@@ -63,7 +63,7 @@ export function simGame(spec: GameSpec): SimGame {
 
 /**
  * A pure simulator input over `games` with exact candles `{ticker: {minute: askBp}}` (game minutes, placed at
- * the wall minute T11's clock model gives them).
+ * the wall minute the soccer / hockey clock model gives them).
  */
 export function simInput(
   sport: Sport,

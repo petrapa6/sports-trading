@@ -1,21 +1,25 @@
 /**
- * `npm run verify:T05` — runs the T05 acceptance checks (SPEC.md §14) and prints PASS / FAIL / MANUAL
- * per item. Needs Docker with Compose and `openssl`; the arm64 item needs QEMU (binfmt) and is run only
- * with `--arm64` (CI job `arm64` in `.github/workflows/image.yml` runs `-- --only=arm64`).
+ * `npm run verify:image` — checks the Home Assistant app packaging and the built image, printing PASS / FAIL
+ * per item. Needs Docker with Compose and `openssl`; the arm64 item needs QEMU (binfmt) and runs only with
+ * `--arm64` (CI job "multiarch" in `.github/workflows/image.yml` runs `-- --only=arm64`).
  *
- *   npm run verify:T05                       # items 1–5, 7–9 (amd64 image via docker compose)
- *   npm run verify:T05 -- --arm64            # also item 6
- *   npm run verify:T05 -- --only=arm64       # only item 6
+ *   npm run verify:image                       # every item except arm64 (amd64 image via docker compose)
+ *   npm run verify:image -- --arm64            # also arm64
+ *   npm run verify:image -- --only=arm64       # only arm64
  *
- * Everything runs in `<repo>/.local/verify-T05/` (removed first) under the Compose project
- * `kst-verify-t05` on host port 8199, never in your own `./.local/data`. The fixture Kalshi key is
+ * Items: addon (check:addon + mutations), compose (health, ownership), user (non-root, read-only), key (key
+ * hand-over), runsh (run.sh exports), container (capabilities, no-new-privileges), arm64, size, config
+ * (config.yaml vs SPEC.md §11), docs (DOCS.md, translations), release (versions agree).
+ *
+ * Everything runs in `<repo>/.local/verify-image/` (removed first) under the Compose project
+ * `kst-verify-image` on host port 8199, never in your own `./.local/data`. The fixture Kalshi key is
  * generated there with `openssl` (keys are never committed), turned into `options.json` by
  * `npm run compose:options`, and handed to the app on fd 3 by `run.sh` exactly as on Home Assistant.
  */
 import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { ROOT, assert, check, finish, record, run, sleep, vitest } from './verify-lib.js';
+import { APP, ROOT, assert, check, cleanEnv, finish, record, run, sleep, vitest } from './verify-lib.js';
 
 const argv = process.argv.slice(2);
 const only = argv
@@ -25,9 +29,9 @@ const only = argv
 const want = (item: string) => (only ? only.includes(item) : item !== 'arm64' || argv.includes('--arm64'));
 
 const ADDON = join(ROOT, 'kalshi-trader');
-const BASE = join(ROOT, '.local/verify-T05');
+const BASE = join(ROOT, '.local/verify-image');
 const DATA = join(BASE, 'data');
-const PROJECT = 'kst-verify-t05';
+const PROJECT = 'kst-verify-image';
 const HOST_PORT = 8199;
 const IMAGE = 'kalshi-trader:local';
 const SIZE_LIMIT = 350 * 1000 * 1000;
@@ -109,7 +113,7 @@ function writeOptions(local: Record<string, unknown>, out: string): string {
   return r.stdout.trim();
 }
 
-// ---- 1. check:addon --------------------------------------------------------------------------
+// ---- check:addon --------------------------------------------------------------------------
 
 if (want('addon')) {
   await check(
@@ -147,7 +151,7 @@ if (want('addon')) {
   );
 }
 
-// ---- 2–4. docker compose: health, ownership, non-root, read-only, key hand-over ----------------
+// ---- docker compose: health, ownership, non-root, read-only, key hand-over ----------------
 
 const needsCompose = ['compose', 'user', 'key', 'runsh', 'size'].some(want);
 let fixtureKey = '';
@@ -172,7 +176,7 @@ if (needsCompose) {
   ]);
   assert(gen.code === 0, `openssl genpkey failed: ${gen.out}`);
   writeOptions(
-    { kalshiKeyId: 'verify-t05-key-id', kalshiPrivateKeyPath: fixtureKey, logLevel: 'info' },
+    { kalshiKeyId: 'verify-image-key-id', kalshiPrivateKeyPath: fixtureKey, logLevel: 'info' },
     join(DATA, 'options.json'),
   );
 }
@@ -194,7 +198,7 @@ if (want('compose')) {
       // The host path is the same file (bind mount); /data/db is mode 700, so it is stat'ed from inside.
       const optionsUid = statSync(join(DATA, 'options.json')).uid;
       assert(optionsUid === 0, `.local/data/options.json is owned by uid ${optionsUid}, expected 0 (root)`);
-      return `healthy after ${(ms / 1000).toFixed(1)} s; /healthz → 200 ${body}; .local/verify-T05/data/db/trader.db uid ${dbUid.stdout.trim()}; options.json uid ${optionsUid}`;
+      return `healthy after ${(ms / 1000).toFixed(1)} s; /healthz → 200 ${body}; .local/verify-image/data/db/trader.db uid ${dbUid.stdout.trim()}; options.json uid ${optionsUid}`;
     },
   );
 }
@@ -213,7 +217,7 @@ if (want('user')) {
         `touch /app/x: ${touch.out.trim()}`,
       );
       for (const dir of ['/data/db', '/data/app']) {
-        const w = exec(`touch ${dir}/.verify-t05 && rm ${dir}/.verify-t05`, '1000');
+        const w = exec(`touch ${dir}/.verify-image && rm ${dir}/.verify-image`, '1000');
         assert(w.code === 0, `uid 1000 cannot write ${dir}: ${w.out.trim()}`);
       }
       const opt = exec('echo x >> /data/options.json', '1000');
@@ -282,7 +286,7 @@ if (want('key')) {
   );
 }
 
-// ---- 5. run.sh with fixture options.json ------------------------------------------------------
+// ---- run.sh with fixture options.json ------------------------------------------------------
 
 if (want('runsh')) {
   await check(
@@ -320,7 +324,7 @@ if (want('runsh')) {
             '/data/options.json',
           ]).stdout,
         ) as Record<string, unknown>;
-        const cname = `kst-verify-t05-runsh-${name}`;
+        const cname = `kst-verify-image-runsh-${name}`;
         run('docker', ['rm', '-f', cname]);
         const start = run('docker', [
           'run',
@@ -393,7 +397,90 @@ if (want('runsh')) {
   );
 }
 
-// ---- 6. arm64 ---------------------------------------------------------------------------------
+// ---- container: capabilities, read-only root, no-new-privileges ------------------------------------------------
+
+if (want('container')) {
+  await check(
+    'Container (docker compose): node CapEff shows no capabilities; touch /app/x → read-only error; no cap_add / privileged',
+    async () => {
+      const project = 'kst-verify-image-caps';
+      const data = join(BASE, 'caps-data');
+      mkdirSync(data, { recursive: true });
+      const env = { ...process.env, KST_DATA_DIR: data, KST_HOST_PORT: '8189' };
+      const compose = (args: string[]) =>
+        run('docker', ['compose', '-f', join(ROOT, 'docker-compose.yml'), '-p', project, ...args], {
+          cwd: ROOT,
+          env,
+        });
+      const opts = run(
+        'npm',
+        ['run', '--silent', 'compose:options', '--', '--out', join(data, 'options.json')],
+        {
+          env: cleanEnv({ CONFIG_LOCAL_PATH: '/nonexistent/config.local.json' }),
+        },
+      );
+      assert(opts.code === 0, `compose:options: ${opts.out}`);
+      const cfg = parse(compose(['config']).stdout) as {
+        services: Record<
+          string,
+          { cap_add?: unknown; privileged?: boolean; security_opt?: string[]; read_only?: boolean }
+        >;
+      };
+      const svc = cfg.services['kalshi-trader'];
+      assert(svc && svc.cap_add === undefined && !svc.privileged, `compose config: ${JSON.stringify(svc)}`);
+      assert(svc.read_only === true, 'read_only is not true');
+      assert(svc.security_opt?.includes('no-new-privileges:true'), 'no-new-privileges is not set');
+      try {
+        const up = compose(['up', '--build', '-d']);
+        assert(up.code === 0, `docker compose up failed:\n${up.out.slice(-2500)}`);
+        let health = '';
+        for (let i = 0; i < 90 && health !== 'healthy'; i++) {
+          await sleep(1000);
+          const id = compose(['ps', '-q', 'kalshi-trader']).stdout.trim();
+          health = run('docker', ['inspect', '-f', '{{.State.Health.Status}}', id]).stdout.trim();
+        }
+        assert(health === 'healthy', `container health: ${health}\n${compose(['logs', '--tail', '30']).out}`);
+        const exec = (cmd: string) => compose(['exec', '-T', 'kalshi-trader', 'sh', '-c', cmd]);
+        const pid = exec('pgrep -x node').stdout.trim();
+        assert(/^\d+$/.test(pid), `node pid: ${pid}`);
+        const status = exec(
+          `grep -E '^(Uid|CapInh|CapPrm|CapEff|CapBnd|CapAmb|NoNewPrivs):' /proc/${pid}/status`,
+        ).stdout;
+        const field = (k: string) => new RegExp(`^${k}:\\s*(\\S+)`, 'm').exec(status)?.[1] ?? '';
+        assert(field('CapEff') === '0000000000000000', `CapEff ${field('CapEff')}`);
+        assert(field('CapPrm') === '0000000000000000', `CapPrm ${field('CapPrm')}`);
+        assert(field('NoNewPrivs') === '1', `NoNewPrivs ${field('NoNewPrivs')}`);
+        const uid = /^Uid:\s*(\d+)/m.exec(status)?.[1];
+        assert(uid === '1000', `uid ${uid}`);
+        const touch = exec('touch /app/x');
+        assert(touch.code !== 0 && touch.out.includes('Read-only file system'), `touch /app/x: ${touch.out}`);
+        // The bounding set of a default Docker container: the capabilities Docker grants, none added.
+        const docker = run('docker', [
+          'inspect',
+          '-f',
+          '{{json .HostConfig.CapAdd}} {{.HostConfig.Privileged}}',
+          compose(['ps', '-q', 'kalshi-trader']).stdout.trim(),
+        ]);
+        return `node pid ${pid} uid ${uid}: CapEff ${field('CapEff')}, CapPrm ${field('CapPrm')}, CapAmb ${field('CapAmb')}, NoNewPrivs ${field('NoNewPrivs')} (CapBnd ${field('CapBnd')}: Docker's default set, CapAdd/Privileged = ${docker.stdout.trim()}); touch /app/x → "${touch.out.trim()}"`;
+      } finally {
+        compose(['down', '--remove-orphans']);
+        run('docker', [
+          'run',
+          '--rm',
+          '-v',
+          `${data}:/wipe`,
+          '--entrypoint',
+          'sh',
+          IMAGE,
+          '-c',
+          'rm -rf /wipe/*',
+        ]);
+      }
+    },
+  );
+}
+
+// ---- arm64 ---------------------------------------------------------------------------------
 
 if (want('arm64')) {
   await check(
@@ -444,7 +531,7 @@ if (want('arm64')) {
   );
 }
 
-// ---- 7. size and production dependencies ------------------------------------------------------
+// ---- size and production dependencies ------------------------------------------------------
 
 if (want('size')) {
   await check('amd64 image < 350 MB; no dev dependencies in /app/node_modules (grep -c vitest → 0)', () => {
@@ -477,7 +564,7 @@ if (want('size')) {
   });
 }
 
-// ---- 8–9. config.yaml vs §11, DOCS.md headings, translations ------------------------------------
+// ---- config.yaml vs §11, DOCS.md headings, translations ------------------------------------
 
 if (want('config')) {
   await check('config.yaml matches §11 field for field', () => {
@@ -508,12 +595,32 @@ if (want('docs')) {
   );
 }
 
-if (!only)
-  record(
-    'CI image.yml green for both platforms',
-    'MANUAL',
-    'see the GitHub Actions run recorded in docs/verification/T05.md',
+// ---- release: versions agree ---------------------------------------------------------------------------------
+
+if (want('release')) {
+  await check(
+    'config.yaml, package.json, package-lock.json, the Dockerfile label and the top CHANGELOG.md heading agree',
+    () => {
+      const cfg = parse(readFileSync(join(ROOT, 'kalshi-trader/config.yaml'), 'utf8')) as { version: string };
+      const pkg = JSON.parse(readFileSync(join(APP, 'package.json'), 'utf8')) as { version: string };
+      const lock = JSON.parse(readFileSync(join(APP, 'package-lock.json'), 'utf8')) as { version: string };
+      const headings = readFileSync(join(ROOT, 'kalshi-trader/CHANGELOG.md'), 'utf8')
+        .split('\n')
+        .filter((l) => l.startsWith('## '));
+      const top = headings[0];
+      const label = /io\.hass\.version="([^"]+)"/.exec(
+        readFileSync(join(ROOT, 'kalshi-trader/Dockerfile'), 'utf8'),
+      )?.[1];
+      assert(
+        cfg.version === pkg.version && pkg.version === lock.version,
+        `${cfg.version} ${pkg.version} ${lock.version}`,
+      );
+      assert(top?.startsWith(`## ${pkg.version}`), `top CHANGELOG heading: ${top}`);
+      assert(label === pkg.version, `Dockerfile io.hass.version ${label}`);
+      return `config.yaml ${cfg.version}, package.json ${pkg.version} (lock ${lock.version}), Dockerfile label ${label}, CHANGELOG "${top}"`;
+    },
   );
+}
 
 if (needsCompose && !argv.includes('--keep')) compose(['down', '--remove-orphans']);
 finish();

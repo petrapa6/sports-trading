@@ -27,7 +27,7 @@ import { useLive } from '../live';
 import { Link, navigate, useLocation } from '../router';
 
 /**
- * Backtest page (SPEC.md §8, §9, T12): a form (league, seasons, strategy version or ad-hoc parameters, initial
+ * Backtest page (SPEC.md §8, §9): a form (league, seasons, strategy version or ad-hoc parameters, initial
  * bankroll, exact / modelled prices), the selected run (progress, tiles, equity / drawdown / monthly charts,
  * trades table with CSV export, save, promote, delete) and a comparison of up to 3 saved runs. Backtests are a
  * separate category: nothing on this page is live or dry-run data. The selected run and the compared runs live

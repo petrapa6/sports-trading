@@ -3,7 +3,7 @@ import { KalshiClient } from '../../../src/feeds/kalshi/client.js';
 import { testClient } from '../../helpers/kalshiMsw.js';
 
 /**
- * SPEC.md §10 Blast radius (T13): the Kalshi client exposes no deposit, withdrawal or transfer method. Every
+ * SPEC.md §10 Blast radius: the Kalshi client exposes no deposit, withdrawal or transfer method. Every
  * method on the client is listed here; adding one fails this test until it is reviewed and listed, and a name
  * mentioning money movement fails it whatever the list says.
  */

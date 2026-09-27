@@ -543,7 +543,7 @@ export function createRepositories(orm: Orm, now: () => number = Date.now) {
     histPrices: new Repository(orm, s.hist_prices, ['market_ticker', 'minute_ts']),
     backtests: new BacktestsRepository(orm),
     backtestTrades: new BacktestTradesRepository(orm),
-    /** Read-only aggregates for `GET /api/stats` (T10). */
+    /** Read-only aggregates for `GET /api/stats`. */
     stats: new StatsRepository(orm),
   };
 }

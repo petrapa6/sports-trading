@@ -1,5 +1,5 @@
 /**
- * Live game state shared by every score feed (SPEC.md §3 "Live game state — ScoreFeed interface", T07).
+ * Live game state shared by every score feed (SPEC.md §3 "Live game state — ScoreFeed interface").
  *
  * Adapters turn their payloads into `GameState`; the `GameTracker` (core/tracker.ts) merges the feeds of
  * one game, writes `game_snapshots`, updates `games` and emits `stateUpdated` / `phaseChanged`.
@@ -59,7 +59,7 @@ export const FEED_NAMES: Record<FeedId, string> = {
   'api-football': 'API-Football',
 };
 
-/** Whether an adapter runs while Settings → Feeds has no entry for it (API-Football is opt-in, T15). */
+/** Whether an adapter runs while Settings → Feeds has no entry for it (API-Football is opt-in). */
 export const FEED_DEFAULT_ENABLED: Record<FeedId, boolean> = {
   'kalshi-live': true,
   'nhl-official': true,
@@ -67,7 +67,7 @@ export const FEED_DEFAULT_ENABLED: Record<FeedId, boolean> = {
 };
 
 /**
- * A feed refused to make a request because its daily request quota is used up (API-Football, T15). The
+ * A feed refused to make a request because its daily request quota is used up (API-Football). The
  * scheduler shows the feed as `quota` instead of `error`.
  */
 export class FeedQuotaExhausted extends Error {

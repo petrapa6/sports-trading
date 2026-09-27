@@ -1,5 +1,5 @@
 /**
- * `GET /api/stats` response types (mirrors `src/core/stats.ts`, T10). The response is keyed by mode and a
+ * `GET /api/stats` response types (mirrors `src/core/stats.ts`). The response is keyed by mode and a
  * mode filtered out is absent; nothing in it is a sum over both modes.
  */
 import type { Mode } from './components/ModeBadge';

@@ -11,7 +11,7 @@ import type { JobContext } from './jobs.js';
 import { PbpUnusable, timelineFromGameStats } from './kalshiPbp.js';
 
 /**
- * Kalshi backfill (SPEC.md §3 "Backfill discovery", T11): the discovery walk with `status=settled` over
+ * Kalshi backfill (SPEC.md §3 "Backfill discovery"): the discovery walk with `status=settled` over
  * a date range, so past Kalshi games can be backtested exactly although the app never saw them live.
  *
  * 1. For each enabled league (or the chosen ones): every settled event of the series (all pages);

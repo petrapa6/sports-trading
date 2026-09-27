@@ -3,7 +3,7 @@
  * `docker compose` runs (SPEC.md §12), from `config.local.json` (or `$CONFIG_LOCAL_PATH`).
  *
  *   npm run compose:options                      # → <repo>/.local/data/options.json
- *   npm run compose:options -- --out <file>      # another location (verify:T05 uses a scratch dir)
+ *   npm run compose:options -- --out <file>      # another location (verify:image uses a scratch dir)
  *
  * The private key is read from `kalshiPrivateKeyPath` and stored base64-encoded on one line, as in the
  * Configuration tab. Like on Home Assistant the file is root-owned with mode 600, so the app (uid 1000)

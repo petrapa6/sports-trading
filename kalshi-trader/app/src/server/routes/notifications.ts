@@ -7,7 +7,7 @@ import { parseBody } from '../http.js';
 import { authOf, clientContext } from '../security.js';
 
 /**
- * Settings → Notifications (T15): `GET /api/settings/notifications` answers every event and mode toggle
+ * Settings → Notifications: `GET /api/settings/notifications` answers every event and mode toggle
  * (defaults filled in) and whether a Supervisor token is present; `POST` changes some of them (audited as
  * `settings_change`, no step-up: a notification cannot lead to an order).
  */

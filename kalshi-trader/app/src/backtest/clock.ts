@@ -58,7 +58,7 @@ export function stateAt(sport: Sport, goals: readonly GoalEvent[], minute: numbe
 const MINUTE_MS = 60_000;
 
 /**
- * The first wall minute `e` (whole minutes after the scheduled start) at which T11's clock model
+ * The first wall minute `e` (whole minutes after the scheduled start) at which the clock model
  * (`matchMinute` in `priceModel.ts`, the same model the price-model builder uses to place candles) reads
  * game minute `minute`: soccer `e = minute` in the first half and `minute + 17` in the second (after the
  * 15-minute break and 2 minutes of first-half stoppage); hockey three 36-minute periods separated by

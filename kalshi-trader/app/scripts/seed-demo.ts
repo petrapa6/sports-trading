@@ -1,5 +1,5 @@
 /**
- * `npm run seed:demo -- --trades 500` (T10): fills the configured database (DB_PATH / config.local.json, like
+ * `npm run seed:demo -- --trades 500`: fills the configured database (DB_PATH / config.local.json, like
  * the app) with generated demo strategies and trades in both modes for manual checks of the Dashboard and the
  * Trades page. `--clear` removes the demo rows again. Never run it against a production database: every row
  * is fake. Options: `--trades N` (default 500), `--seed N`, `--env demo|prod`, `--clear`.

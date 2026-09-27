@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1790339140650,
-      "tag": "0000_initial_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1790339156953,
-      "tag": "0001_seed_leagues",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1790411838224,
-      "tag": "0002_games_historical",
+      "when": 1790474758150,
+      "tag": "0000_initial",
       "breakpoints": true
     }
   ]

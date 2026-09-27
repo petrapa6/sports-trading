@@ -17,7 +17,7 @@ const EVENT_LABEL: Record<NotificationEvent, string> = {
 };
 
 /**
- * Settings → Notifications (T15): Home Assistant notifications per event and per mode. A notification is
+ * Settings → Notifications: Home Assistant notifications per event and per mode. A notification is
  * sent only when both its event and its mode are on; every message starts with `[LIVE]` or `[DRY RUN]`.
  */
 export function NotificationsSettings() {

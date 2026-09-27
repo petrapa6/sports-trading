@@ -1,5 +1,5 @@
 /**
- * `npm run fixtures:record:kalshi` (SPEC.md §14 T06) — records raw responses of the Kalshi **demo**
+ * `npm run fixtures:record:kalshi` — records raw responses of the Kalshi **demo**
  * environment into `test/fixtures/kalshi/recorded/`, so the hand-written fixtures the tests use can be
  * checked against real payloads (field names of milestones, live data and the batch live-data endpoint
  * in particular). Only public market-data endpoints are recorded: request headers (the credentials) are

@@ -7,7 +7,7 @@ import { NHL_BASE_URL } from '../feeds/nhl/feed.js';
 import type { JobContext } from './jobs.js';
 
 /**
- * NHL goal timelines (SPEC.md §3 Historical, T11): `GET /v1/schedule/{date}` week by week over a
+ * NHL goal timelines (SPEC.md §3 Historical): `GET /v1/schedule/{date}` week by week over a
  * season, then `GET /v1/gamecenter/{gameId}/play-by-play` for every finished game → `hist_games`
  * (`source = 'nhl'`, id `nhl:<gameId>`).
  *

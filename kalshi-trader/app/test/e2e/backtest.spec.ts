@@ -4,7 +4,7 @@ import { candleMinuteMs } from '../../src/backtest/clock.js';
 import { ensureUser, expectNoHorizontalScroll, login, watchConsole, withDb } from './helpers.js';
 
 /**
- * T12: the Backtest page on seeded historical data (`hist_games`, `markets`, `hist_prices` in the shared e2e
+ * The Backtest page on seeded historical data (`hist_games`, `markets`, `hist_prices` in the shared e2e
  * database): run an exact backtest from the form (tiles, equity / drawdown / monthly charts, trades table), save
  * it, run a second one with a different `atMinute` in modelled mode (badge), compare the two saved runs (two
  * equity lines), and start the Strategies page "Test against last 30 days". No legend on the page says "Live"

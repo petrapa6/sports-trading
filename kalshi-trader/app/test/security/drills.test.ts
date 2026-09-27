@@ -7,7 +7,7 @@ import { Client, createTestApp, PASSWORD, setupUser, tunnel, USER, type TestApp 
 import { captureLogger, must } from '../helpers/kalshiMsw.js';
 
 /**
- * T14: the failure-drill endpoints exist only with NODE_ENV=development and answer only class `dev`; a database
+ * The failure-drill endpoints exist only with NODE_ENV=development and answer only class `dev`; a database
  * locked by another process answers `503 {"error":"db_busy"}`, never a 500.
  */
 

@@ -46,7 +46,7 @@ export function demoClient(): ScriptKalshi | undefined {
   const log = pino({ level: 'warn' }, destination(2));
   const database = new DatabaseManager(config.dbPath, log);
   database.open();
-  // `KALSHI_SCRIPT_BASE_URL`: point the script at a stand-in (verify:T06 uses test/e2e/fake-kalshi.ts).
+  // `KALSHI_SCRIPT_BASE_URL`: point the script at a stand-in (e.g. test/e2e/fake-kalshi.ts).
   const baseUrl = process.env['KALSHI_SCRIPT_BASE_URL'];
   const client = new KalshiClient({
     env: 'demo',

@@ -93,6 +93,7 @@ CREATE TABLE `games` (
 	`final_away` integer,
 	`finished_at` text,
 	`timeline_archived` integer DEFAULT 0 NOT NULL,
+	`historical` integer DEFAULT 0 NOT NULL,
 	`pregame_home_bp` integer,
 	`pregame_away_bp` integer,
 	`updated_at` text NOT NULL,
@@ -285,4 +286,12 @@ CREATE TABLE `users` (
 	`last_login_at` text
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);
+CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);--> statement-breakpoint
+-- Seed: the six leagues of SPEC.md §2/§7. feed_ids.apiFootball holds the API-Football league id.
+INSERT OR IGNORE INTO `leagues` (`id`, `sport`, `name`, `kalshi_series`, `feed_ids`, `include_preseason`, `enabled`) VALUES
+	('nhl', 'hockey', 'NHL', 'KXNHLGAME', '{"apiFootball":null,"nhl":null}', 0, 1),
+	('epl', 'soccer', 'English Premier League', 'KXEPLGAME', '{"apiFootball":39,"nhl":null}', 0, 1),
+	('laliga', 'soccer', 'La Liga', 'KXLALIGAGAME', '{"apiFootball":140,"nhl":null}', 0, 1),
+	('bundesliga', 'soccer', 'Bundesliga', 'KXBUNDESLIGAGAME', '{"apiFootball":78,"nhl":null}', 0, 1),
+	('seriea', 'soccer', 'Serie A', 'KXSERIEAGAME', '{"apiFootball":135,"nhl":null}', 0, 1),
+	('ligue1', 'soccer', 'Ligue 1', 'KXLIGUE1GAME', '{"apiFootball":61,"nhl":null}', 0, 1);

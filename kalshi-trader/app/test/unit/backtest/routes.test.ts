@@ -202,7 +202,7 @@ describe('worker isolation and performance', () => {
     expect(timings.length).toBeGreaterThan(3);
     expect(Math.max(...timings)).toBeLessThan(100);
     console.log(
-      `[T12 isolation] ${timings.length} /healthz calls during a 5000-game backtest: max ${Math.max(...timings).toFixed(1)} ms; ${running.length} progress events`,
+      `[backtest isolation] ${timings.length} /healthz calls during a 5000-game backtest: max ${Math.max(...timings).toFixed(1)} ms; ${running.length} progress events`,
     );
     await sse.cancel();
   }, 60_000);
@@ -256,6 +256,6 @@ describe('worker isolation and performance', () => {
     expect(summary.games).toBe(1300);
     expect(summary.trades).toBeGreaterThan(100);
     expect(ms).toBeLessThan(5000);
-    console.log(`[T12 perf] 1300 games (exact, ${summary.trades} trades) in ${ms.toFixed(0)} ms`);
+    console.log(`[backtest perf] 1300 games (exact, ${summary.trades} trades) in ${ms.toFixed(0)} ms`);
   }, 60_000);
 });

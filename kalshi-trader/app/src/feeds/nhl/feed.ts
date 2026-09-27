@@ -13,7 +13,7 @@ import {
 import type { NetworkGate } from '../network.js';
 
 /**
- * `nhl-official` adapter (SPEC.md §3, T07): `GET /v1/score/now` of the NHL Web API (no key), plus
+ * `nhl-official` adapter (SPEC.md §3): `GET /v1/score/now` of the NHL Web API (no key), plus
  * `GET /v1/gamecenter/{id}/landing` for a tracked game whose NHL id is known but that is missing from
  * `score/now`. Games are matched through the tricodes (`teams.abbreviation` / `teams.aliases`) and the
  * start time, or through an NHL id found in the milestone `source_ids`. Every request passes the

@@ -1,5 +1,5 @@
 /**
- * `npm run import:nhl -- --season 20252026 [--limit 5] [--preseason]` (SPEC.md §14 T11): imports an NHL
+ * `npm run import:nhl -- --season 20252026 [--limit 5] [--preseason]`: imports an NHL
  * season's goal timelines from the NHL Web API into `hist_games` of the configured database (DB_PATH /
  * config.local.json, like the app). Resumable: games already imported are skipped. Respects the global
  * kill switch (exits at once while it is on). When the NHL API cannot be reached it prints the network

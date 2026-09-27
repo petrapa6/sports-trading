@@ -186,7 +186,7 @@ export interface LogEntry {
   mode: LogMode;
 }
 
-// ---- Live games and the trading loop (T07) ----------------------------------------------------
+// ---- Live games and the trading loop ----------------------------------------------------
 
 export type Phase = 'scheduled' | 'live' | 'halftime' | 'intermission' | 'finished' | 'postponed';
 
@@ -218,7 +218,7 @@ export interface GameView {
   strategies: ArmedStrategy[];
 }
 
-// ---- Strategies and signals (T08) -----------------------------------------------------------------
+// ---- Strategies and signals -----------------------------------------------------------------
 
 export type ConfiguredMode = 'live' | 'dry_run';
 export type DryRunReason = 'addon_lock' | 'global_dry_run' | 'strategy';
@@ -265,9 +265,9 @@ export interface StrategyRule {
   atMinute: number;
   windowMinutes: number;
   leaderSide: 'any' | 'home' | 'away';
-  /** T15: the trailing team has at most this many goals. */
+  /** The trailing team has at most this many goals. */
   maxOpponentGoals?: number;
-  /** T15: only when the leader was the pre-game underdog. */
+  /** Only when the leader was the pre-game underdog. */
   underdogOnly?: boolean;
 }
 
@@ -360,7 +360,7 @@ export interface FeedInfo {
   lastError: string | null;
 }
 
-/** Settings → Feeds → API-Football (T15): the key is never sent back, only whether one is stored. */
+/** Settings → Feeds → API-Football: the key is never sent back, only whether one is stored. */
 export interface ApiFootballSettings {
   configured: boolean;
   maskedKey: string | null;
@@ -376,7 +376,7 @@ export const NOTIFICATION_EVENTS = [
 ] as const;
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
 
-/** Settings → Notifications (T15). */
+/** Settings → Notifications. */
 export interface NotificationSettings {
   available: boolean;
   events: Record<NotificationEvent, boolean>;
@@ -391,7 +391,7 @@ export interface FeedTestResult {
   message: string;
 }
 
-// ---- Trades (T09) ------------------------------------------------------------------------------
+// ---- Trades ------------------------------------------------------------------------------
 
 export type TradeStatus =
   | 'signalled'
@@ -497,7 +497,7 @@ export interface PublicSettings {
   order_group_contract_limit: number;
 }
 
-/** `GET /api/settings/order-group` (T13): the Kalshi order group every live order carries. */
+/** `GET /api/settings/order-group`: the Kalshi order group every live order carries. */
 export interface OrderGroupStatus {
   enabled: boolean;
   id: string | null;
@@ -508,7 +508,7 @@ export interface OrderGroupStatus {
   limitHitAt: string | null;
 }
 
-// ---- Settings → Data (T11) ------------------------------------------------------------------
+// ---- Settings → Data ------------------------------------------------------------------
 
 export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles' | 'api_football_import';
 export type JobStatus = 'running' | 'paused' | 'done' | 'failed' | 'cancelled';
@@ -567,7 +567,7 @@ export interface VacuumResult {
   dbSizeBytes: number;
 }
 
-// ---- Backtests (T12) ---------------------------------------------------------------------------------
+// ---- Backtests ---------------------------------------------------------------------------------
 
 export type BacktestPriceMode = 'exact' | 'modelled';
 export type BacktestStatus = 'running' | 'done' | 'failed' | 'interrupted';

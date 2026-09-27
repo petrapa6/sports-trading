@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f8cfbfff-f3d0-4ce7-927a-a244569b5ec3",
+  "id": "4c492ddc-c252-4590-9a43-610bb582ba47",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "audit_log": {
@@ -598,6 +598,14 @@
         },
         "timeline_archived": {
           "name": "timeline_archived",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "historical": {
+          "name": "historical",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,

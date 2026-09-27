@@ -3,7 +3,7 @@ import type { Db } from '../db/connection.js';
 import { GameSnapshotsRepository } from '../db/repositories.js';
 
 /**
- * Nightly database maintenance (SPEC.md §7 Retention, T02): at 02:30 local time (`TZ`)
+ * Nightly database maintenance (SPEC.md §7 Retention): at 02:30 local time (`TZ`)
  * run `PRAGMA wal_checkpoint(TRUNCATE)` and prune `game_snapshots` older than 90 days for
  * games whose timeline is archived. The schedule uses an injectable clock so it can be
  * tested with fake timers.

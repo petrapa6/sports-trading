@@ -6,8 +6,8 @@ import { tempDb } from '../../helpers/db.js';
 import { captureLogger, kalshiMockServer, testClient } from '../../helpers/kalshiMsw.js';
 
 /**
- * `npm run e2e:demo` (T13) against the recorded-fixture stand-in: the order flow, the read-back by
- * client_order_id and the fee comparison. (Against the real demo exchange it needs a key; see T13.md.)
+ * `npm run e2e:demo` against the recorded-fixture stand-in: the order flow, the read-back by client_order_id and
+ * the fee comparison. (Against the real demo exchange it needs a demo key.)
  */
 const mock = kalshiMockServer();
 beforeAll(() => mock.server.listen({ onUnhandledRequest: 'error' }));

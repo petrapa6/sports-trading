@@ -24,7 +24,7 @@ describe('fees (SPEC.md §2, PREC = 100)', () => {
     expect(feeMicros({ cc, bp, multiplier: 1, precisionMicros: 100 })).toBe(fee);
   });
 
-  it('T09 acceptance values with {multiplier, precisionMicros}', () => {
+  it('reference fee values with {multiplier, precisionMicros}', () => {
     expect(feeMicros({ cc: 100, bp: 9200, multiplier: 1, precisionMicros: 100 })).toBe(5200);
     expect(feeMicros({ cc: 200, bp: 9400, multiplier: 1, precisionMicros: 100 })).toBe(7900);
     expect(feeMicros({ cc: 10_000, bp: 5000, multiplier: 1, precisionMicros: 100 })).toBe(1_750_000);

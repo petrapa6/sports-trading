@@ -33,7 +33,7 @@ import {
 } from './trades.js';
 
 /**
- * Executor (SPEC.md §4, §5, §6, T09): turns a signal into a trade and each tick of a still-matching rule into
+ * Executor (SPEC.md §4, §5, §6): turns a signal into a trade and each tick of a still-matching rule into
  * an attempt, in dry run a virtual fill against the live orderbook.
  *
  * - On a signal the `trades` row is inserted (`signalled`) at once; attempts then run **serially** in one
@@ -46,7 +46,7 @@ import {
  * - Dry run: the stake is a percentage of the shared bankroll; the virtual fill is at the limit price for
  *   `min(contracts, contracts offered ≤ limit)`; the bankroll is debited by cost + fee with a
  *   `bankroll_snapshots` row in the same transaction as the fill.
- * - Live (T13): the stake is a percentage of the Kalshi cash balance minus the cost of this app's live
+ * - Live: the stake is a percentage of the Kalshi cash balance minus the cost of this app's live
  *   attempts still `pending`; the trade goes `pending` (attempt row carrying limit and count) **before** the
  *   Create Order V2 request (IOC, `client_order_id = <trade.id>-<n>`, the order group, the subaccount). The
  *   response decides: a fill → `filled` with the exchange's count, average price and fee; nothing filled →
@@ -81,7 +81,7 @@ export interface ExecutorOptions {
   kalshiEnv: KalshiEnv;
   /** Runs `fn` in one SQLite transaction. */
   transaction: (fn: () => void) => void;
-  /** The Kalshi order group every live order carries (T13); without it live attempts end as `error`. */
+  /** The Kalshi order group every live order carries; without it live attempts end as `error`. */
   orderGroups?: Pick<OrderGroupManager, 'currentId' | 'markLimitHit' | 'invalidate'>;
   now?: () => number;
 }

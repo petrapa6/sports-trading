@@ -14,7 +14,7 @@ import { LAST_MINUTE, scoreAt, stateAt, wallMinuteOf } from './clock.js';
 import { priceModelLookup, REGULATION_MINUTES, seedModel, type PriceModel } from './priceModel.js';
 
 /**
- * The backtest simulator (SPEC.md §9, T12): replays a strategy over historical games with the production
+ * The backtest simulator (SPEC.md §9): replays a strategy over historical games with the production
  * `engine.ts` rule (`evaluateLeadAtTime`), `guards.ts` (`evaluateEntry`) and `pricing.ts` unchanged. Pure and
  * deterministic: the same input always yields the same trades and summary (no clock, no randomness).
  *
@@ -50,7 +50,7 @@ export interface SimGame {
   goals: GoalEvent[];
   /** The leader markets (exact mode). */
   markets: { home?: SimMarket; away?: SimMarket };
-  /** YES asks at kick-off recorded live (`games.pregame_*_bp`), for `underdogOnly` (T15). */
+  /** YES asks at kick-off recorded live (`games.pregame_*_bp`), for `underdogOnly`. */
   pregame?: { homeBp: number; awayBp: number };
 }
 
@@ -62,10 +62,10 @@ export interface SimInput {
   /** `fee_balance_precision_micros`. */
   precisionMicros: number;
   multiplierMilli?: number;
-  /** `settings.price_model` built by T11 (modelled mode); `null` → the full seed table. */
+  /** `settings.price_model` built by the price-model builder (modelled mode); `null` → the full seed table. */
   priceModel?: PriceModel | null;
   /**
-   * Exact mode: YES ask close by market ticker and wall minute after the game's scheduled start (`e` of T11's
+   * Exact mode: YES ask close by market ticker and wall minute after the game's scheduled start (`e` of the
    * clock model, see `clock.ts`).
    */
   candles?: ReadonlyMap<string, ReadonlyMap<number, number>>;
@@ -162,7 +162,7 @@ function exactAsk(
 }
 
 /**
- * The kick-off YES asks of a game for `underdogOnly` (T15): the ones recorded live, else in exact mode the
+ * The kick-off YES asks of a game for `underdogOnly`: the ones recorded live, else in exact mode the
  * candle at the scheduled start (or within the next 3 minutes) of each leader market. Modelled mode has no
  * pre-game prices, so an `underdogOnly` rule never matches there.
  */

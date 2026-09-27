@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runLiveMockReplay } from '../../../scripts/live-mock-lib.js';
 
-/** `npm run replay -- --live-mock` (T13): one live trade that fills and settles, balance history, stats by mode. */
+/** `npm run replay -- --live-mock`: one live trade that fills and settles, balance history, stats by mode. */
 describe('replay --live-mock', () => {
   it('a live strategy against the msw Kalshi mock → one live trade that fills and settles; balance_snapshots grows; /api/stats shows it only under live', async () => {
     const r = await runLiveMockReplay();

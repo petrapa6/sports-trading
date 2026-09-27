@@ -72,7 +72,7 @@ const NO_SOURCE: LiveSource = { games: () => [], loop: () => null };
 /**
  * Fan-out point for everything `/api/live` streams: log lines (from the ring), switch changes, the
  * tracked games (after every tracker update, coalesced per event-loop turn) with the strategies armed on
- * them, the loop status, the strategies with their effective mode, and signals (T08).
+ * them, the loop status, the strategies with their effective mode, and signals.
  */
 export class LiveHub extends EventEmitter<{
   switches: [SwitchStates];
@@ -83,7 +83,7 @@ export class LiveHub extends EventEmitter<{
   trade: [TradeChange];
   backtest: [BacktestProgress];
   job: [JobView];
-  /** One global switch changed (T15 notifications); `mode` is the global mode after the change. */
+  /** One global switch changed (notifications); `mode` is the global mode after the change. */
   switchChanged: [SwitchChange];
 }> {
   private source: LiveSource = NO_SOURCE;
@@ -164,7 +164,7 @@ export class LiveHub extends EventEmitter<{
     return this.source.loop();
   }
 
-  /** A data job (T11) started, progressed, paused, resumed or finished. */
+  /** A data job started, progressed, paused, resumed or finished. */
   jobChanged(job: JobView): void {
     this.emit('job', job);
   }
@@ -195,7 +195,7 @@ export class LiveHub extends EventEmitter<{
     };
   }
 
-  /** One switch changed (after `switchesChanged()`): the notifier listens (T15). */
+  /** One switch changed (after `switchesChanged()`): the notifier listens. */
   switchChanged(change: SwitchChange): void {
     this.emit('switchChanged', change);
   }
@@ -218,9 +218,9 @@ export function sseEvent(event: string, data: unknown): string {
  * strategies), `loop` (loop state, last poll, feed status, Kalshi balance), `strategies`
  * (`{strategies: StrategyView[]}` with effective modes) and `signals` (`{signals: Signal[]}`, the recent
  * ones); then a `log` event per new line, `switches` / `games` / `loop` / `strategies` on every change, a
- * `signal` event per new signal, a `trade` event (`{id, status}`) per trade state change (T09), a `job`
- * event per data-job change (T11: status, progress), a `backtest` event (`{id, status, done, total}`) per
- * backtest progress step (T12) and a `heartbeat` (with the switch states) every 10 s.
+ * `signal` event per new signal, a `trade` event (`{id, status}`) per trade state change, a `job`
+ * event per data-job change (status, progress), a `backtest` event (`{id, status, done, total}`) per
+ * backtest progress step and a `heartbeat` (with the switch states) every 10 s.
  * Each heartbeat re-checks the session, so a revoked or expired session stops receiving data within
  * one interval.
  */

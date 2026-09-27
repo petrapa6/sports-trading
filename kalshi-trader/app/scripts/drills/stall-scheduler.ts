@@ -1,5 +1,5 @@
 /**
- * Drill (a) `stall-scheduler` (SPEC.md §14 T14): a scratch development instance, its trading loop stalled through
+ * Drill (a) `stall-scheduler`: a scratch development instance, its trading loop stalled through
  * the development-only `POST /api/dev/drills/stall-scheduler` → `/healthz` must answer 503 within 2 minutes (the
  * Supervisor watchdog then restarts the container); `resume-scheduler` → 200 again.
  *

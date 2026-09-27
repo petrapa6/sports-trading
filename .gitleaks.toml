@@ -15,5 +15,5 @@ keywords = ["private key"]
 tags = ["key", "pem"]
 
 [[allowlists]]
-description = "The specification quotes a PEM header in prose (T01 acceptance criteria)."
+description = "The specification may quote a PEM header in prose."
 paths = ['''^SPEC\.md$''']

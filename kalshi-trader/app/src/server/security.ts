@@ -60,7 +60,7 @@ export interface SecurityOptions extends ClassifierOptions {
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const ASSET_PREFIX = '/assets/';
-/** Exempt from the global rate limit: static assets and the SSE stream (T04). */
+/** Exempt from the global rate limit: static assets and the SSE stream. */
 const RATE_LIMIT_EXEMPT = (path: string): boolean => path.startsWith(ASSET_PREFIX) || path === '/api/live';
 
 export const clientContext = (req: FastifyRequest): ClientContext => ({

@@ -41,7 +41,7 @@ export function rangeStart(range: '7d' | '30d' | 'season' | 'all', nowMs: number
 }
 
 /**
- * Trades API (SPEC.md §8 Trades page, T09):
+ * Trades API (SPEC.md §8 Trades page):
  *
  * - `GET /api/trades?sport&leagues&strategies&mode&env&range&status&reason` — trades newest first, each with its
  *   own `effectiveMode` / `configuredMode` / `modeReason` / `kalshiEnv` (never aggregated across modes). `env`

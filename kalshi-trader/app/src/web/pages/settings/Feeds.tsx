@@ -14,7 +14,7 @@ const UNAVAILABLE_TEXT: Record<string, string> = {
 };
 
 /**
- * Settings → Feeds → API-Football (T15): the key field (masked: the stored key never comes back from the
+ * Settings → Feeds → API-Football: the key field (masked: the stored key never comes back from the
  * server), today's request usage against the daily limit, and the limit itself.
  */
 function ApiFootballPanel({ onChanged }: { onChanged: () => void }) {
@@ -139,7 +139,7 @@ function ApiFootballPanel({ onChanged }: { onChanged: () => void }) {
   );
 }
 
-/** Settings → Feeds (T07): score-feed adapters on/off and "Test feed" (one line per adapter). */
+/** Settings → Feeds: score-feed adapters on/off and "Test feed" (one line per adapter). */
 export function FeedsSettings() {
   const queryClient = useQueryClient();
   const feeds = useQuery({ queryKey: ['feeds'], queryFn: () => api.get<FeedInfo[]>('api/feeds') });

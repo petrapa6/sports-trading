@@ -1,5 +1,5 @@
 /**
- * The eight Dashboard charts of SPEC.md §8 (Chart inventory, T10). Every chart takes the same `{ stats }`
+ * The eight Dashboard charts of SPEC.md §8 (Chart inventory). Every chart takes the same `{ stats }`
  * props (the `GET /api/stats` response for the current filters), draws each mode separately — live solid,
  * dry run dashed or hatched, legends "Live" / "Dry run" — and never sums the two. Each chart has its own
  * loading and empty state; the palette follows the colour scheme.

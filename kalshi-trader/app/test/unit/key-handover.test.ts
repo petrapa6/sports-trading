@@ -93,7 +93,7 @@ describe('publicKeyFingerprint', () => {
     const path = join(dir, 'key.pem');
     writeFileSync(path, pem);
     const pub = spawnSync('openssl', ['pkey', '-in', path, '-pubout']);
-    if (pub.status !== 0) return; // openssl not installed: the container check in verify:T05 covers it
+    if (pub.status !== 0) return; // openssl not installed: the key item of verify:image covers it
     const sum = spawnSync('sha256sum', { input: pub.stdout, encoding: 'utf8' });
     expect(publicKeyFingerprint(pem)).toBe(sum.stdout.split(' ')[0]);
   });

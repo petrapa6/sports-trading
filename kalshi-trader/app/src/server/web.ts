@@ -47,8 +47,8 @@ export function renderShell(template: string, prefix: string): string {
  * Serves the React app from `webDir` (the Vite build): hashed assets under `/assets/`, the HTML
  * shell for `/login`, `/setup` and every client route. The shell carries no app data, so it is
  * public; a browser navigation without a session is still redirected to `/login` before any page
- * renders. Without a build (unit tests, a fresh checkout) the minimal server-rendered pages from
- * T03 are served instead.
+ * renders. Without a build (unit tests, a fresh checkout) the minimal server-rendered pages of
+ * `pages.ts` are served instead.
  */
 export async function registerWeb(app: FastifyInstance, webDir: string, limits: RateLimits): Promise<void> {
   const loginConfig = { public: true, rateLimit: { max: limits.login, timeWindow: 60_000 } };

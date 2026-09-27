@@ -40,7 +40,7 @@ function checkLeagues(repos: Repositories, def: StrategyDefinition): void {
 }
 
 /**
- * Strategies API (SPEC.md §5, §8, T08):
+ * Strategies API (SPEC.md §5, §8):
  *
  * - `GET /api/strategies[?includeDeleted=1]` — every strategy with its current version, effective mode and
  *   30-day trades / P&L per mode (soft-deleted ones only with `includeDeleted`).

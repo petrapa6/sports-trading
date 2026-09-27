@@ -1,5 +1,5 @@
 /**
- * Trades page charts (SPEC.md §8, T10): the price-paid histogram and the P&L per trade, split by mode and
+ * Trades page charts (SPEC.md §8): the price-paid histogram and the P&L per trade, split by mode and
  * computed from the trades the page lists, so they follow its filter bar and status filter. Hovering a
  * per-trade bar shows the trade id and its mode.
  */

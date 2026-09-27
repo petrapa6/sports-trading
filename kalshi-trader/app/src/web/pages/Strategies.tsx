@@ -394,7 +394,7 @@ function EditorForm({
     }
   };
 
-  /** Quick exact backtest of the saved version over the last 30 days (T12), shown on the Backtest page. */
+  /** Quick exact backtest of the saved version over the last 30 days, shown on the Backtest page. */
   const test30d = async () => {
     if (!detail) return;
     setBusy(true);

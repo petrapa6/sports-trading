@@ -8,11 +8,11 @@ import { loadStrategies, readGlobalSwitches, strategyMode, type StrategyRecord }
 import type { GameTracker, TrackedState } from './tracker.js';
 
 /**
- * StrategyEngine (SPEC.md §4, §5, T08): on every `stateUpdated` of the tracker, evaluates every strategy
+ * StrategyEngine (SPEC.md §4, §5): on every `stateUpdated` of the tracker, evaluates every strategy
  * whose effective mode is not `paused`, whose `leagueIds` include the game's league and whose sport matches,
  * and emits a `Signal` labelled with the configured and effective mode the first time its rule matches a
  * game. Switches are read from the database on every state (never cached). Nothing acts on signals yet
- * (the executor, T09, turns them into trades and retries within the window).
+ * (the executor, turns them into trades and retries within the window).
  *
  * Once per game per strategy: no signal when a `trades` row exists for (strategy, game), and at most one
  * signal per (strategy, game) while the process runs.
@@ -44,7 +44,7 @@ export interface RuleState {
   awayScore: number;
   clock: GameClock;
   blocked: boolean;
-  /** YES asks at kick-off (T15 `underdogOnly`); unknown → an `underdogOnly` rule never matches. */
+  /** YES asks at kick-off (`underdogOnly`); unknown → an `underdogOnly` rule never matches. */
   pregame?: { homeBp: number | null; awayBp: number | null } | undefined;
 }
 

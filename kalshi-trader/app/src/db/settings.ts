@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { Orm } from './connection.js';
 import { settings } from './schema.js';
 
-/** Home Assistant notification events (T15). */
+/** Home Assistant notification events. */
 export const NOTIFICATION_EVENTS = [
   'trade_filled',
   'trade_settled',
@@ -14,7 +14,7 @@ export const NOTIFICATION_EVENTS = [
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
 
 /**
- * Settings → Notifications (T15): per-event and per-mode toggles. An event missing from `events` is on;
+ * Settings → Notifications: per-event and per-mode toggles. An event missing from `events` is on;
  * a notification is sent only when both its event and its mode are on.
  */
 export const NotificationSettingsSchema = z.object({
@@ -25,7 +25,7 @@ export const NotificationSettingsSchema = z.object({
 });
 export type NotificationSettings = z.output<typeof NotificationSettingsSchema>;
 
-/** The API-Football request counter (T15): `day` is the local calendar date the count belongs to. */
+/** The API-Football request counter: `day` is the local calendar date the count belongs to. */
 export const ApiFootballQuotaSchema = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   used: z.number().int().min(0),
@@ -55,16 +55,16 @@ export const SETTINGS = {
   kalshi_order_group_id: { schema: z.string().min(1).nullable(), default: null },
   order_group_contract_limit: { schema: z.number().int().positive().max(1_000_000), default: 200 },
   price_model: { schema: z.json().nullable(), default: null },
-  /** The API-Football key, `encryptSetting` output (T15); never leaves the server. */
+  /** The API-Football key, `encryptSetting` output; never leaves the server. */
   api_football_key_enc: { schema: z.string().min(1).nullable(), default: null },
-  /** API-Football requests allowed per local calendar day (T15 quota guard). */
+  /** API-Football requests allowed per local calendar day (quota guard). */
   api_football_daily_limit: { schema: z.number().int().min(1).max(1_000_000), default: 100 },
   api_football_quota: { schema: ApiFootballQuotaSchema.nullable(), default: null },
   notifications: {
     schema: NotificationSettingsSchema,
     default: { events: {}, modes: { live: true, dry_run: true } },
   },
-  /** Settings → Feeds (T07): adapter id → enabled; an adapter missing from the map is on. */
+  /** Settings → Feeds: adapter id → enabled; an adapter missing from the map is on. */
   feeds: { schema: z.record(z.string(), z.boolean()), default: {} },
 } as const satisfies Record<string, { schema: z.ZodType; default: unknown }>;
 

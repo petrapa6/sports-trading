@@ -47,7 +47,7 @@ export const LeadAtTimeRuleSchema = z
     /** Defaults per sport (soccer 5, hockey 3) when omitted. */
     windowMinutes: z.number().int('windowMinutes must be a whole number').min(0).max(90).optional(),
     leaderSide: z.enum(LEADER_SIDES).default('any'),
-    /** T15: the trailing team has scored at most this many goals (omitted = no limit). */
+    /** The trailing team has scored at most this many goals (omitted = no limit). */
     maxOpponentGoals: z
       .number()
       .int('maxOpponentGoals must be a whole number')
@@ -55,7 +55,7 @@ export const LeadAtTimeRuleSchema = z
       .max(20)
       .optional(),
     /**
-     * T15: only when the leader was the pre-game underdog, i.e. its YES ask at kick-off
+     * Only when the leader was the pre-game underdog, i.e. its YES ask at kick-off
      * (`games.pregame_*_bp`) was below the opponent's. Omitted = false.
      */
     underdogOnly: z.boolean().optional(),

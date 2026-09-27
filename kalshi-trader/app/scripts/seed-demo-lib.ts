@@ -1,5 +1,5 @@
 /**
- * The demo-data generator behind `npm run seed:demo` (T10): strategies and trades in **both** modes with
+ * The demo-data generator behind `npm run seed:demo`: strategies and trades in **both** modes with
  * attempts, bankroll and balance snapshots, spread over the last 120 days, for manual checks of the Dashboard
  * and the Trades page and for the size and speed checks of `GET /api/stats`. Deterministic for a given seed.
  * Every generated id starts with `demo-`, so `clearDemo` removes exactly what it inserted.

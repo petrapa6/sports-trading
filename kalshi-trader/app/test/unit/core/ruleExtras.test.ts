@@ -14,7 +14,7 @@ import { captureLogger } from '../../helpers/kalshiMsw.js';
 import { tempDb, type TempDb } from '../../helpers/db.js';
 import { seedGame } from '../../helpers/feeds.js';
 
-/** T15 acceptance 7: `maxOpponentGoals` and `underdogOnly` of `lead_at_time`. */
+/** `maxOpponentGoals` and `underdogOnly` of `lead_at_time`. */
 
 const rule = (extra: Partial<LeadAtTimeRule> = {}): LeadAtTimeRule => ({
   type: 'lead_at_time',

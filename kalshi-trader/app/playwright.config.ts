@@ -24,7 +24,7 @@ const executablePath = chromiumExecutable();
 /**
  * `npm run e2e` builds the web app first (`vite build`), then runs the specs against the production
  * server on :8198 (a fresh database in `.local/e2e`) and a local stand-in for the ingress proxy on
- * :8199, with a fixture-backed stand-in for the Kalshi API on :8197 (T06) and a per-run key. The specs
+ * :8199, with a fixture-backed stand-in for the Kalshi API on :8197 and a per-run key. The specs
  * share one user and database, so they run in one worker, in file order.
  */
 export default defineConfig({

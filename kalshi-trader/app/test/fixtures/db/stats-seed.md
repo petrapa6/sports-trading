@@ -1,6 +1,6 @@
-# `stats-seed.sql` — the T10 stats fixture
+# `stats-seed.sql` — the stats fixture
 
-`stats-seed.sql` loads into a migrated database (the leagues come from migration `0001`): two soccer strategies
+`stats-seed.sql` loads into a migrated database (the leagues come from migration `0000`): two soccer strategies
 **A** ("Stats A") and **B** ("Stats B"), both on `epl` + `laliga` with `maxPrice` 0.97, and 30 trades in both
 modes, plus 15 `trade_attempts`, 8 `bankroll_snapshots` and 6 `balance_snapshots`. `stats-seed.expected.json`
 holds the `GET /api/stats` response for six queries with the clock at `2026-09-20T12:00:00.000Z` and the app on

@@ -99,7 +99,7 @@ function settingValue(sqlite: Database.Database, key: string): unknown {
   }
 }
 
-/** `settings.price_model` as T11's builder stores it, or `null` (none yet, or an unknown shape → seed table). */
+/** `settings.price_model` as the builder stores it, or `null` (none yet, or an unknown shape → seed table). */
 function storedPriceModel(value: unknown): PriceModel | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Partial<PriceModel>;
@@ -174,7 +174,7 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
       const event = gameRow.get(row.kalshi_event_ticker) as
         | { scheduled_at: string | null; pregame_home_bp: number | null; pregame_away_bp: number | null }
         | undefined;
-      // Kick-off asks recorded live (T15 `underdogOnly`); otherwise the simulator reads the kick-off candles.
+      // Kick-off asks recorded live (`underdogOnly`); otherwise the simulator reads the kick-off candles.
       if (event && event.pregame_home_bp !== null && event.pregame_away_bp !== null)
         pregame = { homeBp: event.pregame_home_bp, awayBp: event.pregame_away_bp };
       const startMs = ms(event?.scheduled_at) ?? playedMs;

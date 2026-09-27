@@ -2,8 +2,8 @@ import type { GameStats } from '../feeds/kalshi/schemas.js';
 import type { GoalEvent } from '../core/tracker.js';
 
 /**
- * Goal timelines from Kalshi `GET /live_data/milestone/{id}/game_stats` (SPEC.md §3 Historical, T11).
- * Payload shapes seen on production on 2026-09-26 (recorded in docs/verification/T11.md):
+ * Goal timelines from Kalshi `GET /live_data/milestone/{id}/game_stats` (SPEC.md §3 Historical).
+ * Payload shapes seen on production on 2026-09-26:
  *
  * - `pbp.periods[]` (not necessarily in order) with `period_number`, `period_type`, and `events[]`
  *   **newest first**. Every event carries the running score `home_points` / `away_points` after it.

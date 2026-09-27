@@ -5,8 +5,8 @@
 #
 # Mirrors what the Supervisor does: `/data` is the app's data directory with a root-owned options.json,
 # Docker's init is PID 1 (config.yaml `init: true`), and the root filesystem is read-only here (Home
-# Assistant has no such option), with no-new-privileges and no added capabilities (T14). KST_DATA_DIR /
-# KST_NODE_ENV / KST_HOST_PORT let `npm run verify:T05` / `verify:T14` use a scratch data directory, the
+# Assistant has no such option), with no-new-privileges and no added capabilities. KST_DATA_DIR /
+# KST_NODE_ENV / KST_HOST_PORT let `npm run verify:image` use a scratch data directory, the
 # development-only diagnostics and another port without touching yours.
 services:
   kalshi-trader:

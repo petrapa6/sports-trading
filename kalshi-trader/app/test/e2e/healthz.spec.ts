@@ -11,7 +11,7 @@ test('GET /healthz returns {"ok":true,"loop":…} without console or CSP errors'
 
   const response = await page.goto('/healthz');
   expect(response?.status()).toBe(200);
-  // Since T07 the body carries the trading loop state as well.
+  // The body carries the trading loop state as well.
   expect(await response?.text()).toMatch(/^\{"ok":true,"loop":"(starting|idle|running)"\}$/);
   expect(problems).toEqual([]);
 });

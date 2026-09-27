@@ -80,7 +80,7 @@ function parseSummary(row: Backtest): StoredSummary | null {
 const isError = (s: StoredSummary | null): s is { error: string } => s !== null && 'error' in s;
 
 /**
- * Backtests API (SPEC.md §8 Backtest page, §9, T12). Backtests are their own category: nothing here reads or
+ * Backtests API (SPEC.md §8 Backtest page, §9). Backtests are their own category: nothing here reads or
  * writes live or dry-run trades.
  *
  * - `GET /api/backtests/options` — leagues with replayable seasons (games, games with Kalshi prices).

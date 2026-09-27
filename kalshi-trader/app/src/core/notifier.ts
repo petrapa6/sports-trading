@@ -8,7 +8,7 @@ import { payoutMicros, realizedPnlMicros } from './pricing.js';
 import type { BlockedChange, GameTracker } from './tracker.js';
 
 /**
- * Home Assistant notifications (SPEC.md §1, T15): a `persistent_notification.create` service call through
+ * Home Assistant notifications (SPEC.md §1): a `persistent_notification.create` service call through
  * the Supervisor's Core API proxy (`http://supervisor/core/api`, `homeassistant_api: true`), authenticated
  * with `SUPERVISOR_TOKEN` from the environment.
  *
@@ -134,7 +134,7 @@ export class Notifier {
         body: JSON.stringify({ title: NOTIFICATION_TITLE, message }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      // Not awaited: under msw the cancel never settles (T14 note on the Kalshi client).
+      // Not awaited: under msw the cancel never settles (same as in the Kalshi client).
       void res.body?.cancel().catch(() => undefined);
       if (!res.ok) {
         this.log.warn({ event, mode, status: res.status }, 'Home Assistant notification failed');

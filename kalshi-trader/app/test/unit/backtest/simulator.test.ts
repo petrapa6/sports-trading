@@ -33,7 +33,7 @@ describe('clock', () => {
     expect(stateAt('soccer', [goal('away', 55)], 54).awayScore).toBe(0);
   });
 
-  it("candle minutes are the inverse of T11's clock model (matchMinute), from the scheduled start", () => {
+  it('candle minutes are the inverse of the clock model (matchMinute), from the scheduled start', () => {
     for (const sport of ['soccer', 'hockey'] as const) {
       for (let m = 1; m <= (sport === 'soccer' ? 90 : 59); m++) {
         const e = wallMinuteOf(sport, m);
@@ -145,7 +145,7 @@ describe('exact mode', () => {
     }
   });
 
-  it('one timeline per Kalshi event: several sources for the same event replay once, the most trusted (T11 rank)', () => {
+  it('one timeline per Kalshi event: several sources for the same event replay once, the most trusted (source rank)', () => {
     const tdb: TempDb = tempDb();
     try {
       const repos = createRepositories(tdb.db.orm);
@@ -231,7 +231,7 @@ describe('modelled mode', () => {
   });
 
   it('a model cell with ≥ 20 observations is used; smaller cells fall back to the seed and report their sample size', () => {
-    // T11's model shape: a full table; one cell with 60 observations, one with 5 (seeded).
+    // The price model's shape: a full table; one cell with 60 observations, one with 5 (seeded).
     const model: PriceModel = seedModel('2026-09-26T00:00:00.000Z');
     const cell = (lead: number, from: number) => {
       const c = model.cells.find((x) => x.sport === 'soccer' && x.lead === lead && x.remainingFrom === from);

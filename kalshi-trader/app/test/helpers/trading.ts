@@ -15,7 +15,7 @@ import { seedGame } from './feeds.js';
 import { captureLogger, TEST_BASE, testClient } from './kalshiMsw.js';
 
 /**
- * Shared set-up for the T09 executor / settler tests: a migrated database with one NHL game (home VGK, away
+ * Shared set-up for the executor / settler tests: a migrated database with one NHL game (home VGK, away
  * SEA) and its two markets, an engine and an executor attached to a fake tracker, and a Kalshi client pointed
  * at the msw stand-in.
  */
@@ -86,7 +86,7 @@ export class KalshiScript {
   onRequest: ((path: string) => void) | null = null;
   bookError: boolean = false;
 
-  // ---- live (T13) ----
+  // ---- live ----
   /** `GET /portfolio/balance` → `balance_dollars`. */
   balanceDollars = '100.0000';
   /** Create Order V2 answer: status and JSON (default: everything filled at the limit, fee 0.0046 / contract). */
@@ -309,7 +309,7 @@ export function setupTrading(
     killSwitch: opts.killSwitch ?? (() => repos.settings.get('global_kill_switch')),
     subaccount: opts.subaccount ?? 0,
   });
-  // Live orders carry the stored order group (T13); `OrderGroupManager` reuses it without a request.
+  // Live orders carry the stored order group; `OrderGroupManager` reuses it without a request.
   repos.settings.set('kalshi_order_group_id', 'grp-1');
   const orderGroups = new OrderGroupManager({
     repos: () => repos,

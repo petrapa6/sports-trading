@@ -2,8 +2,8 @@ import { useLive } from '../live';
 import { ModeBadge } from './ModeBadge';
 
 /**
- * The most recent strategy signals (SSE `signals` / `signal`, T08): which strategy matched which game, at
- * which score and minute, for which market, and in which mode. Nothing acts on them until the executor (T09).
+ * The most recent strategy signals (SSE `signals` / `signal`): which strategy matched which game, at
+ * which score and minute, for which market, and in which mode. The executor, not this list, turns them into trades.
  */
 export function RecentSignals() {
   const { signals } = useLive();

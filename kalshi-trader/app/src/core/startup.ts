@@ -4,7 +4,7 @@ import type { TradeEvent } from './executor.js';
 import type { OrderGroupManager } from './orderGroup.js';
 
 /**
- * Start-up order of the trading loop (SPEC.md §4 invariants, T13): the order group is ensured (when live orders
+ * Start-up order of the trading loop (SPEC.md §4 invariants): the order group is ensured (when live orders
  * are possible), then restart recovery resolves every `pending` attempt — live ones against Kalshi — and only
  * then do the scheduler, the settler and the balance recorder start. Failures are logged; the loop starts
  * anyway (unresolved live attempts stay `pending` and are retried by the settler loop).
@@ -33,7 +33,7 @@ export async function startTrading(o: {
 
 type TradeSource = { on(event: 'trade', listener: (t: TradeEvent) => void): unknown };
 
-/** A `balance_snapshots` row shortly after every live fill and every live settlement (§7, T13). */
+/** A `balance_snapshots` row shortly after every live fill and every live settlement (§7). */
 export function snapshotBalanceOnLiveChanges(
   balances: Pick<BalanceRecorder, 'recordSoon'>,
   executor: TradeSource,

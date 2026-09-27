@@ -1,5 +1,5 @@
 /**
- * Shared helpers for the failure drills (SPEC.md §14 T14, `scripts/drills/`): a scratch instance of the app
+ * Shared helpers for the failure drills (`scripts/drills/`): a scratch instance of the app
  * (`tsx src/server/main.ts` with `NODE_ENV=development`, its own database and data directory under
  * `.local/drills/<name>/`, no Kalshi credentials, no config.local.json), a signed-in HTTP client for it, and
  * step / result printing. The drill endpoints exist only in that development mode (`/api/dev/drills/*`).

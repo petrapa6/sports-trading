@@ -1,5 +1,5 @@
 /**
- * `npm run e2e:demo` (SPEC.md §14 T13) — places **one real IOC order for 1 contract** on the cheapest open
+ * `npm run e2e:demo` — places **one real IOC order for 1 contract** on the cheapest open
  * market of the Kalshi **demo** environment (paper money), records it as a live trade of the app in the local
  * database (the Trades page shows it with a `LIVE` badge and environment `demo`), reads it back via
  * `getOrders` + `client_order_id`, and prints the order id, `fill_count`, the fee comparison against the §2

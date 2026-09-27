@@ -1,8 +1,8 @@
-# HAOS hand-over checklist — Kalshi Sports Trader 1.0.0
+# HAOS hand-over checklist — Kalshi Sports Trader
 
-The manual deployment of the app to the Raspberry Pi 5 running Home Assistant OS (SPEC.md §14 T14). Everything
-before this point was verified on a development machine (`npm run verify:T01` … `verify:T14`); these steps need the
-real Home Assistant, the real Kalshi account and a real game. Work through them in order, and write what you saw
+The manual deployment of the app to the Raspberry Pi 5 running Home Assistant OS. Everything the development
+machine can check is covered by `npm test`, `npm run e2e`, `npm run audit:security` and `npm run verify:image`;
+these steps need the real Home Assistant, the real Kalshi account and a real game. Work through them in order, and write what you saw
 in the **Observed** line of each step (date, values, screenshots if useful). Stop at the first step that does not
 behave as described.
 
@@ -21,7 +21,7 @@ Reference: `kalshi-trader/DOCS.md` (the app's Documentation tab) explains every 
 2. **Add the repository and install.** In Home Assistant: **Settings → Apps → App store → ⋮ → Repositories**, add
    `https://github.com/petrapa6/sports-trading`, then install **Kalshi Sports Trader** (the Supervisor builds the
    image on the Pi; a few minutes).
-   - Expected: the app page shows version `1.0.0`.
+   - Expected: the app page shows the version in `kalshi-trader/config.yaml`.
    - Observed:
 
 3. **Configure and start.** On the **Configuration** tab set `kalshi_key_id`, `kalshi_private_key_b64` (the base64
@@ -80,8 +80,8 @@ Reference: `kalshi-trader/DOCS.md` (the app's Documentation tab) explains every 
     `allow_live_orders: true` (restart), turn **global dry run off** in Settings → Trading (password prompt), and
     enable **one** live strategy with `maxStakeUsd` ≤ 5.
     - Expected: the first live trade shows a `LIVE` badge with environment `prod`, its fill matches the Kalshi
-      portfolio of the subaccount, and its fee matches the §2 fee formula (see `docs/verification/T13.md`, _Fee
-      check_).
+      portfolio of the subaccount, and its fee matches the §2 fee formula (`npm run e2e:demo` with a demo key
+      compares a real fill against it; adjust `fee_balance_precision_micros` if it does not match).
     - Observed:
 
 ---

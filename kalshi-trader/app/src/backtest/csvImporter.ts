@@ -2,7 +2,7 @@ import type { Repositories } from '../db/repositories.js';
 import type { GoalEvent } from '../core/tracker.js';
 
 /**
- * Generic CSV importer (SPEC.md §3 Historical, T11). Columns, in any order, with a header row:
+ * Generic CSV importer (SPEC.md §3 Historical). Columns, in any order, with a header row:
  *
  *   league_code, season, date, home, away, home_goals_final, away_goals_final, goal_events
  *

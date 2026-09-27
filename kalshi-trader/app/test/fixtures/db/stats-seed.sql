@@ -1,6 +1,6 @@
--- Stats seed (T10): 30 trades across strategies A and B, leagues epl and laliga, both modes.
+-- Stats seed: 30 trades across strategies A and B, leagues epl and laliga, both modes.
 -- Hand-computed expectations: stats-seed.expected.json, worked out in stats-seed.md. Load into a migrated
--- database (leagues seeded by migration 0001). Every id starts with "stats-" / "STATS-" or is A / B.
+-- database (leagues seeded by migration 0000). Every id starts with "stats-" / "STATS-" or is A / B.
 
 INSERT INTO strategies (id, name, sport, mode, kill_switch, current_version, created_at, updated_at) VALUES ('A', 'Stats A', 'soccer', 'dry_run', 1, 1, '2026-08-01T00:00:00.000Z', '2026-08-01T00:00:00.000Z');
 INSERT INTO strategy_versions (strategy_id, version, league_ids, rule, sizing, execution, created_at) VALUES ('A', 1, '["epl","laliga"]', '{"type":"lead_at_time","version":1,"minLead":2,"atMinute":60,"windowMinutes":5,"leaderSide":"any"}', '{"type":"percent_of_balance","percent":2,"minStakeUsd":1,"maxStakeUsd":50}', '{"orderType":"ioc_limit","maxPrice":0.97,"minPrice":null,"maxSlippage":0.01,"minDepthContracts":20,"maxFeedAgeSec":15}', '2026-08-01T00:00:00.000Z');

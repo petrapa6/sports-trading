@@ -11,7 +11,7 @@ import { captureLogger } from '../../helpers/kalshiMsw.js';
 import { tempDb, type TempDb } from '../../helpers/db.js';
 import { logLines, seedGame } from '../../helpers/feeds.js';
 
-/** T15 acceptance 5: Home Assistant notifications through the Supervisor proxy. */
+/** Home Assistant notifications through the Supervisor proxy. */
 
 const TOKEN = 'supervisor-token-abc123';
 const URL_CREATE = `${SUPERVISOR_CORE_URL}/services/persistent_notification/create`;
@@ -113,7 +113,7 @@ function notifier(token: string | undefined = TOKEN) {
   return { n, logs };
 }
 
-describe('Home Assistant notifications (T15 acceptance 5)', () => {
+describe('Home Assistant notifications', () => {
   it('a dry-run fill → POST with the bearer token; message has [DRY RUN], the strategy name and P&L', async () => {
     insertTrade('t-dry', 's-1', 'dry_run');
     const { n } = notifier();

@@ -18,7 +18,7 @@ export function publicKeyFingerprint(privateKeyPem: string): string {
 export interface DevRouteOptions {
   /** `publicKeyFingerprint` of the loaded Kalshi key; `undefined` when no key is loaded. */
   privateKeyFingerprint: string | undefined;
-  /** The trading loop, for the stall drill (T14). */
+  /** The trading loop, for the stall drill. */
   scheduler?: Pick<Scheduler, 'stop' | 'resume' | 'status'>;
 }
 
@@ -26,8 +26,8 @@ export interface DevRouteOptions {
  * Development-only diagnostics. `buildApp` registers them only when `NODE_ENV=development`, and
  * they answer only class `dev` (loopback); everything else gets the ordinary 404.
  *
- * `GET /api/dev/key-fingerprint` proves which private key the process loaded (T05: the key handed
- * over on fd 3 is the one in `options.json`) without the key itself ever leaving memory.
+ * `GET /api/dev/key-fingerprint` proves which private key the process loaded (the key handed over
+ * on fd 3 is the one in `options.json`) without the key itself ever leaving memory.
  */
 export function registerDevRoutes(app: FastifyInstance, options: DevRouteOptions): void {
   app.get('/api/dev/key-fingerprint', { config: { public: true } }, async (req) => {
@@ -38,7 +38,7 @@ export function registerDevRoutes(app: FastifyInstance, options: DevRouteOptions
     };
   });
 
-  // Failure drills (T14, `scripts/drills/`): `stall-scheduler` stops the trading loop without marking it
+  // Failure drills (`scripts/drills/`): `stall-scheduler` stops the trading loop without marking it
   // paused, as a hung loop would, so `/healthz` turns 503 two minutes after the last tick; `resume-scheduler`
   // restarts it. Like every route here they exist only with NODE_ENV=development and answer only class `dev`.
   const scheduler = options.scheduler;
@@ -70,7 +70,7 @@ const ReplayBody = z.object({ line: ReplayLineSchema, reset: z.boolean().optiona
 const isLoopback = (ip: string) => ip === '::1' || ip.startsWith('127.');
 
 /**
- * `POST /api/dev/replay` (T07, development only): plays one recorded feed line through the adapter
+ * `POST /api/dev/replay` (development only): plays one recorded feed line through the adapter
  * conversion and the tracker, observed "now". `npm run replay` posts a file line by line at the chosen
  * speed; `reset: true` (first line of each game) starts the game over and schedules it now. Answers
  * only class `dev` (or, in the e2e server, a loopback peer); everything else gets the ordinary 404.

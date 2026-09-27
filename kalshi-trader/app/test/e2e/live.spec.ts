@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { ensureUser, expectNoHorizontalScroll, login, watchConsole, withDb } from './helpers.js';
 
 /**
- * T13: a live trade on the Trades page — `LIVE` badge with its Kalshi environment, the exchange's fill and fee,
+ * A live trade on the Trades page — `LIVE` badge with its Kalshi environment, the exchange's fill and fee,
  * and a reconciliation warning in the row and in the expanded detail. The row is written straight into the e2e
  * database (the e2e server runs with `allow_live_orders: false`, so it cannot place live orders itself).
  */

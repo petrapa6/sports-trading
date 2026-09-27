@@ -1,6 +1,6 @@
 /**
- * Minimal server-rendered pages (login, first-run setup, signed-in placeholder) until the React
- * app arrives in T04. No inline scripts or styles: the CSP is `default-src 'self'`. Every link is
+ * Minimal server-rendered pages (login, first-run setup, signed-in placeholder) served when there
+ * is no React build. No inline scripts or styles: the CSP is `default-src 'self'`. Every link is
  * relative so the pages work under the Home Assistant ingress prefix.
  */
 
@@ -89,7 +89,7 @@ export function homePage(opts: { username: string; csrfToken: string }): string 
   return layout(
     'Home',
     `<h1>Kalshi Sports Trader</h1>
-<p>Signed in as <strong>${escapeHtml(opts.username)}</strong>. The dashboard arrives in a later release.</p>
+<p>Signed in as <strong>${escapeHtml(opts.username)}</strong>. The web app is not built here; run <code>npm run build</code> to serve the dashboard.</p>
 <form method="post" action="auth/logout">
 <input type="hidden" name="_csrf" value="${escapeHtml(opts.csrfToken)}">
 <button type="submit">Sign out</button>

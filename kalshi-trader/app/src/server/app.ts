@@ -70,23 +70,23 @@ export interface AppOptions {
   heartbeatMs?: number;
   /** Fingerprint of the loaded Kalshi key, served by the development-only `/api/dev/key-fingerprint`. */
   privateKeyFingerprint?: string | undefined;
-  /** Kalshi client and discovery (T06); without them every Kalshi action answers `kalshi_not_configured`. */
+  /** Kalshi client and discovery; without them every Kalshi action answers `kalshi_not_configured`. */
   kalshi?: KalshiServices;
-  /** Tracker, scheduler, feeds (T07) and engine (T08): `/healthz` loop state, SSE games and signals, Settings → Feeds. */
+  /** Tracker, scheduler, feeds and engine: `/healthz` loop state, SSE games and signals, Settings → Feeds. */
   live?: LiveServices;
   /**
    * `POST /api/dev/replay` (needs `live`): registered with `NODE_ENV=development`, or when
    * `allowLoopback` is set (the e2e server, `KST_E2E=1`), where it also accepts loopback peers.
    */
   replay?: { allowLoopback: boolean; transaction?: (fn: () => void) => void };
-  /** Backtest runner (T12); by default one on the app's database file. */
+  /** Backtest runner; by default one on the app's database file. */
   backtests?: BacktestRunner;
   /**
-   * Settings → Data (T11): the job manager and the network gate default to ones reading the global kill
+   * Settings → Data: the job manager and the network gate default to ones reading the global kill
    * switch from the database; `nhlBaseUrl` / `nhlFetch` point the NHL importer at a stand-in (tests, e2e).
    */
   data?: Partial<DataServices>;
-  /** Home Assistant notifications (T15): switch changes are sent through it; Settings → Notifications. */
+  /** Home Assistant notifications: switch changes are sent through it; Settings → Notifications. */
   notifier?: Pick<Notifier, 'available' | 'switchChanged'>;
 }
 
@@ -119,7 +119,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       return reply.code(503).send({ error: 'unavailable' });
     }
     const code = typeof err.code === 'string' ? err.code : '';
-    // Another process holds the SQLite lock past `busy_timeout` (T14 drill): a retryable 503, not a 500.
+    // Another process holds the SQLite lock past `busy_timeout` (e.g. the `db-lock` drill): a retryable 503, not a 500.
     if (isDbBusy(code)) {
       req.log.warn({ code }, 'Database busy');
       return reply.code(503).header('retry-after', '1').send({ error: 'db_busy' });
@@ -159,7 +159,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     ...(options.ingressPeer ? { ingressPeer: options.ingressPeer } : {}),
   });
 
-  // Database first, then the trading loop (T07): `loop` is `running` / `idle` / `paused` / `starting`,
+  // Database first, then the trading loop: `loop` is `running` / `idle` / `paused` / `starting`,
   // and a loop without a tick for 2 minutes answers `503 {"ok":false,"loop":"stale"}`.
   app.get('/healthz', { config: { public: true } }, async (_req, reply) => {
     const health = database.health();
@@ -213,7 +213,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     });
   backtests.on('progress', (p) => hub.backtestProgress(p));
   app.addHook('onClose', async () => backtests.close());
-  // Data jobs (T11) pause while the global kill switch is on and resume as soon as it is turned off.
+  // Data jobs pause while the global kill switch is on and resume as soon as it is turned off.
   const killSwitchOn = () => database.repositories.settings.get('global_kill_switch');
   const jobs =
     options.data?.jobs ??

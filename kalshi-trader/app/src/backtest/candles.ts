@@ -8,7 +8,7 @@ import { NetworkPaused } from '../feeds/network.js';
 import type { JobContext } from './jobs.js';
 
 /**
- * Candle collector (SPEC.md §3 / §9, T11): for every finished (or backfilled) game with markets, the
+ * Candle collector (SPEC.md §3 / §9): for every finished (or backfilled) game with markets, the
  * 1-minute candles of each market → `hist_prices` (ask OHLC, bid close, trade close — `NULL` for a
  * minute without trades — and volume).
  *

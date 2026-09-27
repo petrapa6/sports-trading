@@ -1,5 +1,5 @@
 /**
- * The body of `npm run e2e:demo` (SPEC.md §14 T13): one real IOC order for 1 contract on the cheapest open
+ * The body of `npm run e2e:demo`: one real IOC order for 1 contract on the cheapest open
  * market of the Kalshi **demo** environment, recorded like a live trade of the app (trade + attempt rows,
  * `pending` before the request, audit rows, `effective_mode = 'live'`, `kalshi_env = 'demo'`), read back with
  * `getOrders` by `client_order_id`, and the exchange's fee compared with `feeMicros` at both balance precisions

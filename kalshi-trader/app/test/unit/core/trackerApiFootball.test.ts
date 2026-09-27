@@ -6,7 +6,7 @@ import { captureLogger } from '../../helpers/kalshiMsw.js';
 import { tempDb, type TempDb } from '../../helpers/db.js';
 import { logLines, seedGame } from '../../helpers/feeds.js';
 
-/** T15 acceptance 4: a soccer game tracked by `kalshi-live` and `api-football`. */
+/** A soccer game tracked by `kalshi-live` and `api-football`. */
 
 const ID = 'KXEPLGAME-26OCT17ARSCHE';
 const T0 = Date.parse('2026-10-17T15:30:00Z');
@@ -65,7 +65,7 @@ const kalshi = (home: number, away: number, at: number, minute?: number) =>
 const af = (home: number, away: number, at: number, minute: number) =>
   state('api-football', home, away, at, { minute, minuteSource: 'feed', period: 2, regulationOver: false });
 
-describe('tracker with kalshi-live and api-football (T15 acceptance 4)', () => {
+describe('tracker with kalshi-live and api-football', () => {
   it('the soccer minute comes from API-Football when present', () => {
     // Kalshi alone: its derived minute (27 min after the observed second-half start → 72).
     tracker.ingest('kalshi-live', [{ state: kalshi(2, 0, T0), raw: {} }]);
@@ -89,7 +89,7 @@ describe('tracker with kalshi-live and api-football (T15 acceptance 4)', () => {
     expect(updates.at(-1)?.source).toBe('kalshi-live');
   });
 
-  it('disagreeing scores for more than 20 s → blocked, as in T07; agreement unblocks', () => {
+  it('disagreeing scores for more than 20 s → blocked, as with any two sources; agreement unblocks', () => {
     for (const dt of [0, 5_000, 10_000, 15_000, 20_000, 25_000]) {
       tracker.ingest('kalshi-live', [{ state: kalshi(2, 0, T0 + dt, 78), raw: {} }]);
       tracker.ingest('api-football', [{ state: af(2, 1, T0 + dt, 78), raw: {} }]);

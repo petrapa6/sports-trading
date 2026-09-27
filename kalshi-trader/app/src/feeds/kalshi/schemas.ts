@@ -392,7 +392,7 @@ export const LiveDataSchema = z
   .object({
     type: optStr,
     milestone_id: optStr,
-    // `details` is an open object (SPEC.md §2): validated field by field by the tracker (T07).
+    // `details` is an open object (SPEC.md §2): validated field by field by the tracker.
     details: z.record(z.string(), z.unknown()),
   })
   .passthrough();

@@ -1,5 +1,5 @@
 /**
- * `npm run audit:security` (SPEC.md §10, §12 Test plan, T14): every security check in one command, one line per
+ * `npm run audit:security` (SPEC.md §10, §12 Test plan): every security check in one command, one line per
  * check, a summary table at the end, exit 1 if any check fails.
  *
  *  1. the security test suite (`test/security`: request classes, lockout, sessions, CSRF, step-up, headers, …);

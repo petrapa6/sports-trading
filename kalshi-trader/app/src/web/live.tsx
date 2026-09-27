@@ -24,9 +24,9 @@ export interface LiveState {
   games: GameView[] | null;
   /** Loop state, last poll, feed status and Kalshi balance. */
   loop: LoopStatus | null;
-  /** Recent strategy signals, newest last (T08). */
+  /** Recent strategy signals, newest last. */
   signals: Signal[];
-  /** Progress of the backtests running or finished since the stream opened, by id (T12). */
+  /** Progress of the backtests running or finished since the stream opened, by id. */
   backtests: Record<string, BacktestProgress>;
 }
 
@@ -99,7 +99,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
         void queryClient.invalidateQueries({ queryKey: ['trades'] });
         void queryClient.invalidateQueries({ queryKey: ['settings'] });
       });
-      // A data job (Settings → Data, T11) changed: status and progress go straight into the cache.
+      // A data job (Settings → Data) changed: status and progress go straight into the cache.
       es.addEventListener('job', (e) => {
         const job = JSON.parse((e as MessageEvent<string>).data) as JobView;
         queryClient.setQueryData<{ jobs: JobView[] }>(['jobs'], (old) => {

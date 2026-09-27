@@ -3,7 +3,7 @@ import type { StatsResponse } from '../../../src/core/stats.js';
 import { seedDemo } from '../../../scripts/seed-demo-lib.js';
 import { createTestApp, setupUser, type Client, type TestApp } from '../../helpers/app.js';
 
-/** T10: `/api/stats` over 10 000 generated trades (both modes), median of 20 calls under 300 ms. */
+/** `/api/stats` over 10 000 generated trades (both modes), median of 20 calls under 300 ms. */
 const NOW = Date.parse('2026-09-20T12:00:00.000Z');
 let t: TestApp;
 let client: Client;
@@ -34,7 +34,7 @@ it('10 000 trades: /api/stats median < 300 ms over 20 calls', async () => {
   const sorted = [...times].sort((a, b) => a - b);
   const median = ((sorted[9] ?? 0) + (sorted[10] ?? 0)) / 2;
   console.log(
-    `[T10 perf] 10000 trades, 20 calls: median ${median.toFixed(1)} ms, min ${(sorted[0] ?? 0).toFixed(1)} ms, max ${(sorted[19] ?? 0).toFixed(1)} ms, response ${bytes} bytes`,
+    `[stats perf] 10000 trades, 20 calls: median ${median.toFixed(1)} ms, min ${(sorted[0] ?? 0).toFixed(1)} ms, max ${(sorted[19] ?? 0).toFixed(1)} ms, response ${bytes} bytes`,
   );
   expect(median).toBeLessThan(300);
 }, 120_000);

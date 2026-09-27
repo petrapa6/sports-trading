@@ -19,7 +19,7 @@ import { captureLogger, kalshiMockServer, must, testClient } from '../../helpers
 import { Clock, KalshiScript, marketJson } from '../../helpers/trading.js';
 
 /**
- * T12 parity (SPEC.md §14 T12): the synthetic game `test/fixtures/parity/game-a.json` is (a) replayed minute by
+ * Live/backtest parity: the synthetic game `test/fixtures/parity/game-a.json` is (a) replayed minute by
  * minute through the real GameTracker → StrategyEngine → Executor (dry run) → Settler, with the orderbook at
  * each minute mocked from the fixture's candle series, and (b) run through the simulator in exact mode over
  * the timeline the tracker archived and the same candles stored in `hist_prices`. Both must enter at the same

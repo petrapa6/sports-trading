@@ -4,7 +4,7 @@ import type { Logger } from 'pino';
 import { NetworkPaused } from '../feeds/network.js';
 
 /**
- * Long-running data jobs of Settings → Data (SPEC.md §14 T11): NHL season import, Kalshi backfill
+ * Long-running data jobs of Settings → Data (SPEC.md §8): NHL season import, Kalshi backfill
  * (discovery + play-by-play) and the candle collector. Jobs live in memory only (a restart forgets
  * them; every job is resumable because it skips what is already stored).
  *

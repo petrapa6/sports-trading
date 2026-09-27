@@ -22,7 +22,7 @@ import { routeNhl } from '../helpers/nhlFixtures.js';
 import { AWAY_TICKER, GAME, HOME_TICKER, KalshiScript } from '../helpers/trading.js';
 
 /**
- * Failure drill (d) (SPEC.md §14 T14, run by `scripts/drills/kill-switch.ts`): the global kill switch is on while
+ * Failure drill (d) (run by `scripts/drills/kill-switch.ts`): the global kill switch is on while
  * an NHL game is live and a live strategy is enabled with the add-on lock open. Everything that can talk to the
  * outside is wired as in `main.ts` — the Kalshi client (msw stand-in), the Kalshi live-data and NHL feeds (the NHL
  * one against msw with the recorded fixtures), discovery, order group, restart recovery, executor, settler and

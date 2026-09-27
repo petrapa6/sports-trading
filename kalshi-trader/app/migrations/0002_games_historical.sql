@@ -1,1 +1,0 @@
-ALTER TABLE `games` ADD `historical` integer DEFAULT 0 NOT NULL;

@@ -1,5 +1,5 @@
 /**
- * `npm run seed:season` (T14): fills the configured database (DB_PATH / config.local.json, like the app) with one
+ * `npm run seed:season`: fills the configured database (DB_PATH / config.local.json, like the app) with one
  * generated season — 2 000 games, 60 000 snapshots, 400 trades (`scripts/seed-season-lib.ts`) — then runs
  * `PRAGMA wal_checkpoint(TRUNCATE)` and prints the row counts and the size of `trader.db` and its `-wal`.
  * `--clear` removes the generated rows again. Never run it against a production database: every row is fake.

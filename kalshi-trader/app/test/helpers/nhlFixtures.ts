@@ -15,7 +15,7 @@ export function nhlFixture<T = Record<string, unknown>>(name: string): T {
 /** Maps a path relative to `/v1` to its fixture. */
 export function routeNhl(path: string): { status: number; body: unknown } {
   if (path === '/score/now') return { status: 200, body: nhlFixture('score_now') };
-  // T11 importer: one fixture week (answering the season's first request) and play-by-play per game.
+  // Season importer: one fixture week (answering the season's first request) and play-by-play per game.
   const week = /^\/schedule\/(\d{4}-\d{2}-\d{2})$/.exec(path);
   if (week) {
     const name = `schedule_${week[1] ?? ''}`;

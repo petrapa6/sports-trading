@@ -15,7 +15,7 @@ import {
 } from '../../helpers/trading.js';
 
 /**
- * T13: the live path of the executor (Create Order V2, sizing from the Kalshi balance, outcomes), start-up
+ * The live path of the executor (Create Order V2, sizing from the Kalshi balance, outcomes), start-up
  * recovery of pending live attempts, reconciliation with `/portfolio/settlements`, `balance_snapshots`, and the
  * switch matrix — Kalshi answered by the msw stand-in.
  */

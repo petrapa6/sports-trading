@@ -1,5 +1,5 @@
 {
-  "description": "Synthetic EPL game for the T12 parity test (SPEC.md §14 T12): Arsenal 2-1 Chelsea, goals at 12' (home), 55' (away), 78' (home). Candles are YES ask closes in price units at game minutes; their wall-clock minute is candleMinuteMs('soccer', kickoff, minute). 'retryCandles' replaces the home candles for the retry-parity case (ask above maxPrice at 80' and 81', below at 82').",
+  "description": "Synthetic EPL game for the live/backtest parity test: Arsenal 2-1 Chelsea, goals at 12' (home), 55' (away), 78' (home). Candles are YES ask closes in price units at game minutes; their wall-clock minute is candleMinuteMs('soccer', kickoff, minute). 'retryCandles' replaces the home candles for the retry-parity case (ask above maxPrice at 80' and 81', below at 82').",
   "leagueId": "epl",
   "event": "KXEPLGAME-26OCT17ARSCHE",
   "kickoff": "2026-10-17T14:00:00.000Z",

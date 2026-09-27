@@ -1,5 +1,5 @@
 /**
- * `npm run lighthouse:a11y` (T14): Lighthouse's accessibility score for the Dashboard and the Trades page must be
+ * `npm run lighthouse:a11y`: Lighthouse's accessibility score for the Dashboard and the Trades page must be
  * at least 90, at desktop (1280 px) and mobile (390 px) widths.
  *
  * Runs the production build (`npm run build` first unless `--no-build`) on a scratch database seeded with

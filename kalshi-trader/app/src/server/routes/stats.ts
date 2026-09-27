@@ -16,7 +16,7 @@ const StatsQuery = z.object({
 });
 
 /**
- * `GET /api/stats?sport&leagues&strategies&mode&env&range` (SPEC.md §6 Metrics, §8, T10): the Dashboard's tiles
+ * `GET /api/stats?sport&leagues&strategies&mode&env&range` (SPEC.md §6 Metrics, §8): the Dashboard's tiles
  * and chart series, pre-aggregated and keyed by mode — `{ live: {tiles, series}, dry_run: {tiles, series} }`,
  * a mode filtered out is absent. The filter parameters are the Trades page's; `env` defaults to the Kalshi
  * environment the app runs against, and an unknown league id is a `400`.

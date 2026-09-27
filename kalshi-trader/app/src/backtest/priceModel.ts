@@ -4,7 +4,7 @@ import { hist_games, hist_prices, type HistGame } from '../db/schema.js';
 import type { GoalEvent } from '../core/tracker.js';
 
 /**
- * Price model (SPEC.md §9 Price providers, T11): the **median ask close** by (sport, lead bucket 1 / 2 /
+ * Price model (SPEC.md §9 Price providers): the **median ask close** by (sport, lead bucket 1 / 2 /
  * 3+, remaining-minute bucket of 5), built from `hist_prices` joined to `hist_games` goal timelines
  * (never to `game_snapshots`, which are pruned). Stored in `settings.price_model`. Cells with fewer than
  * `MIN_SAMPLES` observations report the conservative seed value (`seeded: true`) with their real
@@ -142,7 +142,7 @@ export function matchMinute(sport: ModelSport, e: number): number | null {
   return period * 20 + Math.floor((w * 20) / 36);
 }
 
-/** Which timeline describes a Kalshi event when several sources do (lower wins); also used by the backtest (T12). */
+/** Which timeline describes a Kalshi event when several sources do (lower wins); also used by the backtest. */
 export const SOURCE_RANK: Record<string, number> = { live: 0, kalshi_pbp: 1, nhl: 2, csv: 3 };
 
 /** Builds the model from the database (reads `hist_games`, `games`, `markets`, `hist_prices`). */
@@ -219,7 +219,7 @@ export function buildPriceModel(repos: Repositories, builtAt: string): PriceMode
 }
 
 /**
- * `priceModel(sport, lead, minutesRemaining)` for the modelled backtest (T12): the cell's ask and
+ * `priceModel(sport, lead, minutesRemaining)` for the modelled backtest: the cell's ask and
  * sample size. `lead` ≥ 3 uses the 3+ bucket; remaining minutes are clamped to the regulation length.
  */
 export function priceModelLookup(

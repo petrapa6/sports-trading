@@ -1,5 +1,5 @@
 /**
- * The season-sized generator behind `npm run seed:season` (T14): one season of finished games with the rows the
+ * The season-sized generator behind `npm run seed:season`: one season of finished games with the rows the
  * live path leaves behind — teams, two markets per game, 30 `game_snapshots` per game with raw payloads the size
  * the tracker writes, the archived timelines in `hist_games` — plus 400 trades in both modes (`seed:demo`'s
  * generator). Used for the DB size check (< 200 MB after a checkpoint), the maintenance check (pruning only

@@ -1,5 +1,5 @@
 /**
- * Backtest charts (SPEC.md §8 Backtest page, §9 Output, T12): equity curve, drawdown and monthly P&L of one run,
+ * Backtest charts (SPEC.md §8 Backtest page, §9 Output): equity curve, drawdown and monthly P&L of one run,
  * and the equity lines of up to three saved runs side by side. Backtests are their own category: these charts
  * never show live or dry-run data, and their legends name the run ("Backtest …"), never "Live" / "Dry run".
  */

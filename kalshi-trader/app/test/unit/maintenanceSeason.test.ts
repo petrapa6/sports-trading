@@ -7,7 +7,7 @@ import { logLines } from '../helpers/feeds.js';
 import { captureLogger } from '../helpers/kalshiMsw.js';
 
 /**
- * T14: nightly maintenance end to end on a season-sized database (`seed:season`: 2 000 games, 60 000 snapshots,
+ * Nightly maintenance end to end on a season-sized database (`seed:season`: 2 000 games, 60 000 snapshots,
  * 400 trades). Fake time crosses 02:30 → one log line naming `wal_checkpoint` and `pruned N snapshots`, the `-wal`
  * file shrinks below 1 MB, and only snapshots of archived games older than 90 days are gone.
  */

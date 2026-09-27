@@ -148,7 +148,7 @@ export function registerApiRoutes(
   });
 
   /**
-   * The Kalshi order group (SPEC.md §10 Blast radius, T13): id, contract limit and state. Without live orders
+   * The Kalshi order group (SPEC.md §10 Blast radius): id, contract limit and state. Without live orders
    * (`allow_live_orders: false` or no Kalshi credentials) the state is `disabled`.
    */
   app.get('/api/settings/order-group', async () => {

@@ -4,7 +4,7 @@ import type { Repositories } from '../db/repositories.js';
 import type { KalshiClient } from '../feeds/kalshi/client.js';
 
 /**
- * Live balance history (SPEC.md §7 `balance_snapshots`, §8 Balance history, T13): the Kalshi cash and portfolio
+ * Live balance history (SPEC.md §7 `balance_snapshots`, §8 Balance history): the Kalshi cash and portfolio
  * value of the configured subaccount, written every 15 minutes and shortly after each live fill or live
  * settlement. While the global kill switch is on nothing is read and nothing is written.
  */

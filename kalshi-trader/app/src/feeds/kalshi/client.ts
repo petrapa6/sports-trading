@@ -9,7 +9,7 @@ import * as S from './schemas.js';
 import { authHeaders, loadSigningKey } from './signing.js';
 
 /**
- * Thin hand-written Kalshi Trade API v2 client (SPEC.md §2 API essentials, T06).
+ * Thin hand-written Kalshi Trade API v2 client (SPEC.md §2 API essentials).
  *
  * - Every request passes the network gate first (`NetworkPaused` while the global kill switch is on),
  *   then a token bucket (reads / writes), then is signed with RSA-PSS and sent.
@@ -140,7 +140,7 @@ export class KalshiClient {
   private readonly limits: RateLimitOptions;
   private readonly fetchFn: typeof fetch;
   private readonly now: () => number;
-  /** Outage tracking (T14): when the first failed call of the current outage happened, and how many failed. */
+  /** Outage tracking: when the first failed call of the current outage happened, and how many failed. */
   private unavailableSince: number | null = null;
   private failedCalls = 0;
 
@@ -462,7 +462,7 @@ export class KalshiClient {
     });
   }
 
-  // ---- orders (the executor's live path, restart recovery and the settler, T13) ------------
+  // ---- orders (the executor's live path, restart recovery and the settler) ------------
 
   /** Create Order V2: an immediate-or-cancel buy of YES (`side: "bid"`) at a limit price. */
   async createOrderV2(input: CreateOrderInput): Promise<S.OrderResult> {

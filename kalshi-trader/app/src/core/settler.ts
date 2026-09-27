@@ -8,7 +8,7 @@ import { payoutMicros, realizedPnlMicros } from './pricing.js';
 import { adjustBankroll, transitionTrade, type TradeStatus } from './trades.js';
 
 /**
- * Settler (SPEC.md §6 Settling, T09): every 60 s — never while the global kill switch is on, when it makes no
+ * Settler (SPEC.md §6 Settling): every 60 s — never while the global kill switch is on, when it makes no
  * request at all — reads the market of every `filled` trade, and once it is `settled` / `finalized` with a
  * `settlement_value_dollars`:
  *
@@ -16,7 +16,7 @@ import { adjustBankroll, transitionTrade, type TradeStatus } from './trades.js';
  *   `realized_pnl = payout − cost − fee`;
  * - dry run: the payout is credited to the shared bankroll with a `bankroll_snapshots` row (`settlement`) in
  *   the same transaction;
- * - live (T13): reconciled against `GET /portfolio/settlements?ticker=`: when the exchange's `revenue` for the
+ * - live: reconciled against `GET /portfolio/settlements?ticker=`: when the exchange's `revenue` for the
  *   ticker differs from the app's payout (the sum over its live trades on that ticker) by more than
  *   `RECONCILE_TOLERANCE_MICROS`, `trades.reconcile_warning` is set and one `warn` logged. While Kalshi lists no
  *   settlement for the ticker yet, live trades wait (up to `RECONCILE_WAIT_MS`, then they settle with a warning).

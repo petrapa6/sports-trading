@@ -5,7 +5,7 @@ import type { ApiFootballClient, FixtureEvent } from '../feeds/apiFootball/feed.
 import type { JobContext } from './jobs.js';
 
 /**
- * Bulk soccer goal timelines from API-Football (SPEC.md §3 Historical, T15, optional): for one league and
+ * Bulk soccer goal timelines from API-Football (SPEC.md §3 Historical, optional): for one league and
  * season, `GET /fixtures?league=…&season=…&status=FT`, then `GET /fixtures/events?fixture=…&type=Goal` for
  * every finished fixture → `hist_games` (`source = 'api_football'`, id `api_football:<fixtureId>`).
  *

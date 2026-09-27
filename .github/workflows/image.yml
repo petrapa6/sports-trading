@@ -1,7 +1,7 @@
 name: Image
 
-# Home Assistant app image (SPEC.md §11, T05): the multi-arch build under QEMU, the arm64 native-module
-# check, and the amd64 container checks of `npm run verify:T05` (docker compose, run.sh, key hand-over).
+# Home Assistant app image (SPEC.md §11): the multi-arch build under QEMU, the arm64 native-module
+# check, and the amd64 container checks of `npm run verify:image` (docker compose, run.sh, key hand-over).
 on:
   push:
   pull_request:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   amd64:
-    name: amd64 image — compose, run.sh, key hand-over, capabilities (verify:T05, verify:T14 container)
+    name: amd64 image — compose, run.sh, key hand-over, capabilities (verify:image)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -30,10 +30,7 @@ jobs:
         working-directory: kalshi-trader/app
       - run: npm run check:addon
         working-directory: kalshi-trader/app
-      - run: npm run verify:T05
-        working-directory: kalshi-trader/app
-      # T14: capabilities of the node process, read-only root, no-new-privileges (compose, amd64).
-      - run: npm run verify:T14 -- --only=container
+      - run: npm run verify:image
         working-directory: kalshi-trader/app
 
   multiarch:
@@ -46,7 +43,7 @@ jobs:
         with:
           platforms: arm64
       # A job-local docker-container builder (the runner is disposable; on a workstation pass
-      # `--builder <name>` instead of switching the default builder, SPEC.md §14).
+      # `--builder <name>` instead of switching the default builder, SPEC.md §14 Reference app facts).
       - uses: docker/setup-buildx-action@v3
       - name: docker buildx build --platform linux/arm64,linux/amd64
         run: docker buildx build --platform linux/arm64,linux/amd64 -t kalshi-trader:multiarch kalshi-trader/
@@ -58,5 +55,5 @@ jobs:
       - run: npm ci --loglevel=warn
         working-directory: kalshi-trader/app
       # Re-uses the builder's cache from the step above; loads the arm64 image and runs node under QEMU.
-      - run: npm run verify:T05 -- --only=arm64
+      - run: npm run verify:image -- --only=arm64
         working-directory: kalshi-trader/app

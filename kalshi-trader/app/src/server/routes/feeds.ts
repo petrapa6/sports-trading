@@ -26,18 +26,18 @@ import { encryptSetting } from '../secrets.js';
 import { authOf, clientContext } from '../security.js';
 import { describeKalshiError } from './kalshi.js';
 
-/** The live pipeline (T07); absent in tests that only exercise the HTTP layer. */
+/** The live pipeline; absent in tests that only exercise the HTTP layer. */
 export interface LiveServices {
   tracker: GameTracker;
   scheduler: Scheduler;
   /** The adapters (the Kalshi one only with credentials; API-Football reports `isAvailable()`). */
   feeds: readonly ScoreFeed[];
-  /** The strategy engine (T08): its signals are pushed over `/api/live`. */
+  /** The strategy engine: its signals are pushed over `/api/live`. */
   engine?: StrategyEngine;
-  /** Executor and settler (T09): their trade changes are pushed over `/api/live`. */
+  /** Executor and settler: their trade changes are pushed over `/api/live`. */
   executor?: Pick<Executor, 'on'>;
   settler?: Pick<Settler, 'on'>;
-  /** The Kalshi order group (T13): Settings → Trading shows its status and resets it. */
+  /** The Kalshi order group: Settings → Trading shows its status and resets it. */
   orderGroups?: Pick<OrderGroupManager, 'status' | 'reset'>;
 }
 
@@ -80,7 +80,7 @@ const UNAVAILABLE: Record<FeedId, string> = {
 export const MASKED_KEY = '••••••••••••';
 
 /**
- * Settings → Feeds and the dashboard's live data (T07): tracked games, loop status, adapters on/off
+ * Settings → Feeds and the dashboard's live data: tracked games, loop status, adapters on/off
  * (audited as `feed_change`; no step-up — a feed cannot lead to a real order by itself) and
  * "Test feed", which answers one line per adapter (always `200`).
  */

@@ -15,7 +15,7 @@ import { HttpError, parseBody } from '../http.js';
 import { authOf, clientContext } from '../security.js';
 
 /**
- * Kalshi access for the app and the UI (T06). `client` and `discovery` are absent while the Kalshi
+ * Kalshi access for the app and the UI. `client` and `discovery` are absent while the Kalshi
  * credentials are not configured; every Kalshi action then answers a readable error.
  */
 export interface KalshiServices {

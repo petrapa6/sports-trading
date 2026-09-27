@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from '../../../src/db/connection.js';
 import { MIGRATIONS_TABLE, migrateDown, migrateUp, migrationStatus } from '../../../src/db/migrate.js';
-import { EXPECTED_TABLES, rowCounts, tableNames, tempDb, type TempDb } from '../../helpers/db.js';
+import { EXPECTED_TABLES, tableNames, tempDb, type TempDb } from '../../helpers/db.js';
 
 describe('migrations', () => {
   let t: TempDb | undefined;
@@ -66,41 +66,12 @@ describe('migrations', () => {
     t.db = openDatabase(t.path);
   });
 
-  it('down then up on a seeded DB leaves row counts unchanged', () => {
-    t = tempDb();
-    t.db.sqlite.exec(
-      "INSERT INTO settings (key, value) VALUES ('global_dry_run', 'false');" +
-        "INSERT INTO audit_log (at, actor, action) VALUES ('2026-09-25T00:00:00.000Z', 'system', 'test');",
-    );
-    const before = rowCounts(t.db);
-    expect(migrateDown(t.db, 2)).toEqual(['0002_games_historical', '0001_seed_leagues']);
-    expect(t.db.sqlite.prepare('SELECT count(*) AS n FROM leagues').get()).toEqual({ n: 0 });
-    expect(migrateUp(t.db)).toEqual(['0001_seed_leagues', '0002_games_historical']);
-    expect(rowCounts(t.db)).toEqual(before);
-  });
-
   it('roll back everything and re-apply it', () => {
     t = tempDb();
-    expect(migrateDown(t.db, Number.MAX_SAFE_INTEGER)).toEqual([
-      '0002_games_historical',
-      '0001_seed_leagues',
-      '0000_initial_schema',
-    ]);
+    expect(migrateDown(t.db, Number.MAX_SAFE_INTEGER)).toEqual(['0000_initial']);
     expect(tableNames(t.db)).toEqual([MIGRATIONS_TABLE]);
-    expect(migrateUp(t.db)).toEqual(['0000_initial_schema', '0001_seed_leagues', '0002_games_historical']);
+    expect(migrateUp(t.db)).toEqual(['0000_initial']);
     expect(tableNames(t.db)).toEqual([...EXPECTED_TABLES, MIGRATIONS_TABLE].sort());
-  });
-
-  it('refuse to remove a seeded league that is still referenced, changing nothing', () => {
-    t = tempDb();
-    t.db.sqlite.exec("INSERT INTO teams (id, league_id, name) VALUES ('t1', 'epl', 'Wolves')");
-    expect(migrateDown(t.db)).toEqual(['0002_games_historical']);
-    expect(() => migrateDown(t?.db as NonNullable<TempDb['db']>)).toThrow(/FOREIGN KEY/);
-    expect(
-      migrationStatus(t.db)
-        .filter((m) => m.applied)
-        .map((m) => m.tag),
-    ).toEqual(['0000_initial_schema', '0001_seed_leagues']);
     expect(t.db.sqlite.prepare('SELECT count(*) AS n FROM leagues').get()).toEqual({ n: 6 });
   });
 });

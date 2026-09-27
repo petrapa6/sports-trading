@@ -6,7 +6,7 @@ import { createTestApp, PASSWORD, setupUser, type TestApp } from '../../helpers/
 import { captureLogger, kalshiMockServer, must, testClient } from '../../helpers/kalshiMsw.js';
 import { KalshiScript } from '../../helpers/trading.js';
 
-/** Settings → Trading, order group (T13): status, and the reset that needs step-up and is audited. */
+/** Settings → Trading, order group: status, and the reset that needs step-up and is audited. */
 const mock = kalshiMockServer();
 let script: KalshiScript;
 let t: TestApp | undefined;

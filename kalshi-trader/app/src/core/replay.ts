@@ -9,7 +9,7 @@ import type { GameTracker, TrackedState } from './tracker.js';
 
 /**
  * Recorded feed evenings (`test/fixtures/replay/*.jsonl`, written by `npm run fixtures:record:feeds`) and
- * their playback (`npm run replay`, T07). One JSON object per line, each self-contained:
+ * their playback (`npm run replay`). One JSON object per line, each self-contained:
  *
  * ```json
  * {"at":"2026-10-11T02:00:00.000Z","feed":"kalshi-live",
@@ -129,7 +129,7 @@ function ensureGame(ctx: ReplayContext, line: ReplayLine, opts: ApplyOptions): v
   if (existing) repos.games.update({ id: g.id }, fresh);
   else repos.games.insert({ id: g.id, ...fresh });
   // Replayed games get their home / away (and soccer tie) markets like discovered ones, so strategies
-  // matching a replayed game signal with a market ticker (`<event>-<ABBR>`, `<event>-TIE`, T08).
+  // matching a replayed game signal with a market ticker (`<event>-<ABBR>`, `<event>-TIE`).
   const sport = repos.leagues.get({ id: g.leagueId })?.sport;
   const markets: [string, 'home' | 'away' | 'tie'][] = [
     [`${g.id}-${g.home.abbreviation.toUpperCase()}`, 'home'],

@@ -1,6 +1,6 @@
 /**
- * Helpers shared by the `verify:TXX` scripts: PASS / FAIL / MANUAL reporting, running commands,
- * and starting `npm run dev` in its own process group with a clean environment.
+ * Helpers shared by `verify:image`, `audit:security`, `lighthouse:a11y` and the failure drills: PASS / FAIL /
+ * MANUAL reporting, running commands, and starting `npm run dev` in its own process group with a clean environment.
  */
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { resolve } from 'node:path';

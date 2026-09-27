@@ -1,6 +1,6 @@
 /**
  * `npm run check:addon` — static checks of the Home Assistant app manifest `kalshi-trader/config.yaml`
- * (SPEC.md §11, T05). Prints every problem as `ERROR <key>: <reason>` and exits 1, or prints `OK` and
+ * (SPEC.md §11). Prints every problem as `ERROR <key>: <reason>` and exits 1, or prints `OK` and
  * exits 0.
  *
  *   npm run check:addon                              # ../config.yaml, ../run.sh, ./package.json
@@ -47,7 +47,7 @@ const REQUIRED = [
 const FORBIDDEN = ['host_network', 'privileged', 'full_access', 'hassio_api'] as const;
 
 /**
- * `homeassistant_api: true` (T15): Home Assistant notifications go through the Supervisor's Core API
+ * `homeassistant_api: true`: Home Assistant notifications go through the Supervisor's Core API
  * proxy; `hassio_api` (the Supervisor API itself) is not needed and stays forbidden.
  */
 const HOMEASSISTANT_API = 'homeassistant_api';

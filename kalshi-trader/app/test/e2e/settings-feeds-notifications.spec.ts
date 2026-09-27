@@ -2,7 +2,7 @@
 import { expect, test } from '@playwright/test';
 import { ensureUser, expectNoHorizontalScroll, login, watchConsole, withDb } from './helpers.js';
 
-/** T15 acceptance 8: Settings → Feeds (masked API-Football key, quota usage) and Settings → Notifications. */
+/** Settings → Feeds (masked API-Football key, quota usage) and Settings → Notifications. */
 
 let cspProblems: string[] = [];
 test.beforeEach(({ context }) => {

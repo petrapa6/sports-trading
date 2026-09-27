@@ -51,8 +51,8 @@ export const games = sqliteTable('games', {
   final_away: integer(),
   finished_at: text(),
   timeline_archived: integer().notNull().default(0), // goal timeline written to hist_games
-  historical: integer().notNull().default(0), // 1 = backfilled settled event (T11): never tracked or traded
-  pregame_home_bp: integer(), // YES ask at kick-off (T15 underdogOnly)
+  historical: integer().notNull().default(0), // 1 = backfilled settled event: never tracked or traded
+  pregame_home_bp: integer(), // YES ask at kick-off (underdogOnly)
   pregame_away_bp: integer(),
   updated_at: text().notNull(),
 });

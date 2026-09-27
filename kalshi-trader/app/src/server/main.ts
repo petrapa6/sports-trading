@@ -132,7 +132,7 @@ if (privateKey !== undefined && process.env['NODE_ENV'] === 'development') {
 
 const maintenance = startMaintenance({ getDb: () => database.current, log });
 
-// Kalshi (T06): every request passes the network gate, which reads the global kill switch from the
+// Kalshi: every request passes the network gate, which reads the global kill switch from the
 // database on each call. Without credentials there is no client and Kalshi access stays disabled.
 const gate = createNetworkGate(() => database.repositories.settings.get('global_kill_switch'));
 let kalshiClient: KalshiClient | undefined;
@@ -171,27 +171,27 @@ const discovery = kalshiClient
     })
   : undefined;
 
-// Live game state (T07): feeds → tracker, driven by the scheduler (paused while the kill switch is on).
+// Live game state: feeds → tracker, driven by the scheduler (paused while the kill switch is on).
 const transaction = (fn: () => void) => {
   const db = database.current;
   if (db) db.sqlite.transaction(fn)();
   else fn();
 };
 const tracker = new GameTracker({ repos: () => database.repositories, log, transaction });
-// Strategy engine (T08): evaluates every merged game state; switches are read from the database each time.
+// Strategy engine: evaluates every merged game state; switches are read from the database each time.
 const engine = new StrategyEngine({
   repos: () => database.repositories,
   log,
   allowLiveOrders: config.allowLiveOrders,
 }).attach(tracker);
-// Order group (T13): created or reused at start-up when live orders are possible; every live order carries it.
+// Order group: created or reused at start-up when live orders are possible; every live order carries it.
 const orderGroups = new OrderGroupManager({
   repos: () => database.repositories,
   log,
   kalshi: () => kalshiClient,
   allowLiveOrders: config.allowLiveOrders,
 });
-// Executor and settler (T09, live path T13): fills against the live orderbook (virtual in dry run, IOC orders
+// Executor and settler: fills against the live orderbook (virtual in dry run, IOC orders
 // in live), settlement every minute; pending live attempts whose outcome was unknown are resolved there too.
 const executor = new Executor({
   repos: () => database.repositories,
@@ -212,7 +212,7 @@ const settler = new Settler({
     await executor.resolvePendingLive('order_not_found', PENDING_LIVE_MIN_AGE_MS);
   },
 });
-// Live balance history (T13): every 15 min and after each live fill / settlement (never under the kill switch).
+// Live balance history: every 15 min and after each live fill / settlement (never under the kill switch).
 const balances = new BalanceRecorder({
   repos: () => database.repositories,
   log,
@@ -227,7 +227,7 @@ if (kalshiClient) feeds.push(new KalshiLiveFeed({ client: kalshiClient, log, gam
 // `KST_E2E_NHL_URL`: the Playwright stand-in for the NHL API; honoured only with KST_E2E=1 outside production.
 const nhlBaseUrl = e2e ? process.env['KST_E2E_NHL_URL'] : undefined;
 feeds.push(new NhlFeed({ gate, log, games: trackedGames, ...(nhlBaseUrl ? { baseUrl: nhlBaseUrl } : {}) }));
-// API-Football (T15): off by default, available once a key is stored (encrypted) under Settings → Feeds.
+// API-Football: off by default, available once a key is stored (encrypted) under Settings → Feeds.
 // `KST_E2E_API_FOOTBALL_URL`: a stand-in, honoured only with KST_E2E=1 outside production.
 const apiFootballBaseUrl = e2e ? process.env['KST_E2E_API_FOOTBALL_URL'] : undefined;
 const apiFootball = new ApiFootballClient({
@@ -254,9 +254,9 @@ feeds.push(
     },
   }),
 );
-// Kick-off YES asks for `underdogOnly` (T15), recorded on every scheduled → live change.
+// Kick-off YES asks for `underdogOnly`, recorded on every scheduled → live change.
 new PregameRecorder({ repos: () => database.repositories, log, kalshi: () => kalshiClient }).attach(tracker);
-// Home Assistant notifications (T15) through the Supervisor proxy; a no-op without SUPERVISOR_TOKEN.
+// Home Assistant notifications through the Supervisor proxy; a no-op without SUPERVISOR_TOKEN.
 // `KST_E2E_SUPERVISOR_URL`: a stand-in, honoured only with KST_E2E=1 outside production.
 const supervisorUrl = e2e ? process.env['KST_E2E_SUPERVISOR_URL'] : undefined;
 const notifier = new Notifier({
@@ -307,7 +307,7 @@ const app = await buildApp({
   live: { tracker, scheduler, feeds, engine, executor, settler, orderGroups },
   notifier,
   replay: { allowLoopback: e2e, transaction },
-  // Settings → Data (T11): the NHL importer uses the same e2e stand-in as the NHL feed.
+  // Settings → Data: the NHL importer uses the same e2e stand-in as the NHL feed.
   data: { gate, transaction, apiFootball, ...(nhlBaseUrl ? { nhlBaseUrl } : {}) },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });

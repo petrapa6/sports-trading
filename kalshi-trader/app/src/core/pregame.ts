@@ -4,7 +4,7 @@ import type { Market } from '../db/schema.js';
 import type { GameTracker } from './tracker.js';
 
 /**
- * Kick-off prices (SPEC.md §5 `underdogOnly`, T15): when a game goes from `scheduled` to `live`, the YES ask
+ * Kick-off prices (SPEC.md §5 `underdogOnly`): when a game goes from `scheduled` to `live`, the YES ask
  * of its home and away markets is read (`GET /markets/{ticker}`, through the network gate like every Kalshi
  * call) and stored in `games.pregame_home_bp` / `pregame_away_bp`. When Kalshi cannot be asked (no
  * credentials, kill switch, error) the last ask discovery or settlement stored in `markets.yes_ask_bp` is

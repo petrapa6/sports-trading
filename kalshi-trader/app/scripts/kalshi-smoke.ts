@@ -1,5 +1,5 @@
 /**
- * `npm run kalshi:smoke` (SPEC.md §14 T06) — read-only checks against the Kalshi **demo** environment:
+ * `npm run kalshi:smoke` — read-only checks against the Kalshi **demo** environment:
  * environment, subaccount, balance, exchange status, and the number of open events per enabled series
  * (0 is fine off-season). Without a demo key (`kalshiKeyId` + `kalshiPrivateKeyPath` in
  * `config.local.json`, `kalshiEnv: "demo"`) it prints `SKIPPED (no demo key)` and exits 0.

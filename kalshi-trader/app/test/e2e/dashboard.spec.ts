@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ensureUser, expectNoHorizontalScroll, login, watchConsole, withDb } from './helpers.js';
 
 /**
- * T10: the Dashboard tiles and the eight Recharts charts on `test/fixtures/db/stats-seed.sql`, plus the
+ * The Dashboard tiles and the eight Recharts charts on `test/fixtures/db/stats-seed.sql`, plus the
  * Trades page charts. The e2e database is shared by every spec, so this one empties the trade tables for
  * the empty-state check, loads the seed, and removes the seed rows again at the end.
  */

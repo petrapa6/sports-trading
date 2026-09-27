@@ -1,5 +1,5 @@
 /**
- * `npm run replay -- --live-mock [--file test/fixtures/replay/nhl-sample.jsonl]` (SPEC.md §14 T13): the live
+ * `npm run replay -- --live-mock [--file test/fixtures/replay/nhl-sample.jsonl]`: the live
  * path end to end without a Kalshi account. An in-process app (temporary database, the real tracker, engine,
  * executor, settler, order group and balance recorder, `allow_live_orders: true`) runs against the msw Kalshi
  * stand-in, which fills IOC orders at the best ask and keeps a balance. One live strategy (created, kill switch

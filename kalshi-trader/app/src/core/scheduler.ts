@@ -14,7 +14,7 @@ import { systemClock, type Clock } from './maintenance.js';
 import type { GameTracker } from './tracker.js';
 
 /**
- * Poll cadence (SPEC.md §3 Polling plan, §4, T07), a `setTimeout` chain:
+ * Poll cadence (SPEC.md §3 Polling plan, §4), a `setTimeout` chain:
  *
  * - **paused** while the global kill switch is on: no feed call at all; the switch is re-read every 5 s
  *   (and at once on `wake()`, which the API calls after a switch change);
@@ -141,7 +141,7 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
   }
 
   /**
-   * Restarts a stopped loop (the development-only stall drill, T14): the next tick runs at once, so
+   * Restarts a stopped loop (the development-only stall drill): the next tick runs at once, so
    * `/healthz` recovers as soon as it has ticked.
    */
   resume(): void {
