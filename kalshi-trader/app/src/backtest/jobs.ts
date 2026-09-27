@@ -17,7 +17,7 @@ import { NetworkPaused } from '../feeds/network.js';
  * - Every state or progress change is emitted as `job` (pushed over `/api/live`).
  */
 
-export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles';
+export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles' | 'api_football_import';
 export type JobStatus = 'running' | 'paused' | 'done' | 'failed' | 'cancelled';
 
 export interface JobView {

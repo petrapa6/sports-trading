@@ -34,7 +34,7 @@ The app is a single Node.js service, packaged as a Home Assistant app (formerly 
 - No pre-game bets, no selling before settlement, no hedging, no multi-leg positions, no top-up of a partially filled entry. One entry per game per strategy, held to settlement.
 - No sports other than soccer and hockey; no leagues other than those configured. Adding a league is configuration; adding a sport is code (a small adapter).
 - No NHL preseason games by default (per-league setting).
-- No push notifications until T15 (Home Assistant notifications).
+- No push notifications other than Home Assistant persistent notifications (T15; Settings → Notifications).
 
 ### Switches and effective mode
 
@@ -181,13 +181,13 @@ interface ScoreFeed {
 | --- | --- | --- | --- | --- |
 | `kalshi-live` | both | **on** (primary) | One batch live-data call per tick for all tracked milestones: `home_points`, `away_points`, `status`, `round`, `final_round_time_left`, `tileLiveText`/`widgetLiveText`, team ids that map straight to market structured targets | Zero extra keys, no team-name matching, and it is the state Kalshi settles on. Soccer minute is not a first-class field: parsed from `tileLiveText`/`widgetLiveText` (`78'`, `45+2'`, `HT`, `FT`); if unparseable, derived (below). |
 | `nhl-official` | hockey | **on** (cross-check) | `https://api-web.nhle.com/v1/score/now` → `period`, `clock.timeRemaining`, `homeTeam.score`, `gameState` (`FUT`, `PRE`, `LIVE`, `CRIT`, `FINAL`, `OFF`) | Authoritative clock for NHL; matched to games via tricodes, `teams.aliases` and milestone `source_ids` |
-| `api-football` | soccer | off (T15) | `GET /fixtures?live=all` → `fixture.status.elapsed`, goals, status codes | Needs a paid plan for 5-second-class polling; deferred |
+| `api-football` | soccer | **off** (opt-in, T15) | `GET /fixtures?live=all` → `fixture.status.elapsed`, goals, status codes | Key stored encrypted (Settings → Feeds); a daily request quota guard (default 100) stops it before the plan's limit; a paid plan is needed for 5-second-class polling. When fresh, its minute is the soccer clock |
 
 **Soccer minute fallback (derived).** When the Kalshi text cannot be parsed, the tracker derives the minute from wall-clock time since the observed kick-off (first transition to `live`) and since the observed start of the second half (first `live` after halftime), minute = whole minutes elapsed (floored), capped at 45 and 90 respectively; `minuteSource = 'derived'` is stored on every snapshot and shown in the trade snapshot. Accuracy is about ±1 minute; T07 verifies it on replays.
 
 **Halftime / intermission.** Kalshi `status` has no break state. Soccer halftime = text `HT` or `round` change without play; hockey intermission = `final_round_time_left` `00:00` with `round` 1 or 2, or NHL `clock.inIntermission`. Strategies never fire during a break.
 
-**Polling plan.** The scheduler polls at **5 s** while any tracked game is live, **60 s** during the hour before a scheduled game, and stops otherwise; the global kill switch puts it in `paused` (zero requests). With two feeds for a game (NHL), the `GameTracker` reconciles them: score = the agreed value; a disagreement lasting more than 20 s sets `games.blocked = 1`, is logged, and blocks entries for that game until the feeds agree again. Team matching between feeds uses the `teams` table seeded from Kalshi structured targets.
+**Polling plan.** The scheduler polls at **5 s** while any tracked game is live, **60 s** during the hour before a scheduled game, and stops otherwise; the global kill switch puts it in `paused` (zero requests). With two feeds for a game (NHL, or soccer with API-Football switched on), the `GameTracker` reconciles them: score = the agreed value; a disagreement lasting more than 20 s sets `games.blocked = 1`, is logged, and blocks entries for that game until the feeds agree again. Team matching between feeds uses the `teams` table seeded from Kalshi structured targets.
 
 ### Kalshi market discovery
 
@@ -214,7 +214,7 @@ Backtesting "lead at minute M" needs **goal timestamps** and the **ask at the tr
 | Soccer, older seasons | Generic CSV importer (e.g. Kaggle "European Soccer Database", 2008–2016) | Whatever the user uploads | Modelled prices only (no Kalshi candles exist for those games) |
 | Kalshi in-play prices | Candlesticks, 1-minute (`yes_ask` and `yes_bid` OHLC) | Since Kalshi listed each series (NHL and EPL game markets from roughly the 2025–26 season) | Exact backtests use the **ask close** at minute M |
 | Prices before Kalshi existed | **Price model** fitted on collected candles: median ask by (sport, lead, minutes remaining) | Any season | Labelled "modelled" in the UI (§9) |
-| Soccer, bulk paid import | API-Football (`/fixtures`, `/fixtures/events`) | 1,200+ leagues | Deferred to T15 (optional, needs a paid key) |
+| Soccer, bulk paid import | API-Football (`/fixtures`, `/fixtures/events`) | 1,200+ leagues | Settings → Data, one league and season per job (T15; needs a paid key; `source = 'api_football'`) |
 
 **Generic CSV importer** (Settings → Data): columns `league_code, season, date, home, away, home_goals_final, away_goals_final, goal_events` where `goal_events` is `home:23;away:67;home:90+2`. Any dataset the user can shape into this form becomes backtestable (modelled prices).
 
@@ -317,7 +317,9 @@ A strategy is a row with a JSON `rule`; the engine evaluates the rule against ev
     "minLead": 2,
     "atMinute": 80,
     "windowMinutes": 5,
-    "leaderSide": "any"
+    "leaderSide": "any",
+    "maxOpponentGoals": 0,
+    "underdogOnly": false
   },
   "sizing": { "type": "percent_of_balance", "percent": 2, "minStakeUsd": 1, "maxStakeUsd": 50 },
   "execution": {
@@ -341,8 +343,12 @@ New strategies are created with `killSwitch: true` (paused) and `mode: "dry_run"
 | `atMinute` | Earliest clock minute at which the strategy may enter | match minute 1–90 (stoppage counts as 45 / 90) | elapsed minute 1–59 = (period − 1) × 20 + (20 − time left), floored |
 | `windowMinutes` | Entry window: the strategy may enter while `atMinute ≤ minute ≤ atMinute + windowMinutes` | default 5 | default 3 |
 | `leaderSide` | `any`, `home`, or `away` | | |
+| `maxOpponentGoals` | Optional (T15): the trailing team has scored at most this many goals; integer ≥ 0, omitted = no limit | goals | goals |
+| `underdogOnly` | Optional (T15), default `false`: only when the leader was the pre-game underdog — its YES ask at kick-off (`games.pregame_home_bp` / `pregame_away_bp`) strictly below the opponent's; unknown kick-off asks never match | | |
 
-The rule **matches** when `phase === 'live'`, the game is not `blocked`, `|home − away| ≥ minLead` with the leader on an allowed side, and the minute is inside the window. It never matches during halftime/intermission or after regulation (hockey OT is excluded; soccer stoppage time of the second half counts as minute 90).
+The rule **matches** when `phase === 'live'`, the game is not `blocked`, `|home − away| ≥ minLead` with the leader on an allowed side, the extra conditions above hold, and the minute is inside the window.
+
+**Kick-off asks (T15).** On every `scheduled → live` change the YES ask of the home and away markets is read (`GET /markets/{ticker}`, through the network gate) and written once to `games.pregame_*_bp`; when Kalshi cannot be asked, the last ask stored in `markets.yes_ask_bp` is used. The backtester uses these values when recorded, otherwise in exact mode the candle at the scheduled start; modelled backtests have no kick-off prices, so an `underdogOnly` rule never trades there. It never matches during halftime/intermission or after regulation (hockey OT is excluded; soccer stoppage time of the second half counts as minute 90).
 
 **First match** inserts the `trades` row (`signalled`) with the trigger snapshot (score, minute, minute source, feed timestamps), the leader's market, `configured_mode`, `effective_mode`, `window_ends_at`. Then the executor makes an attempt.
 
@@ -585,7 +591,10 @@ CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEX
 -- keys and defaults: global_kill_switch=false, global_dry_run=true,
 --   dry_run_bankroll_micros=100000000, dry_run_initial_bankroll_micros=100000000,
 --   fee_balance_precision_micros=100, kalshi_order_group_id=null, order_group_contract_limit=200,
---   price_model=null, api_football_key_enc=null (T15), notifications={} (T15), feeds={} (T07)
+--   price_model=null, api_football_key_enc=null (T15), api_football_daily_limit=100 (T15),
+--   api_football_quota=null (T15, {"day":"YYYY-MM-DD" local,"used":n}),
+--   notifications={"events":{},"modes":{"live":true,"dry_run":true}} (T15; an event missing from events is on),
+--   feeds={} (T07; an adapter missing from the map has its default: api-football off, the others on)
 
 -- Backtesting
 CREATE TABLE hist_games (
@@ -642,7 +651,7 @@ Six pages behind the login. Every data page shares one **filter bar** — sport,
 | **Strategies** | Create, edit, pause, switch mode | Table: name, sport, leagues, **kill switch toggle**, **mode toggle**, effective-mode badge, trades and P&L 30d per mode; editor drawer with all §5 fields and inline validation; "Test against last 30 days" (quick exact backtest, from T12; disabled until the strategy is saved); version history |
 | **Trades** | Everything that fired or nearly fired | Table with filter bar + status filter (waiting / filled / settled / skipped by reason) + mode badges; row expands to trigger snapshot (score, minute, minute source, feed timestamps), attempts list (time, ask, depth, limit, outcome, reason), fill, settlement, reconcile warning, audit trail; charts: price-paid histogram and P&L per trade, both split by mode |
 | **Backtest** | Replay a strategy over a past season | Form: league, season(s), strategy (existing version or ad-hoc), initial bankroll, price mode (exact / modelled); results: equity curve, drawdown, monthly P&L, trades table, tiles, "modelled" badge with the smallest sample size used; save; compare up to 3 saved runs; "Promote to strategy" |
-| **Settings** | Everything operational | **Trading:** global kill switch (big, red), global dry run, add-on lock and Kalshi env/subaccount (read-only, with a note that they are changed in Home Assistant), dry-run bankroll (current, initial, reset with step-up), fee precision, order group status/limit; **Leagues:** enable, series ticker, include preseason, discover series, run discovery; **Feeds:** adapters on/off, test feed; **Data:** import CSV, fetch NHL season, backfill settled Kalshi events, collect candles, rebuild price model, DB size, vacuum; **Account:** change password, TOTP, active sessions with revoke; **Diagnostics:** log tail with mode filter, app version, DB path/size, test Kalshi connection |
+| **Settings** | Everything operational | **Trading:** global kill switch (big, red), global dry run, add-on lock and Kalshi env/subaccount (read-only, with a note that they are changed in Home Assistant), dry-run bankroll (current, initial, reset with step-up), fee precision, order group status/limit; **Leagues:** enable, series ticker, include preseason, discover series, run discovery; **Feeds:** adapters on/off, test feed, API-Football key (masked), daily request limit and today's usage (T15); **Notifications:** Home Assistant notifications per event and per mode (T15); **Data:** import CSV, fetch NHL season, import an API-Football season (paid key, T15), backfill settled Kalshi events, collect candles, rebuild price model, DB size, vacuum; **Account:** change password, TOTP, active sessions with revoke; **Diagnostics:** log tail with mode filter, app version, DB path/size, test Kalshi connection |
 
 Layout: one dark/light-aware responsive layout; on a phone the status strip and live game cards come first and charts stack vertically below `md`.
 
@@ -716,7 +725,8 @@ Every request is classified once, by the socket peer and headers, before any rou
 | Kalshi API key id + RSA private key (PEM) | Home Assistant app options (`/data/options.json`, root-only) as `kalshi_key_id` and `kalshi_private_key_b64` (schema type `password`) | Pasted once in the app's **Configuration** tab | In git, in the image, in the database or any app-written file under `/data` (backed up to Google Drive; only the Supervisor-written `options.json` holds it, protected by the backup password), in logs, in environment variables |
 | Private key at runtime | Node process memory only | `run.sh` (root) decodes it and hands it to Node on **file descriptor 3**; Node reads fd 3 once at boot and closes it once the database and the listening socket are open (§11) | `process.env`, `/proc/<pid>/environ`, disk |
 | Session/encryption secret | `/data/app/secret.key` (mode 600, owned by the app user), 32 random bytes generated on first start | Automatic | Regenerated unless deleted (which logs everyone out and makes encrypted settings unreadable) |
-| API-Football key (T15) | `settings.api_football_key_enc`, AES-256-GCM under a key derived from `secret.key` | Settings page | Plaintext in the DB |
+| API-Football key (T15) | `settings.api_football_key_enc`, AES-256-GCM under a key derived from `secret.key` (`encryptSetting`) | Settings → Feeds (write-only: the page shows it masked; no API returns it) | Plaintext in the DB, in logs, in audit rows or in API answers |
+| `SUPERVISOR_TOKEN` (T15) | Process environment, set by the Supervisor for apps with `homeassistant_api` | Automatic inside Home Assistant; absent elsewhere (notifications become a no-op) | In logs or the database |
 | App user password | `users.password_hash`, argon2id (m = 64 MiB, t = 3) | First-run setup, only from `ingress` (or `dev`) while `users` is empty | — |
 
 No `.env` files exist in any environment. Local development reads the same settings from a git-ignored `config.local.json` (the private key as a **path** to a PEM outside the repository); `config.local.example.json` is committed with empty values. The repository ships `.gitignore` entries for `*.key`, `*.pem`, `config.local.json`, `*.db*`, `.local/`, and a **pre-commit hook plus CI step running `gitleaks`**; `.dockerignore` excludes the same paths.
@@ -759,10 +769,10 @@ No `.env` files exist in any environment. Local development reads the same setti
 
 ### Container and supply chain
 
-- Built and run from the same pinned Home Assistant base image; the Node process runs as the non-root user `trader` (uid 1000); `run.sh` alone runs as root to read options, prepare directories and hand over the key. `apparmor: true` (default profile), no `host_network`, no `privileged`, no `full_access`, no `hassio_api`; `homeassistant_api` only from T15.
+- Built and run from the same pinned Home Assistant base image; the Node process runs as the non-root user `trader` (uid 1000); `run.sh` alone runs as root to read options, prepare directories and hand over the key. `apparmor: true` (default profile), no `host_network`, no `privileged`, no `full_access`, no `hassio_api`; `homeassistant_api: true` from T15 (Home Assistant notifications through the Supervisor's Core API proxy; `check:addon` requires it and still rejects `hassio_api`).
 - Read-only root filesystem is enforced in local `docker compose` runs (`read_only: true`); Home Assistant has no equivalent option, so on HAOS the protections are non-root, AppArmor and the absence of extra privileges.
 - `npm ci` with a committed lockfile; `npm audit` and Dependabot in CI; runtime dependencies limited to §4 (dev-only additions: `msw`, `qrcode`, `yaml`).
-- Outbound egress by design: Kalshi hosts, `api-web.nhle.com`, API-Football (T15), `supervisor` (T15). Documented so it can be enforced at the router/Pi-hole.
+- Outbound egress by design: Kalshi hosts, `api-web.nhle.com`, `v3.football.api-sports.io` (API-Football, only with a stored key and the feed switched on, T15), `supervisor` (internal Home Assistant host, notifications, T15). Every one of them passes the network gate, so the global kill switch stops notifications too. Documented so it can be enforced at the router/Pi-hole.
 - Every money- or security-related action (order attempt, fill, settlement, switch change, mode change, limits change, login, failed login, lockout, key/session events) goes to `audit_log` with actor, IP, channel and mode, and cannot be deleted from the UI.
 
 ## 11. Home Assistant app packaging
@@ -790,7 +800,7 @@ sports-trading/                 (git repo root = HA app repository)
 
 ```yaml
 name: Kalshi Sports Trader
-version: "1.0.0"
+version: "1.1.0"
 slug: kalshi-trader
 description: In-game sports strategy trader for Kalshi with dry-run mode and backtesting
 url: https://github.com/petrapa6/sports-trading
@@ -811,6 +821,7 @@ backup_exclude:
   - "/data/app/cache/**"
 watchdog: http://[HOST]:[PORT:8099]/healthz
 tmpfs: true
+homeassistant_api: true        # T15: notifications via the Supervisor Core API proxy; hassio_api stays off
 options:
   kalshi_env: demo
   kalshi_key_id: ""
@@ -859,7 +870,7 @@ COPY run.sh /run.sh
 RUN chmod 755 /run.sh
 ENV NODE_ENV=production
 HEALTHCHECK CMD wget -qO- http://127.0.0.1:8099/healthz || exit 1
-LABEL io.hass.version="1.0.0" io.hass.type="app" io.hass.arch="aarch64|amd64" \
+LABEL io.hass.version="1.1.0" io.hass.type="app" io.hass.arch="aarch64|amd64" \
       org.opencontainers.image.title="Kalshi Sports Trader" \
       org.opencontainers.image.source="https://github.com/petrapa6/sports-trading"
 ENTRYPOINT []
@@ -947,7 +958,7 @@ CI (GitHub Actions): lint, typecheck, tests, e2e, `npm audit --audit-level=high`
 
 | Risk | Impact | Mitigation in this spec |
 | --- | --- | --- |
-| Kalshi soccer live data has no clean match-minute field | Soccer strategies fire late or not at all | Text parser + derived-minute fallback, `minuteSource` recorded; verify in the first dry-run week; API-Football adapter in T15 |
+| Kalshi soccer live data has no clean match-minute field | Soccer strategies fire late or not at all | Text parser + derived-minute fallback, `minuteSource` recorded; verify in the first dry-run week; optional API-Football adapter (T15) supplies the feed minute |
 | Late-game prices of $0.94–$0.98: one loss erases ~16–49 wins (more after fees) | Strategy can be net negative even at a 95 % win rate; these markets are liquid and efficient (a settled NHL game checked on 2026-09-25 traded ~290k contracts per side) | Expect near-zero or negative EV until proven otherwise; implied-vs-actual chart, `maxPrice`, exact backtests, dry run → demo → prod with `maxStakeUsd` ≤ $5 |
 | Score feed lags the market (buying right after the opponent scores) | Adverse selection | `maxFeedAgeSec`, optional `minPrice`, feed cross-check for NHL, snapshot timestamps on every trade |
 | Thin orderbooks | Partial fills or none | `minDepthContracts`, IOC orders, retry within the window, partial fills recorded honestly |
@@ -965,7 +976,7 @@ CI (GitHub Actions): lint, typecheck, tests, e2e, `npm audit --audit-level=high`
 | 25 Sep 2026 | Dry-run bankroll | One shared virtual bankroll for all dry-run trades (default $100, resettable) |
 | 25 Sep 2026 | Daily loss limit / trades-per-day cap | Dropped; switches, `maxStakeUsd`, order group and subaccount remain |
 | 25 Sep 2026 | TOTP | Optional, off at launch, can be enabled later |
-| 25 Sep 2026 | Home Assistant notifications | Later (T15) |
+| 25 Sep 2026 | Home Assistant notifications | Later (T15; done 27 Sep 2026) |
 | 25 Sep 2026 | Backtest history source | NHL Web API + Kalshi candles + archived live timelines + Kalshi play-by-play (if usable); soccer older seasons via CSV; API-Football deferred |
 | 25 Sep 2026 (review) | Kill switch semantics | Two global switches: **kill switch** (pause everything, no outgoing HTTP) and **dry run** (keep APIs, no real orders, log results). Live strategies pause under the kill switch and run as dry run under global dry run. |
 | 25 Sep 2026 (review) | Per-strategy controls | Each strategy has its own kill switch (replaces `enabled`) and its own dry-run/live mode |
@@ -1633,14 +1644,29 @@ Fifteen tickets, implemented strictly in order by one developer agent (Opus 5.5)
 **Out of scope:** new sports.
 
 **Acceptance (verify locally)**
-- [ ] Fixture `status.short: '2H', elapsed: 78`, goals 2-0 → `{phase:'live', clock.minute:78, minuteSource:'feed', homeScore:2}`; `'HT'` → `halftime`; `'FT'` → `finished`; `'PST'` → `postponed`.
-- [ ] Quota guard: counter at 100 → no call, `warn`, feed status `quota`; resets at local midnight (fake timers). Global kill switch → zero calls.
-- [ ] Stored key: DB value ≠ plaintext; `decryptSetting` returns it; it never appears in logs.
-- [ ] Tracker with `kalshi-live` and `api-football`: soccer minute comes from API-Football when present; disagreeing scores for > 20 s → `blocked` as in T07.
-- [ ] Notifications: msw mock of `http://supervisor/core/api/services/persistent_notification/create` receives a POST with `Authorization: Bearer <SUPERVISOR_TOKEN>` whose message contains `[DRY RUN]`, the strategy name and P&L on a dry-run fill, and `[LIVE]` on a live fill; toggles off → no request; no token → no request and one `debug` line.
-- [ ] `npm run check:addon` passes with `homeassistant_api: true` and fails if `hassio_api` is added.
-- [ ] Rule tests: `maxOpponentGoals: 0` with 2-1 → no signal, 2-0 → signal; `underdogOnly: true` fires only when the leader's kick-off YES ask was below the opponent's.
-- [ ] e2e: Settings → Feeds shows the masked API-Football key field and quota usage; Settings → Notifications toggles persist.
+- [x] Fixture `status.short: '2H', elapsed: 78`, goals 2-0 → `{phase:'live', clock.minute:78, minuteSource:'feed', homeScore:2}`; `'HT'` → `halftime`; `'FT'` → `finished`; `'PST'` → `postponed`.
+- [x] Quota guard: counter at 100 → no call, `warn`, feed status `quota`; resets at local midnight (fake timers). Global kill switch → zero calls.
+- [x] Stored key: DB value ≠ plaintext; `decryptSetting` returns it; it never appears in logs.
+- [x] Tracker with `kalshi-live` and `api-football`: soccer minute comes from API-Football when present; disagreeing scores for > 20 s → `blocked` as in T07.
+- [x] Notifications: msw mock of `http://supervisor/core/api/services/persistent_notification/create` receives a POST with `Authorization: Bearer <SUPERVISOR_TOKEN>` whose message contains `[DRY RUN]`, the strategy name and P&L on a dry-run fill, and `[LIVE]` on a live fill; toggles off → no request; no token → no request and one `debug` line.
+- [x] `npm run check:addon` passes with `homeassistant_api: true` and fails if `hassio_api` is added.
+- [x] Rule tests: `maxOpponentGoals: 0` with 2-1 → no signal, 2-0 → signal; `underdogOnly: true` fires only when the leader's kick-off YES ask was below the opponent's.
+- [x] e2e: Settings → Feeds shows the masked API-Football key field and quota usage; Settings → Notifications toggles persist.
+
+**Implementation notes (T15, deviations and clarifications)**
+
+- **Adapter** (`feeds/apiFootball/feed.ts`): API-Football v3 at `https://v3.football.api-sports.io`, key in the `x-apisports-key` header only. Status codes: `TBD`/`NS` scheduled; `1H`/`2H`/`ET`/`P`/`LIVE` live; `HT`/`BT`/`INT` halftime (a break: no entries); `FT`/`AET`/`PEN`/`AWD`/`WO` finished; `PST`/`CANC`/`ABD`/`SUSP` postponed. `1H` minutes are capped at 45 and `2H` at 90 (stoppage); `ET`/`P` count as regulation over. Fixtures are matched by a known fixture id (`feed_game_ids.apiFootball`, learned on first match), else by league (`leagues.feed_ids.apiFootball`), both team names (accents, case, punctuation and club affixes such as FC / AFC / 1. ignored; equal or whole-word contained) and a kick-off within 12 h, or one team name and a kick-off within 15 min. A tracked game in progress that dropped out of `live=all` (it just finished) and whose fixture id is known is read with one extra `GET /fixtures?ids=…` per tick (≤ 20 ids).
+- The adapter is **off by default** (`FEED_DEFAULT_ENABLED`; an adapter missing from `settings.feeds` gets its default) and **unavailable** until a key is stored (`ScoreFeed.isAvailable()`); an unavailable adapter is never polled and "Test feed" says so.
+- **Quota guard:** `settings.api_football_quota` = `{day, used}` for the local calendar day (`TZ` / the `timezone` option), limit `settings.api_football_daily_limit` (default 100, editable in Settings → Feeds). Every request counts — polls, "Test feed", `/status` and the bulk import — and is counted before it is sent. At the limit nothing is sent, one `warn` is logged per day and the scheduler shows the feed as `quota` (a new `FeedHealth` value) while the other feeds keep running. An `errors.requests` answer from the provider counts as `quota` too.
+- **Key:** write-only. `POST /api/settings/api-football` `{key?: string | null, dailyLimit?}` stores it with `encryptSetting`, replaces or removes it (audited `api_football_key_set` / `api_football_key_removed`, no value in the row); `GET` answers `{configured, maskedKey, quota}` with a fixed mask, so nothing of the key leaves the server. No step-up (a score feed cannot lead to an order by itself, like the feed toggles).
+- **Soccer clock:** for soccer the tracker takes clock and phase from a fresh (≤ 60 s) API-Football observation that has a minute, else from `kalshi-live` as before; scores are merged and a > 20 s disagreement blocks exactly as in T07. The tracker now also emits `blockedChanged` (used by the `feed_disagreement` notification).
+- **Notifications** (`core/notifier.ts`): `POST http://supervisor/core/api/services/persistent_notification/create` with `Authorization: Bearer $SUPERVISOR_TOKEN`, body `{title: "Kalshi Sports Trader", message}`. Messages start with `[LIVE]` / `[DRY RUN]` and the Kalshi environment in brackets, e.g. `[DRY RUN] (demo) Trade filled: "EPL two-goal lead at 75" bought 12 × Arsenal YES at $0.92 (…); cost $11.04, fee $0.05; P&L +$0.91 if it wins, −$11.09 if it loses.` A settlement states the realized P&L. The switch events carry the global mode after the change, `feed_disagreement` the current global mode. Settings → Notifications (`GET/POST /api/settings/notifications`, audited `settings_change`) stores `{events, modes}`; a notification is sent only when its event and its mode are on (all on by default). The request passes the network gate like every outgoing call (§1: no outgoing HTTP under the global kill switch), so "kill switch turned **on**" is never delivered (logged at `debug`), "turned off" is. Without a token each skipped notification logs one `debug` line; failures log `warn` and never affect trading.
+- **Rule parameters:** both optional in the `lead_at_time` schema (`maxOpponentGoals` integer 0–20, `underdogOnly` boolean), so existing rows parse unchanged and `rule.version` stays 1. New no-match reasons `opponent_goals` and `underdog` (neither closes the window). Strategy editor and the ad-hoc backtest form have both fields.
+- **Kick-off asks** (`core/pregame.ts`): recorded on `scheduled → live` (see §5); the merged tracker state carries them as `pregame`, so the engine and the executor's retries evaluate the same rule. A game already live when the app starts has no kick-off asks, so `underdogOnly` does not fire on it.
+- **Bulk import** (`backtest/apiFootballImporter.ts`, `POST /api/data/api-football` `{leagueId, season, limit?}` → job `api_football_import`): `GET /status` first and a `Free` plan fails the job; then finished (`FT`) fixtures of the league and season and their `type=Goal` events → `hist_games` id `api_football:<fixtureId>`. Missed penalties are ignored; own goals are credited to whichever side makes the events add up to the final score, otherwise the fixture is skipped with a `warn`. Resumable (existing rows skipped); the job pauses under the kill switch and fails on a used-up quota.
+- **Packaging:** `config.yaml` (and the §11 block) gain `homeassistant_api: true`; `check:addon` now requires it and still rejects `hassio_api`. `SUPERVISOR_TOKEN` reaches Node unchanged (`su-exec` keeps the environment).
+- **Version 1.1.0** (config.yaml, package.json, image label, CHANGELOG), because Home Assistant offers an app update only when `version` changes. The T14 release item of `verify:T14` now checks that all these agree and that the CHANGELOG still has the `1.0.0` release, instead of the literal `1.0.0`.
+- Test payloads in `test/fixtures/api-football/` are **hand-written from the API-Football v3 documentation**, not recorded: this session had no API-Football key. The e2e run points the adapter and the notifier at `test/e2e/fake-kalshi.ts` (`KST_E2E_API_FOOTBALL_URL`, `KST_E2E_SUPERVISOR_URL`, honoured only with `KST_E2E=1` outside production).
 
 ## 15. Change log from the review (25 Sep 2026)
 

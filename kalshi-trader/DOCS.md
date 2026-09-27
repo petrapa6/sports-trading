@@ -114,16 +114,24 @@ the app's own login that also hides the login page from scanners.
 ## Score feeds
 
 The app follows every game of the enabled leagues that Kalshi lists: it polls every **5 s** while a game is in
-progress, every **60 s** in the hour before a game, and not at all otherwise. Two adapters are available under
-**Settings → Feeds** (each can be switched off; **Test feed** checks both):
+progress, every **60 s** in the hour before a game, and not at all otherwise. Three adapters are available under
+**Settings → Feeds** (each can be switched on or off; **Test feed** checks all of them):
 
 | Feed | Sports | Needs |
 | --- | --- | --- |
 | Kalshi live data | soccer, hockey | the Kalshi key (one batch request per poll for all tracked games) |
 | NHL official API (`api-web.nhle.com`) | hockey | nothing (public, no key); used as the authoritative clock and to cross-check the score |
+| API-Football (`v3.football.api-sports.io`) | soccer | **off by default**; an API-Football key. When on and fresh, its match minute is used for soccer (Kalshi's soccer text often has no clean minute) and its score cross-checks Kalshi's |
 
-When the two feeds disagree on an NHL score for more than 20 s, entries for that game are blocked until they agree
-again. While the **global kill switch** is on, no feed is polled at all and `/healthz` reports
+When two feeds disagree on a score for more than 20 s, entries for that game are blocked until they agree
+again.
+
+**API-Football key and quota.** Enter the key under Settings → Feeds → API-Football. It is stored encrypted in the
+database (with a key derived from `secret.key`) and never shown again: the field only says that a key is stored.
+Every request counts against **Daily request limit** (default 100, the free plan's limit), shown with today's
+usage; at the limit the app stops calling API-Football until local midnight, logs one warning and shows the feed
+as `quota`. The free plan allows 100 requests a day, which 5-second polling uses up in minutes, so switch the feed
+on for live soccer only with a paid plan (and raise the limit to match it). While the **global kill switch** is on, no feed is polled at all and `/healthz` reports
 `{"ok":true,"loop":"paused"}`; if the loop stops ticking for 2 minutes, `/healthz` answers `503` (`"loop":"stale"`)
 and the Supervisor watchdog restarts the app. When a game finishes, its goal timeline is kept for backtesting.
 
@@ -138,7 +146,10 @@ your password again; the way back to safety does not.
 
 v1 has one rule, *lead at time*: the strategy may enter when a team leads by at least `minLead` goals from
 `atMinute` to `atMinute + windowMinutes` (soccer match minute, stoppage counting as 45 / 90; hockey elapsed minute
-1–59, overtime excluded), never during a break and never while the feeds disagree. Editing the rule, sizing,
+1–59, overtime excluded), never during a break and never while the feeds disagree. Two optional conditions narrow
+it: **Max opponent goals** (the trailing team has scored at most this many goals — `0` means a clean sheet) and
+**Underdog only** (the leading team was the pre-game underdog: its YES ask at kick-off was below the opponent's;
+the app records both asks when it sees the game start). Editing the rule, sizing,
 execution or leagues creates a new version (listed in the editor); trades keep the version they fired under.
 Deleting a strategy hides it but keeps its trades in the reports.
 
@@ -185,6 +196,17 @@ password) re-enables live orders. A changed limit applies to the next group crea
 **First live test.** `npm run e2e:demo` (development machine, demo key in `config.local.json`) places one real
 order for 1 contract on the cheapest open demo market, records it as a live trade and prints the fee comparison.
 
+## Notifications
+
+The app posts Home Assistant **persistent notifications** (the bell in the sidebar) for: a trade filled, a trade
+settled, the global kill switch or global dry run changed, and entries blocked because the feeds disagree on a
+score. Every message starts with its mode — `[LIVE]` or `[DRY RUN]` — and the Kalshi environment, e.g.
+`[DRY RUN] (demo) Trade filled: "EPL 2-goal lead at 80'" bought 12 × Arsenal YES at $0.92 …; P&L +$0.91 if it
+wins, −$11.09 if it loses.` Under **Settings → Notifications** each event and each mode can be switched off.
+Notifications go through the Supervisor (the app has `homeassistant_api` access for this and nothing else); outside
+Home Assistant nothing is sent. While the global kill switch is on nothing is sent either, so you are notified
+when it is turned off, not when it is turned on.
+
 ## Historical data (Settings → Data)
 
 Backtests (a later version) need goal timelines and Kalshi prices. **Settings → Data** collects them:
@@ -193,6 +215,7 @@ Backtests (a later version) need goal timelines and Kalshi prices. **Settings �
 | --- | --- |
 | **Import CSV** | Goal timelines from a file with the columns `league_code, season, date, home, away, home_goals_final, away_goals_final, goal_events` (e.g. `home:23;away:67;home:90+2`). Up to 20 MB; asks for your password; an invalid row is reported with its row number and column and nothing is imported |
 | **Fetch NHL season** | Every finished game of a season from the public NHL API (preseason only when ticked) |
+| **Import API-Football season** | Every finished game of one league and season with its goal timeline from API-Football. Needs a stored key on a **paid** plan (a free key stops the job); each fixture costs one request of the daily limit |
 | **Backfill settled events** | Settled Kalshi games of the enabled leagues in a date range, with their goal timelines from Kalshi's play-by-play. These games are only data: they are never tracked or traded |
 | **Collect candles** | One-minute Kalshi prices of every finished game |
 | **Rebuild price model** | The median ask by sport, lead and minutes left, used by modelled backtests; cells with fewer than 20 observations use a conservative built-in table |
@@ -211,11 +234,11 @@ restricts outbound traffic from the Pi, allow exactly these:
 | `external-api.demo.kalshi.co` | Kalshi API (demo): markets, orderbooks, live data, orders, portfolio, candles | `kalshi_env: demo` |
 | `external-api.kalshi.com` | Kalshi API (production), same calls | `kalshi_env: prod` |
 | `api-web.nhle.com` | NHL official API: live scores and clock; season schedule and play-by-play for Settings → Data | NHL games tracked, NHL import |
+| `v3.football.api-sports.io` | API-Football: live soccer scores and minute; season import | only with a stored key and the feed switched on (or an import started) |
+| `supervisor` (internal, plain HTTP inside Home Assistant) | Home Assistant notifications (`persistent_notification.create`) | notifications on; never leaves the Pi |
 
 Nothing else: no telemetry, no CDN (the web UI is bundled into the image), no update checks. While the global
-kill switch is on the app makes **no** outgoing request at all. The planned API-Football feed and Home Assistant
-notifications (T15) will add `v3.football.api-sports.io` and the internal `supervisor` host; they are not part of
-1.0.0.
+kill switch is on the app makes **no** outgoing request at all — notifications included.
 
 ## Health, watchdog and maintenance
 
@@ -238,7 +261,8 @@ notifications (T15) will add `v3.football.api-sports.io` and the internal `super
 
 - The app process runs as the unprivileged user `trader` (uid 1000) with no Linux capabilities; only the start
   script runs as root, to read `options.json`, prepare `/data/db` and `/data/app` and hand over the key.
-- The app declares no `privileged`, `host_network`, `full_access`, `hassio_api` or `homeassistant_api` access,
+- The app declares no `privileged`, `host_network`, `full_access` or `hassio_api` access; its only Home Assistant
+  API access is `homeassistant_api`, used to post notifications through the Supervisor's proxy. It
   maps no port (`8099/tcp` stays unmapped: reachable only through ingress and the `cloudflared` app) and runs
   under Home Assistant's default AppArmor profile.
 - Local `docker compose` runs additionally use a read-only root filesystem and `no-new-privileges`; Home Assistant

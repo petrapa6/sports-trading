@@ -4,12 +4,14 @@ import { DataSettings } from './settings/Data';
 import { DiagnosticsSettings } from './settings/Diagnostics';
 import { FeedsSettings } from './settings/Feeds';
 import { LeaguesSettings } from './settings/Leagues';
+import { NotificationsSettings } from './settings/Notifications';
 import { TradingSettings } from './settings/Trading';
 
 const SECTIONS = [
   { path: '/settings/trading', label: 'Trading' },
   { path: '/settings/leagues', label: 'Leagues' },
   { path: '/settings/feeds', label: 'Feeds' },
+  { path: '/settings/notifications', label: 'Notifications' },
   { path: '/settings/data', label: 'Data' },
   { path: '/settings/account', label: 'Account' },
   { path: '/settings/diagnostics', label: 'Diagnostics' },
@@ -31,6 +33,7 @@ export function SettingsPage() {
       {current === '/settings/trading' && <TradingSettings />}
       {current === '/settings/leagues' && <LeaguesSettings />}
       {current === '/settings/feeds' && <FeedsSettings />}
+      {current === '/settings/notifications' && <NotificationsSettings />}
       {current === '/settings/data' && <DataSettings />}
       {current === '/settings/account' && <AccountSettings />}
       {current === '/settings/diagnostics' && <DiagnosticsSettings />}

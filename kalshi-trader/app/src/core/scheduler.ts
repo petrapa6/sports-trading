@@ -3,6 +3,7 @@ import type { Logger } from 'pino';
 import {
   FEED_IDS,
   FEED_NAMES,
+  FeedQuotaExhausted,
   IN_PROGRESS,
   type FeedId,
   type ScoreFeed,
@@ -33,13 +34,13 @@ export const STALE_MS = 120_000;
 export const BALANCE_REFRESH_MS = 5 * 60_000;
 
 export type LoopState = 'starting' | 'running' | 'idle' | 'paused' | 'stopped';
-export type FeedHealth = 'ok' | 'error' | 'idle' | 'disabled' | 'paused' | 'unavailable';
+export type FeedHealth = 'ok' | 'error' | 'idle' | 'disabled' | 'paused' | 'unavailable' | 'quota';
 
 export interface FeedStatus {
   id: FeedId;
   name: string;
   enabled: boolean;
-  /** `false` when the adapter cannot run (Kalshi credentials missing). */
+  /** `false` when the adapter cannot run (Kalshi credentials or the API-Football key missing). */
   available: boolean;
   status: FeedHealth;
   lastPollAt: string | null;
@@ -61,7 +62,7 @@ export type LoopHealth = { ok: true; loop: LoopState } | { ok: false; loop: 'sta
 
 export interface SchedulerOptions {
   tracker: Pick<GameTracker, 'pollTargets' | 'ingest'>;
-  /** The adapters that can run (the Kalshi one only with credentials). */
+  /** The adapters that can run (the Kalshi one only with credentials; API-Football only with a key). */
   feeds: readonly ScoreFeed[];
   /** Settings → Feeds, read on every tick. */
   isFeedEnabled: (id: FeedId) => boolean;
@@ -75,6 +76,15 @@ export interface SchedulerOptions {
 
 const iso = (ms: number | null) => (ms === null ? null : new Date(ms).toISOString());
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+/** Whether an adapter can run now (`isAvailable()`, errors count as not available). */
+export function feedAvailable(feed: ScoreFeed): boolean {
+  try {
+    return feed.isAvailable?.() ?? true;
+  } catch {
+    return false;
+  }
+}
 
 /** 5 s with a game in progress, 60 s with one about to start, `null` (idle) otherwise. */
 export function cadenceFor(games: readonly TrackedGame[]): number | null {
@@ -164,7 +174,7 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
 
   status(now = this.clock.now()): LoopStatus {
     const health = this.health(now);
-    const available = new Set(this.options.feeds.map((f) => f.id));
+    const available = new Set(this.options.feeds.filter((f) => feedAvailable(f)).map((f) => f.id));
     return {
       state: health.ok ? this.state : 'stale',
       lastTickAt: iso(this.lastTickAt),
@@ -199,7 +209,8 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
   }
 
   private setAll(status: FeedHealth): void {
-    for (const r of this.records.values()) if (r.status !== 'error' || status === 'paused') r.status = status;
+    for (const r of this.records.values())
+      if ((r.status !== 'error' && r.status !== 'quota') || status === 'paused') r.status = status;
   }
 
   private publish(): void {
@@ -261,6 +272,7 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
       const record = this.records.get(feed.id) as FeedRecord;
       const on = this.feedEnabled(feed.id);
       const games = targets.filter((g) => feed.sports.includes(g.sport));
+      if (on && !feedAvailable(feed)) continue;
       if (!on || games.length === 0) {
         if (record.status !== 'error' || !on) record.status = on ? 'idle' : 'disabled';
         continue;
@@ -275,7 +287,8 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
       const record = this.records.get(feed.id) as FeedRecord;
       record.lastPollAt = polledAt;
       if (result.status === 'fulfilled') {
-        if (record.status === 'error') this.log.info({ feed: feed.id }, `Feed ${feed.id} recovered`);
+        if (record.status === 'error' || record.status === 'quota')
+          this.log.info({ feed: feed.id }, `Feed ${feed.id} recovered`);
         record.status = 'ok';
         record.lastOkAt = polledAt;
         record.lastError = null;
@@ -289,6 +302,10 @@ export class Scheduler extends EventEmitter<{ status: [LoopStatus] }> {
         }
       } else if (result.reason instanceof NetworkPaused) {
         record.status = 'paused';
+      } else if (result.reason instanceof FeedQuotaExhausted) {
+        // The adapter logged the `warn` once; the loop keeps running on the other feeds.
+        record.status = 'quota';
+        record.lastError = message(result.reason);
       } else {
         const text = message(result.reason);
         if (record.status !== 'error' || record.lastError !== text)

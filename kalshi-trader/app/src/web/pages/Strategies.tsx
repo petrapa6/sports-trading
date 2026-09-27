@@ -55,7 +55,10 @@ const SIDE_LABEL = { any: 'either side', home: 'home only', away: 'away only' } 
 function ruleSummary(v: Pick<StrategyVersionView, 'rule' | 'sizing' | 'execution'>): string {
   const r = v.rule;
   return (
-    `lead ≥ ${r.minLead} from minute ${r.atMinute} (window ${r.windowMinutes}), ${SIDE_LABEL[r.leaderSide]}; ` +
+    `lead ≥ ${r.minLead} from minute ${r.atMinute} (window ${r.windowMinutes}), ${SIDE_LABEL[r.leaderSide]}` +
+    (r.maxOpponentGoals !== undefined ? `, opponent ≤ ${r.maxOpponentGoals} goals` : '') +
+    (r.underdogOnly ? ', underdog only' : '') +
+    '; ' +
     `${v.sizing.percent}% ($${v.sizing.minStakeUsd}–$${v.sizing.maxStakeUsd}); max $${v.execution.maxPrice}` +
     (v.execution.minPrice !== null ? `, min $${v.execution.minPrice}` : '')
   );
@@ -82,6 +85,8 @@ interface FormState {
   atMinute: string;
   windowMinutes: string;
   leaderSide: 'any' | 'home' | 'away';
+  maxOpponentGoals: string;
+  underdogOnly: boolean;
   percent: string;
   minStakeUsd: string;
   maxStakeUsd: string;
@@ -100,6 +105,8 @@ const NEW_FORM: FormState = {
   atMinute: '80',
   windowMinutes: String(DEFAULT_WINDOW_MINUTES.soccer),
   leaderSide: 'any',
+  maxOpponentGoals: '',
+  underdogOnly: false,
   percent: '2',
   minStakeUsd: '1',
   maxStakeUsd: '50',
@@ -123,6 +130,8 @@ function formOf(s: StrategyDetail): FormState {
     atMinute: String(r.atMinute),
     windowMinutes: String(r.windowMinutes),
     leaderSide: r.leaderSide,
+    maxOpponentGoals: r.maxOpponentGoals === undefined ? '' : String(r.maxOpponentGoals),
+    underdogOnly: r.underdogOnly === true,
     percent: String(z.percent),
     minStakeUsd: String(z.minStakeUsd),
     maxStakeUsd: String(z.maxStakeUsd),
@@ -148,6 +157,8 @@ function bodyOf(f: FormState) {
       atMinute: num(f.atMinute),
       windowMinutes: num(f.windowMinutes),
       leaderSide: f.leaderSide,
+      ...(f.maxOpponentGoals.trim() === '' ? {} : { maxOpponentGoals: Number(f.maxOpponentGoals) }),
+      ...(f.underdogOnly ? { underdogOnly: true } : {}),
     },
     sizing: {
       type: 'percent_of_balance',
@@ -498,6 +509,23 @@ function EditorForm({
               <option value="home">Home</option>
               <option value="away">Away</option>
             </select>
+          </div>
+          {numberField('maxOpponentGoals', 'rule.maxOpponentGoals', 'Max opponent goals (optional)', {
+            step: '1',
+            hint: 'The trailing team has scored at most this many goals',
+          })}
+          <div className="field">
+            <label className="inline-check">
+              <input
+                type="checkbox"
+                checked={form.underdogOnly}
+                onChange={(e) => set('underdogOnly', e.target.checked)}
+              />{' '}
+              Underdog only
+            </label>
+            <span className="hint muted">
+              Only when the leader&apos;s YES ask at kick-off was below the opponent&apos;s
+            </span>
           </div>
         </div>
 

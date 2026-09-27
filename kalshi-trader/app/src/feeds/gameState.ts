@@ -49,14 +49,30 @@ export interface GameState {
   feedUpdatedAt?: Date;
 }
 
-export const FEED_IDS = ['kalshi-live', 'nhl-official'] as const;
+export const FEED_IDS = ['kalshi-live', 'nhl-official', 'api-football'] as const;
 export type FeedId = (typeof FEED_IDS)[number];
 export const isFeedId = (v: string): v is FeedId => (FEED_IDS as readonly string[]).includes(v);
 
 export const FEED_NAMES: Record<FeedId, string> = {
   'kalshi-live': 'Kalshi live data',
   'nhl-official': 'NHL official API',
+  'api-football': 'API-Football',
 };
+
+/** Whether an adapter runs while Settings → Feeds has no entry for it (API-Football is opt-in, T15). */
+export const FEED_DEFAULT_ENABLED: Record<FeedId, boolean> = {
+  'kalshi-live': true,
+  'nhl-official': true,
+  'api-football': false,
+};
+
+/**
+ * A feed refused to make a request because its daily request quota is used up (API-Football, T15). The
+ * scheduler shows the feed as `quota` instead of `error`.
+ */
+export class FeedQuotaExhausted extends Error {
+  override name = 'FeedQuotaExhausted';
+}
 
 export interface TeamRef {
   id: string;
@@ -102,6 +118,11 @@ export interface ScoreFeed {
   get(gameId: string): Promise<GameState>;
   /** Settings → Feeds → "Test feed": a one-line result (throws on failure). */
   test(games: readonly TrackedGame[]): Promise<string>;
+  /**
+   * Whether the adapter can run right now (API-Football: a key is stored). Absent = always; an adapter
+   * that cannot run is shown as `unavailable` and never polled.
+   */
+  isAvailable?(): boolean;
 }
 
 const MINUTE_MS = 60_000;

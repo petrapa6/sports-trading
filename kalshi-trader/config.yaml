@@ -1,5 +1,5 @@
 name: Kalshi Sports Trader
-version: "1.0.0"
+version: "1.1.0"
 slug: kalshi-trader
 description: In-game sports strategy trader for Kalshi with dry-run mode and backtesting
 url: https://github.com/petrapa6/sports-trading
@@ -20,6 +20,7 @@ backup_exclude:
   - "/data/app/cache/**"
 watchdog: http://[HOST]:[PORT:8099]/healthz
 tmpfs: true
+homeassistant_api: true        # T15: notifications via the Supervisor Core API proxy; hassio_api stays off
 options:
   kalshi_env: demo
   kalshi_key_id: ""

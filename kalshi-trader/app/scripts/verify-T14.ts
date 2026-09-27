@@ -377,23 +377,29 @@ if (want('e2e')) {
 
 if (want('release')) {
   await check(
-    'config.yaml, package.json and the top CHANGELOG.md heading all read 1.0.0; npm run check:addon passes',
+    'config.yaml, package.json and the top CHANGELOG.md heading agree (1.0.0 released, later versions since T15); npm run check:addon passes',
     () => {
       const cfg = parse(readFileSync(join(ROOT, 'kalshi-trader/config.yaml'), 'utf8')) as { version: string };
       const pkg = JSON.parse(readFileSync(join(APP, 'package.json'), 'utf8')) as { version: string };
       const lock = JSON.parse(readFileSync(join(APP, 'package-lock.json'), 'utf8')) as { version: string };
-      const top = readFileSync(join(ROOT, 'kalshi-trader/CHANGELOG.md'), 'utf8')
+      const headings = readFileSync(join(ROOT, 'kalshi-trader/CHANGELOG.md'), 'utf8')
         .split('\n')
-        .find((l) => l.startsWith('## '));
+        .filter((l) => l.startsWith('## '));
+      const top = headings[0];
       const label = /io\.hass\.version="([^"]+)"/.exec(
         readFileSync(join(ROOT, 'kalshi-trader/Dockerfile'), 'utf8'),
       )?.[1];
+      // T14 released 1.0.0; T15 (SPEC.md §14 notes) bumped the version, so the versions must agree, not equal 1.0.0.
       assert(
-        cfg.version === '1.0.0' && pkg.version === '1.0.0' && lock.version === '1.0.0',
+        cfg.version === pkg.version && pkg.version === lock.version,
         `${cfg.version} ${pkg.version} ${lock.version}`,
       );
-      assert(top?.startsWith('## 1.0.0'), `top CHANGELOG heading: ${top}`);
-      assert(label === '1.0.0', `Dockerfile io.hass.version ${label}`);
+      assert(top?.startsWith(`## ${pkg.version}`), `top CHANGELOG heading: ${top}`);
+      assert(
+        headings.some((h) => h.startsWith('## 1.0.0')),
+        'the CHANGELOG has no 1.0.0 release',
+      );
+      assert(label === pkg.version, `Dockerfile io.hass.version ${label}`);
       const addon = run('npm', ['run', '--silent', 'check:addon']);
       assert(addon.code === 0, addon.out);
       return `config.yaml ${cfg.version}, package.json ${pkg.version} (lock ${lock.version}), Dockerfile label ${label}, CHANGELOG "${top}"; check:addon exit 0`;

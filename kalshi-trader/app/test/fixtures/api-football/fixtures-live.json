@@ -1,0 +1,83 @@
+{
+  "get": "fixtures",
+  "parameters": { "live": "all" },
+  "errors": [],
+  "results": 3,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "fixture": {
+        "id": 1379001,
+        "referee": "M. Oliver",
+        "timezone": "UTC",
+        "date": "2026-10-17T14:00:00+00:00",
+        "timestamp": 1792245600,
+        "periods": { "first": 1792245600, "second": 1792249200 },
+        "venue": { "id": 494, "name": "Emirates Stadium", "city": "London" },
+        "status": { "long": "Second Half", "short": "2H", "elapsed": 78, "extra": null }
+      },
+      "league": {
+        "id": 39,
+        "name": "Premier League",
+        "country": "England",
+        "season": 2026,
+        "round": "Regular Season - 8"
+      },
+      "teams": {
+        "home": {
+          "id": 42,
+          "name": "Arsenal",
+          "logo": "https://media.api-sports.io/football/teams/42.png",
+          "winner": true
+        },
+        "away": {
+          "id": 49,
+          "name": "Chelsea",
+          "logo": "https://media.api-sports.io/football/teams/49.png",
+          "winner": false
+        }
+      },
+      "goals": { "home": 2, "away": 0 },
+      "score": {
+        "halftime": { "home": 1, "away": 0 },
+        "fulltime": { "home": null, "away": null },
+        "extratime": { "home": null, "away": null },
+        "penalty": { "home": null, "away": null }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1379002,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-10-17T14:00:00+00:00",
+        "timestamp": 1792245600,
+        "status": { "long": "Halftime", "short": "HT", "elapsed": 45, "extra": 3 }
+      },
+      "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2026 },
+      "teams": {
+        "home": { "id": 50, "name": "Manchester City", "winner": null },
+        "away": { "id": 40, "name": "Liverpool", "winner": null }
+      },
+      "goals": { "home": 1, "away": 1 },
+      "score": { "halftime": { "home": 1, "away": 1 } }
+    },
+    {
+      "fixture": {
+        "id": 1390555,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-10-17T13:30:00+00:00",
+        "timestamp": 1792244400,
+        "status": { "long": "First Half", "short": "1H", "elapsed": 45, "extra": 2 }
+      },
+      "league": { "id": 140, "name": "La Liga", "country": "Spain", "season": 2026 },
+      "teams": {
+        "home": { "id": 541, "name": "Real Madrid", "winner": null },
+        "away": { "id": 529, "name": "Barcelona", "winner": null }
+      },
+      "goals": { "home": 0, "away": 0 },
+      "score": { "halftime": { "home": null, "away": null } }
+    }
+  ]
+}

@@ -61,6 +61,12 @@ export interface TradeChange {
   status: string;
 }
 
+export interface SwitchChange {
+  key: 'global_kill_switch' | 'global_dry_run';
+  on: boolean;
+  mode: Exclude<LogMode, null>;
+}
+
 const NO_SOURCE: LiveSource = { games: () => [], loop: () => null };
 
 /**
@@ -77,6 +83,8 @@ export class LiveHub extends EventEmitter<{
   trade: [TradeChange];
   backtest: [BacktestProgress];
   job: [JobView];
+  /** One global switch changed (T15 notifications); `mode` is the global mode after the change. */
+  switchChanged: [SwitchChange];
 }> {
   private source: LiveSource = NO_SOURCE;
   private gamesPending = false;
@@ -185,6 +193,11 @@ export class LiveHub extends EventEmitter<{
       kalshiEnv: this.runtime.kalshiEnv,
       kalshiSubaccount: this.runtime.kalshiSubaccount,
     };
+  }
+
+  /** One switch changed (after `switchesChanged()`): the notifier listens (T15). */
+  switchChanged(change: SwitchChange): void {
+    this.emit('switchChanged', change);
   }
 
   /** Called after a switch changed, so every open stream sees it immediately (and the new effective modes). */

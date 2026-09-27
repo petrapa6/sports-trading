@@ -3,13 +3,21 @@
  * `/trade-api/v2/*` from the recorded fixtures in `test/fixtures/kalshi/` (the same routing as the
  * `msw` unit tests). The e2e server reaches it through `KST_E2E_KALSHI_URL`, honoured only with
  * `KST_E2E=1` outside production. It also stands in for the NHL Web API under `/nhl/v1/*`
- * (`test/fixtures/nhl/`, reached through `KST_E2E_NHL_URL`, T07).
+ * (`test/fixtures/nhl/`, reached through `KST_E2E_NHL_URL`, T07), for API-Football under `/api-football/*`
+ * (`test/fixtures/api-football/`, `KST_E2E_API_FOOTBALL_URL`, T15) and for the Supervisor's Core API
+ * under `/supervisor/core/api/*` (`KST_E2E_SUPERVISOR_URL`, T15), so no e2e request leaves the machine.
  */
+import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { resolve } from 'node:path';
 import { API_PREFIX, routeKalshi } from '../helpers/kalshiFixtures.js';
 import { NHL_PREFIX, routeNhl } from '../helpers/nhlFixtures.js';
 
 const port = Number(process.env['E2E_KALSHI_PORT'] ?? 8197);
+const API_FOOTBALL_LIVE = readFileSync(
+  resolve(import.meta.dirname, '../fixtures/api-football/fixtures-live.json'),
+  'utf8',
+);
 
 createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
@@ -20,6 +28,18 @@ createServer((req, res) => {
   req.resume();
   req.on('end', () => {
     const signed = typeof req.headers['kalshi-access-signature'] === 'string';
+    if (url.pathname.startsWith('/api-football/')) {
+      const body =
+        url.pathname === '/api-football/status'
+          ? JSON.stringify({ errors: [], response: { subscription: { plan: 'Free' } } })
+          : API_FOOTBALL_LIVE;
+      res.writeHead(200, { 'content-type': 'application/json' }).end(body);
+      return;
+    }
+    if (url.pathname.startsWith('/supervisor/core/api/')) {
+      res.writeHead(200, { 'content-type': 'application/json' }).end('[]');
+      return;
+    }
     if (url.pathname.startsWith(NHL_PREFIX)) {
       const n = routeNhl(url.pathname.slice(NHL_PREFIX.length));
       res.writeHead(n.status, { 'content-type': 'application/json' }).end(JSON.stringify(n.body));

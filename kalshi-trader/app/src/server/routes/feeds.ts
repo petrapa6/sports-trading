@@ -4,14 +4,25 @@ import type { Executor } from '../../core/executor.js';
 import type { OrderGroupManager } from '../../core/orderGroup.js';
 import type { Settler } from '../../core/settler.js';
 import type { StrategyEngine } from '../../core/engine.js';
-import type { Scheduler } from '../../core/scheduler.js';
+import { feedAvailable, type Scheduler } from '../../core/scheduler.js';
 import type { GameTracker } from '../../core/tracker.js';
 import type { DatabaseManager } from '../../db/database.js';
-import { FEED_IDS, FEED_NAMES, isFeedId, type FeedId, type ScoreFeed } from '../../feeds/gameState.js';
+import { SETTINGS } from '../../db/settings.js';
+import { quotaUsage } from '../../feeds/apiFootball/feed.js';
+import {
+  FEED_DEFAULT_ENABLED,
+  FEED_IDS,
+  FEED_NAMES,
+  FeedQuotaExhausted,
+  isFeedId,
+  type FeedId,
+  type ScoreFeed,
+} from '../../feeds/gameState.js';
 import { NetworkPaused } from '../../feeds/network.js';
 import { userActor } from '../audit.js';
 import { HttpError, parseBody } from '../http.js';
 import type { LiveHub } from '../live.js';
+import { encryptSetting } from '../secrets.js';
 import { authOf, clientContext } from '../security.js';
 import { describeKalshiError } from './kalshi.js';
 
@@ -19,7 +30,7 @@ import { describeKalshiError } from './kalshi.js';
 export interface LiveServices {
   tracker: GameTracker;
   scheduler: Scheduler;
-  /** The adapters that can run (the Kalshi one only with credentials). */
+  /** The adapters (the Kalshi one only with credentials; API-Football reports `isAvailable()`). */
   feeds: readonly ScoreFeed[];
   /** The strategy engine (T08): its signals are pushed over `/api/live`. */
   engine?: StrategyEngine;
@@ -32,20 +43,41 @@ export interface LiveServices {
 
 const FeedPatch = z.object({ enabled: z.boolean() }).strict();
 
+/** `POST /api/settings/api-football`: a new key (`null` removes it) and / or the daily request limit. */
+const ApiFootballPatch = z
+  .object({
+    key: z
+      .string()
+      .trim()
+      .min(8, 'the key is too short')
+      .max(200, 'the key is too long')
+      .regex(/^[\x21-\x7e]+$/, 'the key must not contain spaces or special characters')
+      .nullable()
+      .optional(),
+    dailyLimit: SETTINGS.api_football_daily_limit.schema.optional(),
+  })
+  .strict();
+
 export const FEED_SPORTS: Record<FeedId, string[]> = {
   'kalshi-live': ['soccer', 'hockey'],
   'nhl-official': ['hockey'],
+  'api-football': ['soccer'],
 };
 
+/** Settings → Feeds: an adapter missing from the map has its default (API-Football off, the others on). */
 export function isFeedEnabled(settings: Record<string, boolean>, id: FeedId): boolean {
-  return settings[id] !== false;
+  return settings[id] ?? FEED_DEFAULT_ENABLED[id];
 }
 
 const UNAVAILABLE: Record<FeedId, string> = {
   'kalshi-live':
     'Kalshi credentials are not configured: set the key id and the private key in the app configuration.',
   'nhl-official': 'The NHL adapter is not running.',
+  'api-football': 'No API-Football key is stored: enter one below.',
 };
+
+/** The key field is shown masked: nothing of the key leaves the server. */
+export const MASKED_KEY = '••••••••••••';
 
 /**
  * Settings → Feeds and the dashboard's live data (T07): tracked games, loop status, adapters on/off
@@ -57,6 +89,8 @@ export function registerFeedRoutes(
   database: Pick<DatabaseManager, 'repositories'>,
   hub: LiveHub,
   live: LiveServices | undefined,
+  secretKey: Buffer,
+  now: () => number = Date.now,
 ): void {
   const auth = app.authService;
 
@@ -69,7 +103,8 @@ export function registerFeedRoutes(
     const status = hub.loop();
     return FEED_IDS.map((id) => {
       const s = status?.feeds.find((f) => f.id === id);
-      const available = live?.feeds.some((f) => f.id === id) ?? false;
+      const feed = live?.feeds.find((f) => f.id === id);
+      const available = feed !== undefined && feedAvailable(feed);
       return {
         id,
         name: FEED_NAMES[id],
@@ -126,7 +161,7 @@ export function registerFeedRoutes(
       FEED_IDS.map(async (id) => {
         const base = { id, name: FEED_NAMES[id], enabled: isFeedEnabled(enabled, id) };
         const feed = live?.feeds.find((f) => f.id === id);
-        if (!feed) return { ...base, ok: false, message: UNAVAILABLE[id] };
+        if (!feed || !feedAvailable(feed)) return { ...base, ok: false, message: UNAVAILABLE[id] };
         try {
           const covered = games.filter((g) => feed.sports.includes(g.sport));
           return { ...base, ok: true, message: await feed.test(covered) };
@@ -137,6 +172,8 @@ export function registerFeedRoutes(
               ok: false,
               message: 'The global kill switch is on, so the app makes no outgoing requests.',
             };
+          if (err instanceof FeedQuotaExhausted)
+            return { ...base, ok: false, message: `API-Football ${err.message}.` };
           const message =
             id === 'kalshi-live'
               ? describeKalshiError(err).message
@@ -148,5 +185,64 @@ export function registerFeedRoutes(
       }),
     );
     return { results };
+  });
+
+  /** Settings → Feeds → API-Football: whether a key is stored (masked) and today's request usage. */
+  const apiFootballView = () => {
+    const settings = database.repositories.settings;
+    return {
+      configured: settings.get('api_football_key_enc') !== null,
+      maskedKey: settings.get('api_football_key_enc') !== null ? MASKED_KEY : null,
+      quota: quotaUsage(settings, now()),
+    };
+  };
+
+  app.get('/api/settings/api-football', async () => apiFootballView());
+
+  /**
+   * Stores (encrypted with `encryptSetting`), replaces or removes the API-Football key and sets the daily
+   * limit. Audited (`api_football_key_set` / `_removed`, `settings_change`); the key is never logged or
+   * audited. No step-up: a score feed cannot lead to a real order by itself.
+   */
+  app.post('/api/settings/api-football', async (req) => {
+    const patch = parseBody(ApiFootballPatch, req.body);
+    const settings = database.repositories.settings;
+    const actor = { actor: userActor(authOf(req).user.username), ...clientContext(req) };
+    if (patch.key !== undefined) {
+      const had = settings.get('api_football_key_enc') !== null;
+      if (patch.key === null) {
+        settings.set('api_football_key_enc', null);
+        if (had) {
+          auth.audit(actor, {
+            action: 'api_football_key_removed',
+            entity: 'settings',
+            entityId: 'api_football_key_enc',
+          });
+          req.log.info('API-Football key removed');
+        }
+      } else {
+        settings.set('api_football_key_enc', encryptSetting(patch.key, secretKey));
+        auth.audit(actor, {
+          action: 'api_football_key_set',
+          entity: 'settings',
+          entityId: 'api_football_key_enc',
+          detail: { replaced: had },
+        });
+        req.log.info(had ? 'API-Football key replaced' : 'API-Football key stored');
+      }
+      live?.scheduler.wake();
+    }
+    if (patch.dailyLimit !== undefined) {
+      const from = settings.get('api_football_daily_limit');
+      if (from !== patch.dailyLimit) {
+        settings.set('api_football_daily_limit', patch.dailyLimit);
+        auth.audit(actor, {
+          action: 'settings_change',
+          entity: 'settings',
+          detail: { api_football_daily_limit: { from, to: patch.dailyLimit } },
+        });
+      }
+    }
+    return apiFootballView();
   });
 }

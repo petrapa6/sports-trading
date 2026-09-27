@@ -104,6 +104,8 @@ export function DataSettings() {
   const [file, setFile] = useState<File | null>(null);
   const [season, setSeason] = useState(currentSeason);
   const [preseason, setPreseason] = useState(false);
+  const [afLeague, setAfLeague] = useState('epl');
+  const [afSeason, setAfSeason] = useState(() => String(new Date().getFullYear() - 1));
   const [from, setFrom] = useState(() => isoDay(Date.now() - 30 * 86_400_000));
   const [to, setTo] = useState(() => isoDay(Date.now()));
   const [model, setModel] = useState<PriceModelSummary | null>(null);
@@ -142,6 +144,14 @@ export function DataSettings() {
     e.preventDefault();
     void run('nhl', async () => {
       addJob(await api.post<JobView>('api/data/nhl', { season, includePreseason: preseason }));
+    });
+  };
+  const startApiFootball = (e: FormEvent) => {
+    e.preventDefault();
+    void run('api-football', async () => {
+      addJob(
+        await api.post<JobView>('api/data/api-football', { leagueId: afLeague, season: Number(afSeason) }),
+      );
     });
   };
   const startBackfill = (e: FormEvent) => {
@@ -258,6 +268,30 @@ export function DataSettings() {
         </label>
         <button type="submit" disabled={busy !== null}>
           Fetch NHL season
+        </button>
+      </form>
+
+      <h3>API-Football season (paid key)</h3>
+      <form className="data-form" onSubmit={startApiFootball}>
+        <label htmlFor="af-league">League</label>
+        <select id="af-league" value={afLeague} onChange={(e) => setAfLeague(e.target.value)}>
+          <option value="epl">English Premier League</option>
+          <option value="laliga">La Liga</option>
+          <option value="bundesliga">Bundesliga</option>
+          <option value="seriea">Serie A</option>
+          <option value="ligue1">Ligue 1</option>
+        </select>
+        <label htmlFor="af-season">Season start year</label>
+        <input
+          id="af-season"
+          value={afSeason}
+          inputMode="numeric"
+          pattern="\d{4}"
+          title="e.g. 2025 for 2025-26"
+          onChange={(e) => setAfSeason(e.target.value.trim())}
+        />
+        <button type="submit" disabled={busy !== null || !/^\d{4}$/.test(afSeason)}>
+          Import API-Football season
         </button>
       </form>
 

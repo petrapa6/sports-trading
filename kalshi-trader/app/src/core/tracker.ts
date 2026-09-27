@@ -25,8 +25,10 @@ import {
  * - Kick-off and second-half start are recorded on first sight (`games.kickoff_observed_at`,
  *   `second_half_observed_at`); a derived soccer minute is recomputed from them.
  * - Feed merge: the score is the value the fresh feeds agree on; a disagreement lasting more than 20 s
- *   sets `games.blocked = 1` (logged at `warn`) until the feeds agree again. For hockey the NHL feed is
- *   the authoritative clock; a game is finished as soon as any fresh feed says so.
+ *   sets `games.blocked = 1` (logged at `warn`, emitted as `blockedChanged`) until the feeds agree again.
+ *   For hockey the NHL feed is the authoritative clock; for soccer API-Football is (T15) whenever it has a
+ *   fresh minute; a game is finished as soon as any fresh feed says so.
+ * - The merged state carries the game's kick-off YES asks (`games.pregame_*_bp`, T15 `underdogOnly`).
  * - `games` is updated, `stateUpdated` (with `blocked`) is emitted for every observation and
  *   `phaseChanged` for every phase change.
  * - On `finished`: goal events are derived from the snapshot score changes and written to `hist_games`
@@ -47,6 +49,18 @@ export const FINISHED_VISIBLE_MS = 3 * 60 * 60 * 1000;
 
 export interface TrackedState extends GameState {
   blocked: boolean;
+  /** YES asks at kick-off (`games.pregame_home_bp` / `pregame_away_bp`), `null` until recorded. */
+  pregame?: { homeBp: number | null; awayBp: number | null };
+}
+
+/** A game became blocked by a feed disagreement, or was unblocked (T15 `feed_disagreement` notification). */
+export interface BlockedChange {
+  gameId: string;
+  leagueId: string;
+  blocked: boolean;
+  /** Score per feed at the time of the change, e.g. `{ "kalshi-live": "2-0", "api-football": "2-1" }`. */
+  scores: Record<string, string>;
+  at: Date;
 }
 
 export interface PhaseChange {
@@ -180,6 +194,7 @@ export class GameTracker extends EventEmitter<{
   phaseChanged: [PhaseChange];
   /** A game was started over (replay reset); listeners drop what they remember about it. */
   gameReset: [string];
+  blockedChanged: [BlockedChange];
 }> {
   private readonly latest = new Map<string, Map<string, GameState>>();
   private readonly merged = new Map<string, TrackedState>();
@@ -439,7 +454,9 @@ export class GameTracker extends EventEmitter<{
     const primary = fresh.find((s) => s.source === 'kalshi-live') ?? fresh[0];
     if (!primary) throw new Error('merge without an observation');
     const clockSource =
-      sport === 'hockey' ? (fresh.find((s) => s.source === 'nhl-official') ?? primary) : primary;
+      sport === 'hockey'
+        ? (fresh.find((s) => s.source === 'nhl-official') ?? primary)
+        : (fresh.find((s) => s.source === 'api-football' && s.clock.minute !== undefined) ?? primary);
     const finished = fresh.find((s) => s.phase === 'finished');
     const base = finished ?? clockSource;
 
@@ -463,12 +480,22 @@ export class GameTracker extends EventEmitter<{
     } else if (!wasBlocked) {
       this.lastAgreed.set(row.id, score);
     }
+    const scores = Object.fromEntries(fresh.map((s) => [s.source, `${s.homeScore}-${s.awayScore}`]));
+    if (blocked !== wasBlocked) {
+      this.emit('blockedChanged', {
+        gameId: row.id,
+        leagueId: row.league_id ?? '',
+        blocked,
+        scores,
+        at: new Date(at),
+      });
+    }
     if (blocked && !wasBlocked) {
       this.log.warn(
         {
           gameId: row.id,
           seconds: Math.round((at - (this.disagreeSince.get(row.id) ?? at)) / 1000),
-          scores: Object.fromEntries(fresh.map((s) => [s.source, `${s.homeScore}-${s.awayScore}`])),
+          scores,
         },
         `Feeds disagree on the score of ${row.id} for more than 20 s; entries blocked`,
       );
@@ -488,6 +515,7 @@ export class GameTracker extends EventEmitter<{
       source: fresh.map((s) => s.source).join('+'),
       observedAt: new Date(at),
       blocked,
+      pregame: { homeBp: row.pregame_home_bp, awayBp: row.pregame_away_bp },
     };
   }
 

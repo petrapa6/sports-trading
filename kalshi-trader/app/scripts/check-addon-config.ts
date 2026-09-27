@@ -46,6 +46,12 @@ const REQUIRED = [
 /** Keys that would widen the app's privileges; none may be set (SPEC.md §10 Container). */
 const FORBIDDEN = ['host_network', 'privileged', 'full_access', 'hassio_api'] as const;
 
+/**
+ * `homeassistant_api: true` (T15): Home Assistant notifications go through the Supervisor's Core API
+ * proxy; `hassio_api` (the Supervisor API itself) is not needed and stays forbidden.
+ */
+const HOMEASSISTANT_API = 'homeassistant_api';
+
 const APP_PORT = '8099/tcp';
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -130,6 +136,9 @@ export function checkAddonConfig(inputs: AddonInputs): AddonProblem[] {
   if (map !== undefined && map !== null && !(Array.isArray(map) && map.length === 0)) {
     add('map', 'must be absent or empty: everything lives in the app’s own /data');
   }
+
+  if (doc[HOMEASSISTANT_API] !== true)
+    add(HOMEASSISTANT_API, 'must be true (Home Assistant notifications through the Supervisor proxy)');
 
   for (const key of FORBIDDEN) {
     const v = doc[key];
