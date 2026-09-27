@@ -396,7 +396,9 @@ export class ApiFootballClient {
     }
     if (key === null) throw new ApiFootballError('no API-Football key is stored');
     this.options.quota.take();
-    const qs = new URLSearchParams(Object.entries(query).map(([k, v]) => [k, String(v)])).toString();
+    const qs = new URLSearchParams(
+      Object.entries(query).map(([k, v]): [string, string] => [k, String(v)]),
+    ).toString();
     const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
     const timeout = AbortSignal.timeout(TIMEOUT_MS);
     let res: Response;
