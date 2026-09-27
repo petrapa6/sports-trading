@@ -1,7 +1,9 @@
 import { eq, isNotNull } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { importApiFootballSeason } from '../../backtest/apiFootballImporter.js';
 import { collectCandles } from '../../backtest/candles.js';
+import type { ApiFootballClient } from '../../feeds/apiFootball/feed.js';
 import { CSV_MAX_BYTES, CsvImportError, importCsv } from '../../backtest/csvImporter.js';
 import { JobRunning, type JobManager, type JobView } from '../../backtest/jobs.js';
 import { runBackfill, validateRange } from '../../backtest/kalshiBackfill.js';
@@ -26,6 +28,8 @@ import type { KalshiServices } from './kalshi.js';
  * - `POST /api/data/csv` (`text/csv`, ≤ 20 MB, **step-up**): the §3 CSV importer; `400 invalid_csv` names
  *   the row and column; `413` above 20 MB. Audited `hist_csv_import`.
  * - `POST /api/data/nhl` `{season, includePreseason?, limit?}` → `202` job (`nhl_import`).
+ * - `POST /api/data/api-football` `{leagueId, season, limit?}` → `202` job (`api_football_import`, T15; needs a
+ *   stored key on a paid plan).
  * - `POST /api/data/kalshi-backfill` `{from, to, leagueIds?, playByPlay?}` → `202` job (`kalshi_backfill`).
  * - `POST /api/data/candles` `{gameIds?, force?}` → `202` job (`candles`).
  * - `POST /api/data/price-model`: rebuilds `settings.price_model` (synchronous), audited.
@@ -46,7 +50,17 @@ export interface DataServices {
   /** Requests per second to the NHL API (default 4). */
   nhlRequestsPerSecond?: number;
   transaction?: (fn: () => void) => void;
+  /** The API-Football client (T15 bulk import); absent → `409 api_football_not_configured`. */
+  apiFootball?: Pick<ApiFootballClient, 'configured' | 'status' | 'fixtures' | 'goalEvents'>;
 }
+
+const ApiFootballBody = z
+  .object({
+    leagueId: z.string().min(1).max(40),
+    season: z.number().int().min(2000).max(2100),
+    limit: z.number().int().min(1).max(10_000).optional(),
+  })
+  .strict();
 
 const NhlBody = z
   .object({
@@ -209,6 +223,38 @@ export function registerDataRoutes(
         {
           season: body.season,
           ...(body.includePreseason !== undefined ? { includePreseason: body.includePreseason } : {}),
+          ...(body.limit !== undefined ? { limit: body.limit } : {}),
+        },
+      ),
+    );
+    return reply.code(202).send(job);
+  });
+
+  app.post('/api/data/api-football', async (req, reply) => {
+    const body = parseBody(ApiFootballBody, req.body);
+    const client = data.apiFootball;
+    if (!client || !client.configured())
+      throw new HttpError(409, 'api_football_not_configured', {
+        message: 'Store an API-Football key under Settings → Feeds first.',
+      });
+    const league = repos().leagues.get({ id: body.leagueId });
+    let apiLeagueId: unknown;
+    try {
+      apiLeagueId = (JSON.parse(league?.feed_ids ?? '{}') as Record<string, unknown>)['apiFootball'];
+    } catch {
+      apiLeagueId = undefined;
+    }
+    if (!league || league.sport !== 'soccer' || typeof apiLeagueId !== 'number')
+      throw new HttpError(400, 'bad_request', {
+        issues: [`leagueId: ${body.leagueId} is not a soccer league with an API-Football league id`],
+      });
+    const job = startJob(req, 'api_football_import', `API-Football ${league.name} ${body.season}`, (ctx) =>
+      importApiFootballSeason(
+        { client, repos: repos(), log: ctx.log, ctx },
+        {
+          leagueId: league.id,
+          apiLeagueId,
+          season: body.season,
           ...(body.limit !== undefined ? { limit: body.limit } : {}),
         },
       ),

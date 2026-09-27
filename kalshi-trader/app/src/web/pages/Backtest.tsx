@@ -77,6 +77,8 @@ interface AdHoc {
   atMinute: string;
   windowMinutes: string;
   leaderSide: 'any' | 'home' | 'away';
+  maxOpponentGoals: string;
+  underdogOnly: boolean;
   percent: string;
   minStakeUsd: string;
   maxStakeUsd: string;
@@ -91,6 +93,8 @@ const AD_HOC: Record<'soccer' | 'hockey', AdHoc> = {
     atMinute: '80',
     windowMinutes: '5',
     leaderSide: 'any',
+    maxOpponentGoals: '',
+    underdogOnly: false,
     percent: '2',
     minStakeUsd: '1',
     maxStakeUsd: '50',
@@ -103,6 +107,8 @@ const AD_HOC: Record<'soccer' | 'hockey', AdHoc> = {
     atMinute: '50',
     windowMinutes: '3',
     leaderSide: 'any',
+    maxOpponentGoals: '',
+    underdogOnly: false,
     percent: '2',
     minStakeUsd: '1',
     maxStakeUsd: '50',
@@ -166,6 +172,8 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
           atMinute: num(adHoc.atMinute),
           windowMinutes: num(adHoc.windowMinutes),
           leaderSide: adHoc.leaderSide,
+          ...(adHoc.maxOpponentGoals.trim() === '' ? {} : { maxOpponentGoals: num(adHoc.maxOpponentGoals) }),
+          ...(adHoc.underdogOnly ? { underdogOnly: true } : {}),
         },
         sizing: {
           percent: num(adHoc.percent),
@@ -195,7 +203,7 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
         id={`bt-${k}`}
         type="number"
         step={step}
-        value={adHoc[k]}
+        value={adHoc[k] as string}
         onChange={(e) => set(k, e.target.value as never)}
       />
     </div>
@@ -309,6 +317,17 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
                 <option value="home">Home</option>
                 <option value="away">Away</option>
               </select>
+            </div>
+            {field('maxOpponentGoals', 'Max opponent goals (optional)', '1')}
+            <div className="field">
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={adHoc.underdogOnly}
+                  onChange={(e) => set('underdogOnly', e.target.checked)}
+                />
+                Underdog only (kick-off ask; exact mode)
+              </label>
             </div>
           </div>
           <h3>Sizing and prices</h3>

@@ -153,7 +153,7 @@ describe('scheduler cadence (fake timers)', () => {
     const h = await t.app.inject({ method: 'GET', url: '/healthz' });
     expect(h.statusCode).toBe(200);
     expect(h.body).toBe('{"ok":true,"loop":"paused"}');
-    expect(scheduler.status().feeds.map((f) => f.status)).toEqual(['paused', 'paused']);
+    expect(scheduler.status().feeds.map((f) => f.status)).toEqual(['paused', 'paused', 'unavailable']);
 
     t.manager.repositories.settings.set('global_kill_switch', false);
     const off = Date.now() - START;

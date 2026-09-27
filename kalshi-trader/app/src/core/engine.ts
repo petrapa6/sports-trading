@@ -29,6 +29,8 @@ export type NoMatchReason =
   | 'no_minute'
   | 'lead'
   | 'side'
+  | 'opponent_goals'
+  | 'underdog'
   | 'window'
   | 'blocked';
 
@@ -42,6 +44,8 @@ export interface RuleState {
   awayScore: number;
   clock: GameClock;
   blocked: boolean;
+  /** YES asks at kick-off (T15 `underdogOnly`); unknown → an `underdogOnly` rule never matches. */
+  pregame?: { homeBp: number | null; awayBp: number | null } | undefined;
 }
 
 /**
@@ -58,7 +62,9 @@ export function ruleMinute(sport: Sport, clock: GameClock): number | undefined {
 
 /**
  * `lead_at_time` (§5): matches when the game is `live`, not in a break, regulation is not over (hockey OT
- * excluded), the leader's margin is ≥ `minLead` on an allowed side, `atMinute ≤ minute ≤ atMinute +
+ * excluded), the leader's margin is ≥ `minLead` on an allowed side, the trailing team has at most
+ * `maxOpponentGoals` goals (when set), the leader was the pre-game underdog (when `underdogOnly`: its
+ * kick-off YES ask strictly below the opponent's, both known), `atMinute ≤ minute ≤ atMinute +
  * windowMinutes`, and the game is not `blocked` by a feed disagreement.
  */
 export function evaluateLeadAtTime(rule: LeadAtTimeRule, sport: Sport, state: RuleState): RuleResult {
@@ -72,6 +78,15 @@ export function evaluateLeadAtTime(rule: LeadAtTimeRule, sport: Sport, state: Ru
   if (Math.abs(lead) < rule.minLead) return { match: false, reason: 'lead' };
   const side: Side = lead > 0 ? 'home' : 'away';
   if (rule.leaderSide !== 'any' && rule.leaderSide !== side) return { match: false, reason: 'side' };
+  const opponentGoals = side === 'home' ? state.awayScore : state.homeScore;
+  if (rule.maxOpponentGoals !== undefined && opponentGoals > rule.maxOpponentGoals)
+    return { match: false, reason: 'opponent_goals' };
+  if (rule.underdogOnly) {
+    const leaderBp = side === 'home' ? state.pregame?.homeBp : state.pregame?.awayBp;
+    const otherBp = side === 'home' ? state.pregame?.awayBp : state.pregame?.homeBp;
+    if (leaderBp == null || otherBp == null || leaderBp >= otherBp)
+      return { match: false, reason: 'underdog' };
+  }
   const window = rule.windowMinutes ?? 0;
   if (minute < rule.atMinute || minute > rule.atMinute + window) return { match: false, reason: 'window' };
   if (state.blocked) return { match: false, reason: 'blocked' };

@@ -265,6 +265,10 @@ export interface StrategyRule {
   atMinute: number;
   windowMinutes: number;
   leaderSide: 'any' | 'home' | 'away';
+  /** T15: the trailing team has at most this many goals. */
+  maxOpponentGoals?: number;
+  /** T15: only when the leader was the pre-game underdog. */
+  underdogOnly?: boolean;
 }
 
 export interface StrategySizing {
@@ -322,7 +326,7 @@ export interface Signal {
   at: string;
 }
 
-export type FeedHealth = 'ok' | 'error' | 'idle' | 'disabled' | 'paused' | 'unavailable';
+export type FeedHealth = 'ok' | 'error' | 'idle' | 'disabled' | 'paused' | 'unavailable' | 'quota';
 
 export interface FeedStatus {
   id: string;
@@ -354,6 +358,29 @@ export interface FeedInfo {
   status: FeedHealth;
   lastOkAt: string | null;
   lastError: string | null;
+}
+
+/** Settings → Feeds → API-Football (T15): the key is never sent back, only whether one is stored. */
+export interface ApiFootballSettings {
+  configured: boolean;
+  maskedKey: string | null;
+  quota: { day: string; used: number; limit: number };
+}
+
+export const NOTIFICATION_EVENTS = [
+  'trade_filled',
+  'trade_settled',
+  'kill_switch_changed',
+  'global_dry_run_changed',
+  'feed_disagreement',
+] as const;
+export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
+
+/** Settings → Notifications (T15). */
+export interface NotificationSettings {
+  available: boolean;
+  events: Record<NotificationEvent, boolean>;
+  modes: { live: boolean; dry_run: boolean };
 }
 
 export interface FeedTestResult {
@@ -483,7 +510,7 @@ export interface OrderGroupStatus {
 
 // ---- Settings → Data (T11) ------------------------------------------------------------------
 
-export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles';
+export type JobType = 'nhl_import' | 'kalshi_backfill' | 'candles' | 'api_football_import';
 export type JobStatus = 'running' | 'paused' | 'done' | 'failed' | 'cancelled';
 
 export interface JobView {

@@ -67,6 +67,8 @@ export default defineConfig({
         KST_E2E: '1',
         KST_E2E_KALSHI_URL: `http://127.0.0.1:${KALSHI_PORT}/trade-api/v2`,
         KST_E2E_NHL_URL: `http://127.0.0.1:${KALSHI_PORT}/nhl/v1`,
+        KST_E2E_API_FOOTBALL_URL: `http://127.0.0.1:${KALSHI_PORT}/api-football`,
+        KST_E2E_SUPERVISOR_URL: `http://127.0.0.1:${KALSHI_PORT}/supervisor/core/api`,
       },
     },
     {

@@ -158,7 +158,9 @@ describe('repositories', () => {
         order_group_contract_limit: 200,
         price_model: null,
         api_football_key_enc: null,
-        notifications: {},
+        api_football_daily_limit: 100,
+        api_football_quota: null,
+        notifications: { events: {}, modes: { live: true, dry_run: true } },
         feeds: {},
       });
       expect(t.db.sqlite.prepare('SELECT count(*) AS n FROM settings').get()).toEqual({ n: 0 });
@@ -170,12 +172,18 @@ describe('repositories', () => {
       r.settings.set('kalshi_order_group_id', 'og-1');
       const model = { version: 2, buckets: [{ minute: 80, lead: 1, p: '0.93' }], note: null };
       r.settings.set('price_model', model);
-      r.settings.set('notifications', { onFill: true, targets: ['mobile_app_pixel'] });
+      r.settings.set('notifications', {
+        events: { trade_filled: false },
+        modes: { live: true, dry_run: false },
+      });
       expect(r.settings.get('global_dry_run')).toBe(false);
       expect(r.settings.get('dry_run_bankroll_micros')).toBe(123_456_789);
       expect(r.settings.get('kalshi_order_group_id')).toBe('og-1');
       expect(r.settings.get('price_model')).toEqual(model);
-      expect(r.settings.get('notifications')).toEqual({ onFill: true, targets: ['mobile_app_pixel'] });
+      expect(r.settings.get('notifications')).toEqual({
+        events: { trade_filled: false },
+        modes: { live: true, dry_run: false },
+      });
       const raw = t.db.sqlite
         .prepare("SELECT value, updated_at FROM settings WHERE key = 'global_dry_run'")
         .get();
@@ -192,7 +200,7 @@ describe('repositories', () => {
       expect(() => r.settings.set('fee_balance_precision_micros', 300)).toThrow(SettingsError);
       r.settings.set('fee_balance_precision_micros', 10_000);
       expect(() => r.settings.get('nope' as never)).toThrow(/unknown setting/);
-      expect(SETTING_KEYS).toHaveLength(11);
+      expect(SETTING_KEYS).toHaveLength(13);
     });
 
     it('rejects a corrupt stored value', () => {

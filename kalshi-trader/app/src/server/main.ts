@@ -13,6 +13,9 @@ import { GameTracker } from '../core/tracker.js';
 import type { ScoreFeed } from '../feeds/gameState.js';
 import { KalshiLiveFeed } from '../feeds/kalshi/live.js';
 import { NhlFeed } from '../feeds/nhl/feed.js';
+import { ApiFootballClient, ApiFootballFeed, ApiFootballQuota } from '../feeds/apiFootball/feed.js';
+import { Notifier } from '../core/notifier.js';
+import { PregameRecorder } from '../core/pregame.js';
 import { isFeedEnabled } from './routes/feeds.js';
 import { DatabaseManager, DatabaseUnavailableError } from '../db/database.js';
 import { KalshiClient } from '../feeds/kalshi/client.js';
@@ -23,7 +26,7 @@ import { loadConfigOrExit } from './boot.js';
 import { publicKeyFingerprint } from './routes/dev.js';
 import { createLogger } from './logger.js';
 import { LogRing } from './logRing.js';
-import { loadOrCreateSecretKey, type LoadedSecret } from './secrets.js';
+import { decryptSetting, loadOrCreateSecretKey, type LoadedSecret } from './secrets.js';
 
 const { config, configLocalPath } = loadConfigOrExit();
 if (config.tz !== undefined) process.env['TZ'] = config.tz;
@@ -224,6 +227,52 @@ if (kalshiClient) feeds.push(new KalshiLiveFeed({ client: kalshiClient, log, gam
 // `KST_E2E_NHL_URL`: the Playwright stand-in for the NHL API; honoured only with KST_E2E=1 outside production.
 const nhlBaseUrl = e2e ? process.env['KST_E2E_NHL_URL'] : undefined;
 feeds.push(new NhlFeed({ gate, log, games: trackedGames, ...(nhlBaseUrl ? { baseUrl: nhlBaseUrl } : {}) }));
+// API-Football (T15): off by default, available once a key is stored (encrypted) under Settings → Feeds.
+// `KST_E2E_API_FOOTBALL_URL`: a stand-in, honoured only with KST_E2E=1 outside production.
+const apiFootballBaseUrl = e2e ? process.env['KST_E2E_API_FOOTBALL_URL'] : undefined;
+const apiFootball = new ApiFootballClient({
+  gate,
+  log,
+  key: () => {
+    const enc = database.repositories.settings.get('api_football_key_enc');
+    return enc === null ? null : decryptSetting(enc, secret.key);
+  },
+  quota: new ApiFootballQuota(() => database.repositories.settings, log),
+  ...(apiFootballBaseUrl ? { baseUrl: apiFootballBaseUrl } : {}),
+});
+feeds.push(
+  new ApiFootballFeed({
+    client: apiFootball,
+    games: trackedGames,
+    leagueFeedId: (leagueId) => {
+      const ids = JSON.parse(database.repositories.leagues.get({ id: leagueId })?.feed_ids ?? '{}') as Record<
+        string,
+        unknown
+      >;
+      const id = ids['apiFootball'];
+      return typeof id === 'number' ? id : null;
+    },
+  }),
+);
+// Kick-off YES asks for `underdogOnly` (T15), recorded on every scheduled → live change.
+new PregameRecorder({ repos: () => database.repositories, log, kalshi: () => kalshiClient }).attach(tracker);
+// Home Assistant notifications (T15) through the Supervisor proxy; a no-op without SUPERVISOR_TOKEN.
+// `KST_E2E_SUPERVISOR_URL`: a stand-in, honoured only with KST_E2E=1 outside production.
+const supervisorUrl = e2e ? process.env['KST_E2E_SUPERVISOR_URL'] : undefined;
+const notifier = new Notifier({
+  repos: () => database.repositories,
+  log,
+  token: process.env['SUPERVISOR_TOKEN'],
+  kalshiEnv: config.kalshiEnv,
+  gate,
+  ...(supervisorUrl ? { baseUrl: supervisorUrl } : {}),
+}).attach({
+  executor,
+  settler,
+  tracker,
+  globalMode: () =>
+    config.allowLiveOrders && !database.repositories.settings.get('global_dry_run') ? 'live' : 'dry_run',
+});
 const balanceClient = kalshiClient;
 const scheduler = new Scheduler({
   tracker,
@@ -256,9 +305,10 @@ const app = await buildApp({
     discovery,
   },
   live: { tracker, scheduler, feeds, engine, executor, settler, orderGroups },
+  notifier,
   replay: { allowLoopback: e2e, transaction },
   // Settings → Data (T11): the NHL importer uses the same e2e stand-in as the NHL feed.
-  data: { gate, transaction, ...(nhlBaseUrl ? { nhlBaseUrl } : {}) },
+  data: { gate, transaction, apiFootball, ...(nhlBaseUrl ? { nhlBaseUrl } : {}) },
   ...(e2e ? { ingressPeer: '127.0.0.1', rateLimits: { global: 10_000, login: 1000 } } : {}),
 });
 

@@ -23,7 +23,7 @@ test('Settings → Feeds: toggles persist; "Test feed" shows one result line per
   await page.goto('/settings/feeds');
   await expect(page.getByRole('heading', { level: 2, name: 'Feeds' })).toBeVisible();
   await expect(page.locator('[data-testid^="feed-"]').filter({ has: page.getByRole('switch') })).toHaveCount(
-    2,
+    3,
   );
 
   const nhl = () => page.getByRole('switch', { name: 'NHL official API enabled' });
@@ -41,7 +41,7 @@ test('Settings → Feeds: toggles persist; "Test feed" shows one result line per
 
   await page.getByRole('button', { name: 'Test feed' }).click();
   const results = page.getByTestId('feed-test-results');
-  await expect(results.locator('li')).toHaveCount(2);
+  await expect(results.locator('li')).toHaveCount(3);
   await expect(page.getByTestId('feed-test-kalshi-live')).toContainText('Kalshi live data: OK');
   await expect(page.getByTestId('feed-test-nhl-official')).toContainText(
     'NHL official API: OK — 3 NHL game(s) today',

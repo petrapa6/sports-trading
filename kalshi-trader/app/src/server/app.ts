@@ -24,6 +24,8 @@ import { OnceSet } from '../feeds/gameState.js';
 import { registerDevRoutes, registerReplayRoute } from './routes/dev.js';
 import { registerFeedRoutes, type LiveServices } from './routes/feeds.js';
 import { registerKalshiRoutes, type KalshiServices } from './routes/kalshi.js';
+import { registerNotificationRoutes } from './routes/notifications.js';
+import type { Notifier } from '../core/notifier.js';
 import { registerStatsRoutes } from './routes/stats.js';
 import { registerStrategyRoutes } from './routes/strategies.js';
 import { registerTradeRoutes } from './routes/trades.js';
@@ -84,6 +86,8 @@ export interface AppOptions {
    * switch from the database; `nhlBaseUrl` / `nhlFetch` point the NHL importer at a stand-in (tests, e2e).
    */
   data?: Partial<DataServices>;
+  /** Home Assistant notifications (T15): switch changes are sent through it; Settings → Notifications. */
+  notifier?: Pick<Notifier, 'available' | 'switchChanged'>;
 }
 
 /** Builds the Fastify application with every §10 control. Listening is done by `main.ts`. */
@@ -236,7 +240,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     database,
     options.kalshi ?? { env: hub.runtime.kalshiEnv, subaccount: hub.runtime.kalshiSubaccount },
   );
-  registerFeedRoutes(app, database, hub, live);
+  registerFeedRoutes(app, database, hub, live, options.secretKey, options.now);
+  registerNotificationRoutes(app, database, options.notifier?.available ?? false);
+  const notifier = options.notifier;
+  if (notifier) hub.on('switchChanged', (c) => notifier.switchChanged(c.key, c.on, c.mode));
   registerDataRoutes(
     app,
     database,

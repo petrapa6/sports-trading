@@ -2,6 +2,28 @@
 
 All notable changes to the Kalshi Sports Trader app. Versions follow `config.yaml` / `package.json`.
 
+## 1.1.0 — 2026-09-27
+
+### T15 — API-Football adapter, Home Assistant notifications, extra rule parameters
+
+- API-Football feed (`api-football`, soccer, off by default): `GET /fixtures?live=all` → game state with the feed's
+  match minute; status codes mapped to phases; fixtures matched by fixture id, league, team names and kick-off. When
+  fresh, its minute is the soccer clock; a score disagreement with Kalshi for more than 20 s blocks entries.
+- Settings → Feeds → API-Football: the key (stored with `encryptSetting`, write-only, shown masked), the daily
+  request limit (default 100) and today's usage. The quota guard counts every request per local day; at the limit
+  the app makes no call, logs one warning and shows the feed as `quota`. The global kill switch stops it like every
+  other feed.
+- Settings → Data → Import API-Football season (paid key): goal timelines into `hist_games`
+  (`source = 'api_football'`).
+- Home Assistant notifications through the Supervisor proxy (`homeassistant_api: true`; `hassio_api` stays off and
+  `check:addon` rejects it): trade filled / settled (strategy, P&L), global kill switch / dry run changed, feed
+  disagreement; every message starts with `[LIVE]` or `[DRY RUN]` and the Kalshi environment. Settings →
+  Notifications toggles per event and per mode. No token → nothing sent (a `debug` line).
+- `lead_at_time` gains `maxOpponentGoals` and `underdogOnly`; the YES asks at kick-off are recorded in
+  `games.pregame_home_bp` / `pregame_away_bp`. Strategy editor and ad-hoc backtest form have both fields; backtests
+  use the recorded kick-off asks or, in exact mode, the kick-off candle.
+- `npm run verify:T15`, `docs/verification/T15.md`.
+
 ## 1.0.0 — 2026-09-26
 
 First release. Everything listed under 0.1.0 (T01–T13, developed as 0.1.0 and never released) is part of it.

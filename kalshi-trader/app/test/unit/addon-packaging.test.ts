@@ -49,6 +49,10 @@ describe('check:addon (scripts/check-addon-config.ts)', () => {
       expect(keysOf(edited((d) => (d[key] = true)))).toEqual([key]);
     }
     expect(keysOf(edited((d) => (d['privileged'] = ['NET_ADMIN'])))).toEqual(['privileged']);
+    // T15: notifications need homeassistant_api; the Supervisor API (hassio_api) stays forbidden.
+    expect(keysOf(edited((d) => delete d['homeassistant_api']))).toEqual(['homeassistant_api']);
+    expect(keysOf(edited((d) => (d['homeassistant_api'] = false)))).toEqual(['homeassistant_api']);
+    expect(keysOf(edited((d) => (d['hassio_api'] = true)))).toEqual(['hassio_api']);
     expect(keysOf(edited((d) => (d['version'] = '9.9.9')))).toEqual(['version']);
     expect(keysOf('name: [unclosed')).toEqual(['config.yaml']);
   });

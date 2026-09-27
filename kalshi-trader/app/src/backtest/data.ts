@@ -155,7 +155,9 @@ export function countGames(sqlite: Database.Database, req: ResolvedRequest): num
  */
 export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): SimInput {
   const marketsOf = sqlite.prepare('SELECT ticker, outcome, price_ranges FROM markets WHERE game_id = ?');
-  const gameRow = sqlite.prepare('SELECT scheduled_at FROM games WHERE id = ?');
+  const gameRow = sqlite.prepare(
+    'SELECT scheduled_at, pregame_home_bp, pregame_away_bp FROM games WHERE id = ?',
+  );
   const candlesOf = sqlite.prepare(
     'SELECT minute_ts, ask_close_bp FROM hist_prices WHERE market_ticker = ? AND ask_close_bp IS NOT NULL',
   );
@@ -166,9 +168,15 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
     const playedMs = ms(row.played_at);
     if (!goals || playedMs === null || row.played_at === null) continue;
     const markets: SimGame['markets'] = {};
+    let pregame: SimGame['pregame'];
     if (row.kalshi_event_ticker) {
       // Candles are placed on the match clock from the event's scheduled start, like the price-model builder.
-      const event = gameRow.get(row.kalshi_event_ticker) as { scheduled_at: string | null } | undefined;
+      const event = gameRow.get(row.kalshi_event_ticker) as
+        | { scheduled_at: string | null; pregame_home_bp: number | null; pregame_away_bp: number | null }
+        | undefined;
+      // Kick-off asks recorded live (T15 `underdogOnly`); otherwise the simulator reads the kick-off candles.
+      if (event && event.pregame_home_bp !== null && event.pregame_away_bp !== null)
+        pregame = { homeBp: event.pregame_home_bp, awayBp: event.pregame_away_bp };
       const startMs = ms(event?.scheduled_at) ?? playedMs;
       if (req.priceMode === 'exact') {
         for (const m of marketsOf.all(row.kalshi_event_ticker) as {
@@ -198,6 +206,7 @@ export function loadSimInput(sqlite: Database.Database, req: ResolvedRequest): S
       finalAway: row.final_away ?? goals.filter((g) => g.side === 'away').length,
       goals,
       markets,
+      ...(pregame ? { pregame } : {}),
     });
   }
   const precision = settingValue(sqlite, 'fee_balance_precision_micros');

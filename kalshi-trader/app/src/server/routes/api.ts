@@ -98,6 +98,7 @@ export function registerApiRoutes(
 
     const actor = { actor: userActor(user.username), ...clientContext(req) };
     const other: typeof changes = {};
+    const switched: { key: SwitchKey; on: boolean }[] = [];
     for (const [key, change] of Object.entries(changes) as [keyof typeof patch, (typeof changes)[string]][]) {
       settings.set(key, change.to as never);
       if (!isSwitch(key)) {
@@ -108,11 +109,16 @@ export function registerApiRoutes(
       const mode = globalMode(hub.switches());
       auth.audit(actor, { action: `${key}_${state}`, entity: 'settings', entityId: key, mode });
       req.log.info({ mode, setting: key, value: change.to }, `${SWITCHES[key]} turned ${state}`);
+      switched.push({ key, on: change.to === true });
     }
     if (Object.keys(other).length > 0) {
       auth.audit(actor, { action: 'settings_change', entity: 'settings', detail: other });
     }
-    if (Object.keys(changes).some(isSwitch)) hub.switchesChanged();
+    if (Object.keys(changes).some(isSwitch)) {
+      hub.switchesChanged();
+      const mode = globalMode(hub.switches());
+      for (const s of switched) hub.switchChanged({ ...s, mode });
+    }
     return publicSettings();
   });
 

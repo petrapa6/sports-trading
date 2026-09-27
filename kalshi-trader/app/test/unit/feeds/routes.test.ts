@@ -80,6 +80,7 @@ describe('Settings → Feeds API', () => {
     expect(list.map((f) => [f.id, f.enabled, f.available])).toEqual([
       ['kalshi-live', true, true],
       ['nhl-official', true, true],
+      ['api-football', false, false],
     ]);
 
     expect((await c.post('/api/feeds/nhl-official', { enabled: false })).statusCode).toBe(403); // no CSRF token
@@ -109,12 +110,13 @@ describe('Settings → Feeds API', () => {
     const res = await c.postWithCsrf('/api/feeds/test', {});
     expect(res.statusCode).toBe(200);
     const { results } = res.json() as { results: { id: string; ok: boolean; message: string }[] };
-    expect(results.map((r) => r.id)).toEqual(['kalshi-live', 'nhl-official']);
+    expect(results.map((r) => r.id)).toEqual(['kalshi-live', 'nhl-official', 'api-football']);
     expect(results[0]).toMatchObject({
       ok: false,
       message: expect.stringMatching(/credentials are not configured/),
     });
     expect(results[1]).toMatchObject({ ok: false, message: 'NHL API answered 502 for GET /score/now' });
+    expect(results[2]).toMatchObject({ ok: false, message: expect.stringMatching(/No API-Football key/) });
     await t.close();
 
     const second = await liveApp([
@@ -126,7 +128,7 @@ describe('Settings → Feeds API', () => {
     const ok = (await c2.postWithCsrf('/api/feeds/test', {})).json() as {
       results: { ok: boolean; message: string }[];
     };
-    expect(ok.results.map((r) => [r.ok, r.message])).toEqual([
+    expect(ok.results.map((r) => [r.ok, r.message]).slice(0, 2)).toEqual([
       [true, 'reachable'],
       [true, '3 NHL game(s) today'],
     ]);
@@ -249,7 +251,7 @@ describe('SSE games', () => {
     expect(((await dev.get('/api/games')).json() as Frame).games[0]?.awayScore).toBe(1);
     expect((await dev.get('/api/loop')).json()).toMatchObject({
       state: 'starting',
-      feeds: [{ id: 'kalshi-live' }, { id: 'nhl-official' }],
+      feeds: [{ id: 'kalshi-live' }, { id: 'nhl-official' }, { id: 'api-football', status: 'unavailable' }],
     });
     await sse.cancel();
   });

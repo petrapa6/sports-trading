@@ -50,6 +50,8 @@ export interface SimGame {
   goals: GoalEvent[];
   /** The leader markets (exact mode). */
   markets: { home?: SimMarket; away?: SimMarket };
+  /** YES asks at kick-off recorded live (`games.pregame_*_bp`), for `underdogOnly` (T15). */
+  pregame?: { homeBp: number; awayBp: number };
 }
 
 export interface SimInput {
@@ -159,6 +161,22 @@ function exactAsk(
   return null;
 }
 
+/**
+ * The kick-off YES asks of a game for `underdogOnly` (T15): the ones recorded live, else in exact mode the
+ * candle at the scheduled start (or within the next 3 minutes) of each leader market. Modelled mode has no
+ * pre-game prices, so an `underdogOnly` rule never matches there.
+ */
+export function kickoffAsks(
+  input: Pick<SimInput, 'sport' | 'priceMode' | 'candles'>,
+  game: Pick<SimGame, 'markets' | 'pregame'>,
+): { homeBp: number | null; awayBp: number | null } {
+  if (game.pregame) return game.pregame;
+  if (input.priceMode !== 'exact') return { homeBp: null, awayBp: null };
+  const at = (m: SimMarket | undefined) =>
+    m ? (exactAsk(input.sport, input.candles?.get(m.ticker), 0)?.askBp ?? null) : null;
+  return { homeBp: at(game.markets.home), awayBp: at(game.markets.away) };
+}
+
 export type ProgressFn = (done: number, total: number) => void;
 
 export function simulate(input: SimInput, onProgress?: ProgressFn, progressEvery = 50): SimResult {
@@ -189,9 +207,10 @@ export function simulate(input: SimInput, onProgress?: ProgressFn, progressEvery
     let lastAsk: number | null = null;
     let lastSource: PriceSource | null = null;
     let row: SimTrade | null = null;
+    const pregame = rule.underdogOnly ? kickoffAsks(input, game) : undefined;
 
     for (let minute = rule.atMinute; minute <= lastMinute && row === null; minute++) {
-      const result = evaluateLeadAtTime(rule, sport, stateAt(sport, game.goals, minute));
+      const result = evaluateLeadAtTime(rule, sport, { ...stateAt(sport, game.goals, minute), pregame });
       if (!result.match) continue;
       // The trade is for the first leader's market; a changed leader makes no attempt on this tick.
       if (side === null) side = result.side;
