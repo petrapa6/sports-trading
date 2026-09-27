@@ -10,6 +10,7 @@ import {
   type PriceModelSummary,
   type VacuumResult,
 } from '../../api';
+import { InfoTip, LabelTip, TitleTip, WithTip } from '../../components/InfoTip';
 import { useStepUp } from '../../reauth';
 
 const mb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -70,18 +71,14 @@ function ModelSummary({ model }: { model: PriceModelSummary }) {
           <div className="readonly-item" key={sport} data-testid={`price-model-${sport}`}>
             <dt>{SPORT_LABEL[sport]}</dt>
             <dd>
-              Sample size {s.observations} ({s.games} games) · {s.modelledCells} modelled cells, the rest from
-              the seed table
+              Sample size {s.observations} ({s.games} games) · {s.modelledCells} modelled cells
             </dd>
           </div>
         );
       })}
       <div className="readonly-item">
         <dt>Built</dt>
-        <dd>
-          {new Date(model.builtAt).toLocaleString()} · cells below {model.minSamples} observations use the
-          seed table
-        </dd>
+        <dd>{new Date(model.builtAt).toLocaleString()}</dd>
       </div>
     </dl>
   );
@@ -186,11 +183,23 @@ export function DataSettings() {
 
   return (
     <section className="settings-section" aria-labelledby="data-heading">
-      <h2 id="data-heading">Data</h2>
-      <p className="muted">
-        Goal timelines and Kalshi prices for backtesting. Long jobs pause while the global kill switch is on
-        and can be cancelled; what they already stored is kept.
-      </p>
+      <TitleTip
+        as="h2"
+        id="data-heading"
+        title="Data"
+        tip={
+          <>
+            <p>
+              Historical games (goal timelines) and Kalshi prices for backtesting. Nothing here affects live
+              or dry-run trading.
+            </p>
+            <p>
+              Long jobs run in the background (see Jobs below), pause while the global kill switch is on and
+              can be cancelled; what they already stored is kept.
+            </p>
+          </>
+        }
+      />
 
       <dl className="readonly-list">
         <div className="readonly-item">
@@ -200,7 +209,11 @@ export function DataSettings() {
           </dd>
         </div>
         <div className="readonly-item">
-          <dt>Goal timelines</dt>
+          <dt>
+            <WithTip tip="Historical games with the minute of every goal, by source; linked = matched to a Kalshi event, so exact prices can be looked up.">
+              Goal timelines
+            </WithTip>
+          </dt>
           <dd data-testid="data-hist-games">
             {s
               ? `${s.histGames.total}${
@@ -214,14 +227,24 @@ export function DataSettings() {
           </dd>
         </div>
         <div className="readonly-item">
-          <dt>Kalshi candles</dt>
+          <dt>
+            <WithTip tip="One-minute Kalshi price records (candles) of finished games, used by exact-price backtests and the price model.">
+              Kalshi candles
+            </WithTip>
+          </dt>
           <dd data-testid="data-hist-prices">
             {s ? `${s.histPrices} one-minute candles, ${s.backfilledGames} backfilled games` : '…'}
           </dd>
         </div>
       </dl>
       <div className="actions">
-        <button type="button" className="secondary" disabled={busy !== null} onClick={runVacuum}>
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy !== null}
+          title="Compact the database file to reclaim space left by deleted data"
+          onClick={runVacuum}
+        >
           Vacuum database
         </button>
       </div>
@@ -231,13 +254,24 @@ export function DataSettings() {
         </p>
       )}
 
-      <h3>Import CSV</h3>
-      <p className="muted">
-        Columns{' '}
-        <code>league_code, season, date, home, away, home_goals_final, away_goals_final, goal_events</code>{' '}
-        with <code>goal_events</code> like <code>home:23;away:67;home:90+2</code>. Up to 20 MB; needs your
-        password.
-      </p>
+      <TitleTip
+        title="Import CSV"
+        tip={
+          <>
+            <p>Goal timelines from your own file, with the columns:</p>
+            <p>
+              <code>
+                league_code, season, date, home, away, home_goals_final, away_goals_final, goal_events
+              </code>
+            </p>
+            <p>
+              <code>goal_events</code> lists the goals in order as team:minute, e.g.{' '}
+              <code>home:23;away:67;home:90+2</code>.
+            </p>
+            <p>Up to 20 MB; needs your password. An invalid row is reported and nothing is imported.</p>
+          </>
+        }
+      />
       <form className="data-form" onSubmit={importCsv}>
         <label htmlFor="csv-file">CSV file</label>
         <input
@@ -251,9 +285,16 @@ export function DataSettings() {
         </button>
       </form>
 
-      <h3>NHL season</h3>
+      <TitleTip
+        title="NHL season"
+        tip="Every finished game of an NHL season with its goal timeline, from the public NHL API (free)."
+      />
       <form className="data-form" onSubmit={startNhl}>
-        <label htmlFor="nhl-season">Season</label>
+        <LabelTip
+          htmlFor="nhl-season"
+          label="Season"
+          tip="Start and end year without a separator, e.g. 20252026 for the 2025-26 season."
+        />
         <input
           id="nhl-season"
           value={season}
@@ -262,16 +303,22 @@ export function DataSettings() {
           title="e.g. 20252026"
           onChange={(e) => setSeason(e.target.value.trim())}
         />
-        <label className="checkbox">
-          <input type="checkbox" checked={preseason} onChange={(e) => setPreseason(e.target.checked)} />{' '}
-          Include preseason
-        </label>
+        <span className="with-tip">
+          <label className="checkbox">
+            <input type="checkbox" checked={preseason} onChange={(e) => setPreseason(e.target.checked)} />{' '}
+            Include preseason
+          </label>
+          <InfoTip>Also import preseason (exhibition) games.</InfoTip>
+        </span>
         <button type="submit" disabled={busy !== null}>
           Fetch NHL season
         </button>
       </form>
 
-      <h3>API-Football season (paid key)</h3>
+      <TitleTip
+        title="API-Football season (paid key)"
+        tip="Every finished game of one league and season with its goal timeline, from API-Football. Needs a key on a paid plan (Settings → Feeds; a free key stops the job). Each game costs one request of the daily limit."
+      />
       <form className="data-form" onSubmit={startApiFootball}>
         <label htmlFor="af-league">League</label>
         <select id="af-league" value={afLeague} onChange={(e) => setAfLeague(e.target.value)}>
@@ -281,7 +328,11 @@ export function DataSettings() {
           <option value="seriea">Serie A</option>
           <option value="ligue1">Ligue 1</option>
         </select>
-        <label htmlFor="af-season">Season start year</label>
+        <LabelTip
+          htmlFor="af-season"
+          label="Season start year"
+          tip="The year the season starts, e.g. 2025 for 2025-26."
+        />
         <input
           id="af-season"
           value={afSeason}
@@ -295,7 +346,25 @@ export function DataSettings() {
         </button>
       </form>
 
-      <h3>Kalshi</h3>
+      <TitleTip
+        title="Kalshi"
+        tip={
+          <ul>
+            <li>
+              <strong>Backfill settled events</strong>: settled Kalshi games of the enabled leagues in the
+              date range, with goal timelines from Kalshi's play-by-play. Data only: never tracked or traded.
+            </li>
+            <li>
+              <strong>Collect candles</strong>: one-minute Kalshi prices of every finished game (for
+              exact-price backtests).
+            </li>
+            <li>
+              <strong>Rebuild price model</strong>: the typical ask by sport, lead and minutes left, computed
+              from the candles; used by modelled backtests.
+            </li>
+          </ul>
+        }
+      />
       <form className="data-form" onSubmit={startBackfill}>
         <label htmlFor="backfill-from">From</label>
         <input id="backfill-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -327,12 +396,18 @@ export function DataSettings() {
 
       {shownModel && (
         <>
-          <h3>Price model</h3>
+          <TitleTip
+            title="Price model"
+            tip={`The typical ask by sport, lead and minutes left, used by modelled backtests. Sample size = price observations behind it; a cell with fewer than ${shownModel.minSamples} observations uses a conservative built-in seed table instead.`}
+          />
           <ModelSummary model={shownModel} />
         </>
       )}
 
-      <h3>Jobs</h3>
+      <TitleTip
+        title="Jobs"
+        tip="Imports and collections started on this page, with their progress. The list starts empty after each app restart."
+      />
       {jobList.length === 0 ? (
         <p className="muted">No jobs since the app started.</p>
       ) : (

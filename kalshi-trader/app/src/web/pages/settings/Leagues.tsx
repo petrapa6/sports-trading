@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { api, kalshiErrorMessage, type DiscoveryResult, type KalshiSeries, type League } from '../../api';
+import { InfoTip, LabelTip, TitleTip, WithTip } from '../../components/InfoTip';
 
 function LeagueCard({ league, onSaved }: { league: League; onSaved: () => Promise<void> }) {
   const [series, setSeries] = useState(league.kalshiSeries);
@@ -40,9 +41,17 @@ function LeagueCard({ league, onSaved }: { league: League; onSaved: () => Promis
           <span className="track" aria-hidden="true" />
           <span>{league.enabled ? 'Enabled' : 'Disabled'}</span>
         </label>
+        <InfoTip>
+          Enabled leagues have their games discovered, tracked live and offered to strategies. A disabled
+          league is ignored.
+        </InfoTip>
       </div>
       <form className="league-series" onSubmit={submit}>
-        <label htmlFor={`series-${league.id}`}>Kalshi series</label>
+        <LabelTip
+          htmlFor={`series-${league.id}`}
+          label="Kalshi series"
+          tip="The ticker of the Kalshi series that holds this league's game markets (e.g. KXEPLGAME). Use Discover series to list the available ones."
+        />
         <input
           id={`series-${league.id}`}
           value={series}
@@ -54,16 +63,21 @@ function LeagueCard({ league, onSaved }: { league: League; onSaved: () => Promis
           Save
         </button>
       </form>
-      <label className="checkbox">
-        <input
-          type="checkbox"
-          aria-label={`${league.name} include preseason`}
-          checked={league.includePreseason}
-          disabled={busy}
-          onChange={(e) => void save({ include_preseason: e.target.checked })}
-        />{' '}
-        Include preseason
-      </label>
+      <span className="with-tip">
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            aria-label={`${league.name} include preseason`}
+            checked={league.includePreseason}
+            disabled={busy}
+            onChange={(e) => void save({ include_preseason: e.target.checked })}
+          />{' '}
+          Include preseason
+        </label>
+        <InfoTip>
+          Also track preseason (friendly / exhibition) games. Off: they are skipped at discovery.
+        </InfoTip>
+      </span>
       {error && (
         <p className="error" role="alert">
           {error}
@@ -108,11 +122,12 @@ export function LeaguesSettings() {
 
   return (
     <section className="settings-section" aria-labelledby="leagues-heading">
-      <h2 id="leagues-heading">Leagues</h2>
-      <p className="muted">
-        Each league maps to one Kalshi series. Discovery lists its open events and markets at start-up and
-        every day at 05:00.
-      </p>
+      <TitleTip
+        as="h2"
+        id="leagues-heading"
+        title="Leagues"
+        tip="Each league maps to one Kalshi series. Discovery lists its open events (games) and markets at start-up and every day at 05:00, so the app knows which games to track."
+      />
       {!leagues.data && <p className="muted">Loading…</p>}
       <ul className="league-list">
         {leagues.data?.map((l) => (
@@ -125,11 +140,17 @@ export function LeaguesSettings() {
           type="button"
           className="secondary"
           disabled={busy !== null}
+          title="List Kalshi's sports series ending in GAME, to find the right ticker for a league"
           onClick={() => void discoverSeries()}
         >
           Discover series
         </button>
-        <button type="button" disabled={busy !== null} onClick={() => void runDiscovery()}>
+        <button
+          type="button"
+          disabled={busy !== null}
+          title="Look up the open events and markets of the enabled leagues now instead of waiting for 05:00"
+          onClick={() => void runDiscovery()}
+        >
           Run discovery now
         </button>
       </div>
@@ -165,11 +186,25 @@ export function LeaguesSettings() {
               <thead>
                 <tr>
                   <th>League</th>
-                  <th>Events</th>
-                  <th>Games</th>
-                  <th>Markets</th>
-                  <th>Preseason skipped</th>
-                  <th>Unmapped</th>
+                  <th>
+                    <WithTip tip="Open Kalshi events found in the series.">Events</WithTip>
+                  </th>
+                  <th>
+                    <WithTip tip="Events matched to a scheduled game and stored for tracking.">Games</WithTip>
+                  </th>
+                  <th>
+                    <WithTip tip="Markets of those games (home win, away win, tie).">Markets</WithTip>
+                  </th>
+                  <th>
+                    <WithTip tip="Preseason games left out (Include preseason is off).">
+                      Preseason skipped
+                    </WithTip>
+                  </th>
+                  <th>
+                    <WithTip tip="Markets whose outcome could not be matched to home, away or tie; they are ignored.">
+                      Unmapped
+                    </WithTip>
+                  </th>
                 </tr>
               </thead>
               <tbody>

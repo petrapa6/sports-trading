@@ -1,4 +1,5 @@
 import { useLive } from '../live';
+import { TitleTip } from './InfoTip';
 import { ModeBadge } from './ModeBadge';
 
 /**
@@ -9,7 +10,12 @@ export function RecentSignals() {
   const { signals } = useLive();
   return (
     <section className="card" aria-labelledby="signals-heading">
-      <h2 id="signals-heading">Recent signals</h2>
+      <TitleTip
+        as="h2"
+        id="signals-heading"
+        title="Recent signals"
+        tip="The latest moments a strategy's rule matched a game: the score, minute and Kalshi market. Whether it became a trade (or why not) is on the Trades page."
+      />
       {signals.length === 0 ? (
         <p className="muted" data-testid="no-signals">
           No strategy has matched a game yet.

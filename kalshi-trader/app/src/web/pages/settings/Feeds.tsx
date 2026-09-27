@@ -7,6 +7,15 @@ import {
   type FeedInfo,
   type FeedTestResult,
 } from '../../api';
+import { InfoTip, LabelTip, TitleTip } from '../../components/InfoTip';
+
+const FEED_HELP: Record<string, string> = {
+  'kalshi-live':
+    "Scores and clock from Kalshi's own live data for the games it lists. Needs the Kalshi credentials in the app's configuration.",
+  'nhl-official': 'Scores and clock from the public NHL API, for NHL games.',
+  'api-football':
+    'Soccer scores and match minute from API-Football. Needs an API key (below) and uses its daily request limit.',
+};
 
 const UNAVAILABLE_TEXT: Record<string, string> = {
   'kalshi-live': 'unavailable (Kalshi credentials not configured)',
@@ -53,12 +62,21 @@ function ApiFootballPanel({ onChanged }: { onChanged: () => void }) {
   const limitValue = /^\d+$/.test(limitText) ? Number(limitText) : null;
   return (
     <div className="api-football" data-testid="api-football-settings">
-      <h3>API-Football</h3>
-      <p className="muted">
-        Soccer minute and score from API-Football (off by default). Its minute is used whenever it is fresh; a
-        score disagreement with Kalshi for more than 20 s blocks entries. Every request counts against the
-        daily limit below.
-      </p>
+      <TitleTip
+        title="API-Football"
+        tip={
+          <>
+            <p>
+              Soccer minute and score from API-Football (off by default). Its minute is used whenever it is
+              fresh; a score disagreement with Kalshi for more than 20 s blocks entries.
+            </p>
+            <p>
+              Every request counts against the daily limit. The free plan (100 a day) is used up in minutes by
+              5-second polling, so switch the feed on for live soccer only with a paid plan.
+            </p>
+          </>
+        }
+      />
       <form
         className="bankroll-form"
         onSubmit={(e) => {
@@ -68,7 +86,11 @@ function ApiFootballPanel({ onChanged }: { onChanged: () => void }) {
         }}
       >
         <div className="field">
-          <label htmlFor="api-football-key">API key</label>
+          <LabelTip
+            htmlFor="api-football-key"
+            label="API key"
+            tip="Your API-Football (api-sports.io) key. It is stored encrypted and never shown again; only a masked form is displayed."
+          />
           <input
             id="api-football-key"
             type="password"
@@ -117,7 +139,11 @@ function ApiFootballPanel({ onChanged }: { onChanged: () => void }) {
         }}
       >
         <div className="field">
-          <label htmlFor="api-football-limit">Daily request limit</label>
+          <LabelTip
+            htmlFor="api-football-limit"
+            label="Daily request limit"
+            tip="The app stops calling API-Football for the day once this many requests were made (until local midnight). Set it to your plan's daily quota."
+          />
           <input
             id="api-football-limit"
             inputMode="numeric"
@@ -173,18 +199,19 @@ export function FeedsSettings() {
 
   return (
     <section className="settings-section" aria-labelledby="feeds-heading">
-      <h2 id="feeds-heading">Feeds</h2>
-      <p className="muted">
-        Score feeds are polled every 5 s while a tracked game is in progress and every 60 s in the hour before
-        one. With two feeds for a game (NHL, or soccer with API-Football), a score disagreement lasting more
-        than 20 s blocks entries for it.
-      </p>
+      <TitleTip
+        as="h2"
+        id="feeds-heading"
+        title="Feeds"
+        tip="Score feeds deliver the live score and clock the strategies act on. They are polled every 5 s while a tracked game is in progress and every 60 s in the hour before one. With two feeds for a game (NHL, or soccer with API-Football), a score disagreement lasting more than 20 s blocks entries for it."
+      />
       {!feeds.data && <p className="muted">Loading…</p>}
       <ul className="league-list">
         {feeds.data?.map((f) => (
           <li key={f.id} className="league-card" data-testid={`feed-${f.id}`}>
             <div className="league-head">
               <strong>{f.name}</strong> <span className="muted">({f.sports.join(', ')})</span>
+              {FEED_HELP[f.id] && <InfoTip>{FEED_HELP[f.id]}</InfoTip>}
               <label className="switch">
                 <input
                   type="checkbox"
@@ -206,7 +233,13 @@ export function FeedsSettings() {
         ))}
       </ul>
       <div className="actions">
-        <button type="button" className="secondary" disabled={busy !== null} onClick={() => void test()}>
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy !== null}
+          title="Make one request to every enabled feed and show whether it answered"
+          onClick={() => void test()}
+        >
           Test feed
         </button>
       </div>

@@ -9,6 +9,7 @@ import {
   type Sport,
 } from '../filters';
 import { navigate, useLocation } from '../router';
+import { LabelTip, WithTip } from './InfoTip';
 
 const MODE_LABEL: Record<ModeFilter, string> = { live: 'Live', dry_run: 'Dry run', both: 'Both' };
 const RANGE_LABEL: Record<Range, string> = { '7d': '7d', '30d': '30d', season: 'Season', all: 'All' };
@@ -43,7 +44,11 @@ export function FilterBar() {
   return (
     <section className="filter-bar" aria-label="Filters">
       <div className="filter-group">
-        <label htmlFor="filter-sport">Sport</label>
+        <LabelTip
+          htmlFor="filter-sport"
+          label="Sport"
+          tip="These filters apply to everything on this page and are kept in the URL, so a filtered view can be bookmarked. Pick a sport to narrow the league and strategy lists."
+        />
         <select
           id="filter-sport"
           value={f.sport}
@@ -64,7 +69,9 @@ export function FilterBar() {
       </div>
 
       <fieldset className="filter-group">
-        <legend>Leagues</legend>
+        <legend>
+          <WithTip tip="Show only these leagues; none ticked = all leagues.">Leagues</WithTip>
+        </legend>
         <div className="chips">
           {visibleLeagues.map((l) => (
             <label key={l.id} className="chip">
@@ -80,7 +87,9 @@ export function FilterBar() {
       </fieldset>
 
       <fieldset className="filter-group">
-        <legend>Strategies</legend>
+        <legend>
+          <WithTip tip="Show only these strategies; none ticked = all strategies.">Strategies</WithTip>
+        </legend>
         <div className="chips">
           {visibleStrategies.length === 0 && <span className="muted">No strategies yet</span>}
           {visibleStrategies.map((s) => (
@@ -97,7 +106,11 @@ export function FilterBar() {
       </fieldset>
 
       <fieldset className="filter-group">
-        <legend>Mode</legend>
+        <legend>
+          <WithTip tip="Live = real orders; Dry run = simulated orders at real prices. Both shows them side by side, never added together.">
+            Mode
+          </WithTip>
+        </legend>
         <div className="segmented">
           {(Object.keys(MODE_LABEL) as ModeFilter[]).map((m) => (
             <label key={m} className={f.mode === m ? 'active' : undefined}>
@@ -114,7 +127,11 @@ export function FilterBar() {
       </fieldset>
 
       <div className="filter-group">
-        <label htmlFor="filter-env">Kalshi environment</label>
+        <LabelTip
+          htmlFor="filter-env"
+          label="Kalshi environment"
+          tip="Show trades made against Kalshi demo (test money) or prod (real money). The current one is set in the app's configuration in Home Assistant."
+        />
         <select
           id="filter-env"
           value={f.env ?? currentEnv ?? 'demo'}
@@ -129,7 +146,9 @@ export function FilterBar() {
       </div>
 
       <fieldset className="filter-group">
-        <legend>Date range</legend>
+        <legend>
+          <WithTip tip="The last 7 or 30 days, the current season, or all time.">Date range</WithTip>
+        </legend>
         <div className="segmented">
           {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
             <label key={r} className={f.range === r ? 'active' : undefined}>

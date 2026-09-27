@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { api, formatUsd, type Diagnostics, type KalshiConnectionTest } from '../../api';
+import { TitleTip } from '../../components/InfoTip';
 import { ModeBadge } from '../../components/ModeBadge';
 import { useLive } from '../../live';
 import { filterLogs, type LogModeFilter } from '../../logFilter';
@@ -48,7 +49,10 @@ export function DiagnosticsSettings() {
         </div>
       </dl>
 
-      <h3>Kalshi connection</h3>
+      <TitleTip
+        title="Kalshi connection"
+        tip="Checks the Kalshi credentials: fetches the subaccount balance and the exchange status with the configured key."
+      />
       <div className="actions">
         <button type="button" className="secondary" disabled={testing} onClick={() => void runTest()}>
           Test Kalshi connection
@@ -93,7 +97,10 @@ export function DiagnosticsSettings() {
       )}
 
       <div className="log-header">
-        <h3>Log tail</h3>
+        <TitleTip
+          title="Log tail"
+          tip="The latest log lines of the app, live. Lines about a trade carry its mode badge; the filter shows only live or only dry-run lines."
+        />
         <label htmlFor="log-mode">Mode</label>
         <select id="log-mode" value={filter} onChange={(e) => setFilter(e.target.value as LogModeFilter)}>
           <option value="all">All lines</option>

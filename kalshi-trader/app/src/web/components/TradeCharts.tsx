@@ -18,6 +18,7 @@ import {
 import type { TradeView } from '../api';
 import type { Mode } from './ModeBadge';
 import { barFill, ChartDefs, MODE_LABEL, useChartPalette } from './chartStyle';
+import { TitleTip } from './InfoTip';
 import { ChartTooltip } from './StatsCharts';
 import { formatPrice, formatUsdExact } from '../format';
 
@@ -74,8 +75,11 @@ export function TradeCharts({ rows, maxPriceBp }: { rows: readonly TradeView[]; 
         data-testid="chart-trade-histogram"
         aria-labelledby="trade-hist-title"
       >
-        <h3 id="trade-hist-title">Price paid</h3>
-        <p className="muted chart-caption">Fill prices of the listed trades in 1¢ bins, grouped by mode.</p>
+        <TitleTip
+          id="trade-hist-title"
+          title="Price paid"
+          tip="How many of the listed trades filled at each price, in 1¢ bins up to the strategies' max price, grouped by mode. Follows the filters and the status filter above."
+        />
         {fills === 0 ? (
           <p className="muted chart-empty">No fills among these trades.</p>
         ) : (
@@ -111,10 +115,11 @@ export function TradeCharts({ rows, maxPriceBp }: { rows: readonly TradeView[]; 
         )}
       </section>
       <section className="card chart-card" data-testid="chart-trade-pnl" aria-labelledby="trade-pnl-title">
-        <h3 id="trade-pnl-title">P&amp;L per trade</h3>
-        <p className="muted chart-caption">
-          Realized P&amp;L of each settled trade in the list, by settlement time.
-        </p>
+        <TitleTip
+          id="trade-pnl-title"
+          title="P&L per trade"
+          tip="Realized P&L of each settled trade in the list, oldest settlement first. Hover a bar for the trade id and its mode."
+        />
         {pnl.length === 0 ? (
           <p className="muted chart-empty">No settled trades in the list.</p>
         ) : (

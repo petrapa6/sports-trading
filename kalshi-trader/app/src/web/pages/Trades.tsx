@@ -7,14 +7,16 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { api, type StrategyView, type TradeDetail, type TradeView } from '../api';
 import { FilterBar, useFilters } from '../components/FilterBar';
+import { InfoTip, TitleTip, WithTip } from '../components/InfoTip';
 import { ModeBadge } from '../components/ModeBadge';
 import { TradeCharts } from '../components/TradeCharts';
 import { downloadCsv, toCsv } from '../csv';
 import { serializeFilters } from '../filters';
 import { formatContracts, formatPrice, formatUsd, formatUsdExact } from '../format';
+import { MODE_HELP, SKIP_REASON_HELP, SKIP_REASONS_HELP, STATUS_HELP } from '../help';
 
 // ---- status filter ---------------------------------------------------------------------------------
 
@@ -91,7 +93,7 @@ function StatusCell({ t }: { t: TradeView }) {
     <span className={`trade-status status-${t.status}`} data-testid={`status-${t.id}`}>
       {STATUS_LABEL[t.status] ?? t.status}
       {t.skipReason && (t.status === 'skipped' || t.status === 'waiting') && (
-        <span className="muted">
+        <span className="muted" title={SKIP_REASON_HELP[t.skipReason]}>
           {' '}
           ({t.skipReason.replaceAll('_', ' ')}
           {t.windowExpired ? ', window closed' : ''})
@@ -118,7 +120,10 @@ function Detail({ id }: { id: string }) {
   return (
     <div className="trade-detail" data-testid={`trade-detail-${id}`}>
       <section aria-label="Trigger snapshot" data-testid={`snapshot-${id}`}>
-        <h3>Trigger snapshot</h3>
+        <TitleTip
+          title="Trigger snapshot"
+          tip="The game and market state the app saw at the moment the rule matched."
+        />
         {s ? (
           <dl className="kv">
             <dt>Score</dt>
@@ -130,15 +135,29 @@ function Detail({ id }: { id: string }) {
               {s.minute ?? s.clock.minute ?? '—'}
               {s.clock.period !== undefined ? ` (period ${s.clock.period})` : ''}
             </dd>
-            <dt>Minute source</dt>
+            <dt>
+              <WithTip tip="Where the minute came from: the score feed itself, or derived from the observed kick-off time (±1 min).">
+                Minute source
+              </WithTip>
+            </dt>
             <dd>{s.clock.minuteSource ?? '—'}</dd>
-            <dt>Observed</dt>
+            <dt>
+              <WithTip tip="When the app received the score update.">Observed</WithTip>
+            </dt>
             <dd>{time(s.observedAt)}</dd>
-            <dt>Feed timestamp</dt>
+            <dt>
+              <WithTip tip="The time the feed itself stamped on the update; the gap to Observed is the feed delay.">
+                Feed timestamp
+              </WithTip>
+            </dt>
             <dd>{time(s.feedUpdatedAt)}</dd>
             <dt>Feed</dt>
             <dd>{s.source}</dd>
-            <dt>Ask at trigger</dt>
+            <dt>
+              <WithTip tip="Cheapest YES offer (ask) for the leading team when the rule matched; bid = best buy offer.">
+                Ask at trigger
+              </WithTip>
+            </dt>
             <dd>
               {price(s.orderbook?.bestAskBp ?? null)}
               {s.orderbook?.bestBidBp != null ? ` (bid ${formatPrice(s.orderbook.bestBidBp)})` : ''}
@@ -150,7 +169,10 @@ function Detail({ id }: { id: string }) {
       </section>
 
       <section aria-label="Attempts">
-        <h3>Attempts</h3>
+        <TitleTip
+          title="Attempts"
+          tip="Each try to enter. A soft guard (price, depth, stale feed …) leaves the trade waiting and it is tried again on the next score update while the window is open."
+        />
         {d.attemptsList.length === 0 ? (
           <p className="muted">No attempts.</p>
         ) : (
@@ -162,10 +184,18 @@ function Detail({ id }: { id: string }) {
                   <th>Time</th>
                   <th>Mode</th>
                   <th>Ask</th>
-                  <th>Depth ≤ limit</th>
-                  <th>Limit</th>
+                  <th>
+                    <WithTip tip="Contracts offered at or below the limit price.">Depth ≤ limit</WithTip>
+                  </th>
+                  <th>
+                    <WithTip tip="Limit price of the order: min(ask + max slippage, max price).">
+                      Limit
+                    </WithTip>
+                  </th>
                   <th>Outcome</th>
-                  <th>Reason</th>
+                  <th>
+                    <WithTip tip={SKIP_REASONS_HELP}>Reason</WithTip>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -197,9 +227,16 @@ function Detail({ id }: { id: string }) {
       </section>
 
       <section aria-label="Fill and settlement">
-        <h3>Fill and settlement</h3>
+        <TitleTip
+          title="Fill and settlement"
+          tip="What was bought and what it paid. Dry-run fills are recorded at the limit price."
+        />
         <dl className="kv">
-          <dt>Balance at fill</dt>
+          <dt>
+            <WithTip tip="The balance the stake was computed from: Kalshi cash (live) or the dry-run bankroll.">
+              Balance at fill
+            </WithTip>
+          </dt>
           <dd>{d.balanceMicros === null ? '—' : formatUsd(d.balanceMicros)}</dd>
           <dt>Stake</dt>
           <dd>{d.stakeMicros === null ? '—' : formatUsd(d.stakeMicros)}</dd>
@@ -215,7 +252,11 @@ function Detail({ id }: { id: string }) {
               ? '—'
               : `${formatUsdExact(d.costMicros)} + ${formatUsdExact(d.feeMicros ?? 0)}`}
           </dd>
-          <dt>Settlement</dt>
+          <dt>
+            <WithTip tip="Value per contract at settlement ($1 won, $0 lost, other = void) and the payout.">
+              Settlement
+            </WithTip>
+          </dt>
           <dd>
             {d.settlementValueBp === null
               ? '—'
@@ -233,7 +274,7 @@ function Detail({ id }: { id: string }) {
       </section>
 
       <section aria-label="Audit trail">
-        <h3>Audit trail</h3>
+        <TitleTip title="Audit trail" tip="Every change of the trade, in order, as recorded by the app." />
         <ol className="audit-trail" data-testid={`audit-${id}`}>
           {d.audit.map((a, i) => (
             <li key={i}>
@@ -251,6 +292,24 @@ function Detail({ id }: { id: string }) {
 // ---- the page ----------------------------------------------------------------------------------------
 
 const column = createColumnHelper<TradeView>();
+
+/** The ⓘ next to a column header, by column id. */
+const HEADER_TIPS: Record<string, ReactNode> = {
+  triggeredAt: 'When the rule matched. Click a row to see the snapshot, attempts, fill and audit trail.',
+  strategy: 'The strategy and the version it fired under.',
+  game: 'Home – away, the score and minute at the trigger, and the team bought.',
+  effectiveMode: (
+    <>
+      <p>The mode the trade ran in. Live trades also show the Kalshi environment (demo or prod).</p>
+      {MODE_HELP.effective}
+    </>
+  ),
+  status: STATUS_HELP,
+  askAtTriggerBp: 'Cheapest YES offer for the leading team when the rule matched.',
+  avgFillPriceBp: 'Contracts bought @ average price per contract.',
+  cost: 'Money spent: contracts × price plus the Kalshi fee.',
+  realizedPnlMicros: 'Profit or loss after the fee, once the market settled.',
+};
 
 /** The CSV columns; every export carries the four mode columns (§8). */
 export const TRADE_CSV_HEADER = [
@@ -445,11 +504,32 @@ export function TradesPage() {
       <FilterBar />
       <section className="card" aria-labelledby="trades-heading">
         <div className="section-head">
-          <h2 id="trades-heading">Trades</h2>
+          <TitleTip
+            as="h2"
+            id="trades-heading"
+            title="Trades"
+            tip={
+              <>
+                <p>
+                  Everything that fired or nearly fired: one row per strategy match on a game, with the
+                  attempts to enter and the result.
+                </p>
+                <p>
+                  Live and dry-run trades carry their own badge and are never added together; dry-run fills
+                  are recorded at the limit price.
+                </p>
+              </>
+            }
+          />
           <div className="actions">
             <label className="inline-check" htmlFor="trade-status">
               Status
             </label>
+            <InfoTip>
+              {STATUS_HELP}
+              <p>Skip reasons:</p>
+              {SKIP_REASONS_HELP}
+            </InfoTip>
             <select id="trade-status" value={status} onChange={(e) => setStatus(e.target.value)}>
               {STATUS_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -467,10 +547,6 @@ export function TradesPage() {
             </button>
           </div>
         </div>
-        <p className="muted">
-          Everything that fired or nearly fired. Live and dry-run trades carry their own badge and are never
-          added together; dry-run fills are recorded at the limit price.
-        </p>
         {!list.data ? (
           <p className="muted">{list.isError ? 'Could not load trades.' : 'Loading…'}</p>
         ) : rows.length === 0 ? (
@@ -494,14 +570,17 @@ export function TradesPage() {
                               : undefined
                         }
                       >
-                        <button
-                          type="button"
-                          className="link-button"
-                          onClick={h.column.getToggleSortingHandler()}
-                        >
-                          {flexRender(h.column.columnDef.header, h.getContext())}
-                          {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
-                        </button>
+                        <span className="with-tip">
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={h.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(h.column.columnDef.header, h.getContext())}
+                            {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
+                          </button>
+                          {HEADER_TIPS[h.column.id] && <InfoTip>{HEADER_TIPS[h.column.id]}</InfoTip>}
+                        </span>
                       </th>
                     ))}
                   </tr>

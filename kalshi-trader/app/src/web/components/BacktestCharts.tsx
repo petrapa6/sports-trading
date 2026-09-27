@@ -22,6 +22,7 @@ import {
 import type { BacktestDetail, BacktestSummary } from '../api';
 import { formatUsd } from '../format';
 import { useChartPalette, type ChartPalette } from './chartStyle';
+import { TitleTip } from './InfoTip';
 
 const HEIGHT = 260;
 
@@ -44,11 +45,13 @@ const usdTick = (v: number) => formatUsd(v);
 function Card({
   id,
   title,
+  tip,
   empty,
   children,
 }: {
   id: string;
   title: string;
+  tip: ReactNode;
   empty: boolean;
   children: ReactNode;
 }) {
@@ -59,7 +62,7 @@ function Card({
       aria-labelledby={`bt-chart-${id}-title`}
     >
       <div className="section-head">
-        <h3 id={`bt-chart-${id}-title`}>{title}</h3>
+        <TitleTip id={`bt-chart-${id}-title`} title={title} tip={tip} />
       </div>
       {empty ? (
         <p className="muted chart-empty">No trades in this backtest.</p>
@@ -100,7 +103,12 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
   const dateLabel = (v: unknown) => day(Number(v));
   return (
     <div className="chart-grid">
-      <Card id="equity" title="Backtest equity curve" empty={equity.length === 0}>
+      <Card
+        id="equity"
+        title="Backtest equity curve"
+        tip="Cumulative realized P&L of the backtest after each settled trade."
+        empty={equity.length === 0}
+      >
         <LineChart data={equity} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
           <CartesianGrid stroke={palette.grid} strokeDasharray="3 3" />
           <XAxis
@@ -125,7 +133,12 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
           />
         </LineChart>
       </Card>
-      <Card id="drawdown" title="Backtest drawdown" empty={drawdown.length === 0}>
+      <Card
+        id="drawdown"
+        title="Backtest drawdown"
+        tip="How far cumulative P&L is below its highest point so far; the deepest point is the max drawdown."
+        empty={drawdown.length === 0}
+      >
         <AreaChart data={drawdown} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
           <CartesianGrid stroke={palette.grid} strokeDasharray="3 3" />
           <XAxis
@@ -150,7 +163,12 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
           />
         </AreaChart>
       </Card>
-      <Card id="monthly" title="Backtest monthly P&L" empty={monthly.length === 0}>
+      <Card
+        id="monthly"
+        title="Backtest monthly P&L"
+        tip="Realized P&L per calendar month of the replayed games."
+        empty={monthly.length === 0}
+      >
         <BarChart data={monthly} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
           <CartesianGrid stroke={palette.grid} strokeDasharray="3 3" />
           <XAxis dataKey="month" {...axisProps(palette)} />
@@ -183,7 +201,12 @@ export function BacktestComparison({ runs }: { runs: BacktestDetail[] }) {
   });
   const data = [...rows.values()].sort((a, b) => (a['x'] ?? 0) - (b['x'] ?? 0));
   return (
-    <Card id="compare" title="Backtest comparison — equity" empty={data.length === 0}>
+    <Card
+      id="compare"
+      title="Backtest comparison — equity"
+      tip="The equity curves of the ticked saved backtests, one line each, on the same axes."
+      empty={data.length === 0}
+    >
       <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
         <CartesianGrid stroke={palette.grid} strokeDasharray="3 3" />
         <XAxis

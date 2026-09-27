@@ -3,6 +3,7 @@ import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '
 import QRCode from 'qrcode';
 import { useMemo, useState, type FormEvent } from 'react';
 import { api, ApiError, type Me, type SessionRow } from '../../api';
+import { TitleTip, WithTip } from '../../components/InfoTip';
 import { useStepUp } from '../../reauth';
 
 function ChangePassword() {
@@ -148,7 +149,11 @@ function TwoFactor() {
   if (!me.data) return null;
   return (
     <section className="card" aria-labelledby="totp-heading">
-      <h3 id="totp-heading">Two-factor authentication (TOTP)</h3>
+      <TitleTip
+        id="totp-heading"
+        title="Two-factor authentication (TOTP)"
+        tip="Adds a 6-digit code from an authenticator app (Google Authenticator, 1Password, …) to every sign-in. Recovery codes let you in if you lose the app."
+      />
       <p>
         Status: <strong data-testid="totp-status">{me.data.totpEnabled ? 'enabled' : 'off'}</strong>
         {me.data.totpEnabled && (
@@ -219,7 +224,13 @@ function Sessions() {
 
   const columns = useMemo(
     () => [
-      col.accessor('channel', { header: 'Channel' }),
+      col.accessor('channel', {
+        header: () => (
+          <WithTip tip="How the browser reached the app: ingress = the Home Assistant sidebar; tunnel = a Cloudflare tunnel; dev = a development server; other = directly.">
+            Channel
+          </WithTip>
+        ),
+      }),
       col.accessor('ua', {
         header: 'Browser',
         cell: (c) => <span className="ua">{c.getValue() ?? '—'}</span>,
@@ -254,7 +265,11 @@ function Sessions() {
 
   return (
     <section className="card" aria-labelledby="sessions-heading">
-      <h3 id="sessions-heading">Active sessions</h3>
+      <TitleTip
+        id="sessions-heading"
+        title="Active sessions"
+        tip="Browsers and devices signed in to this app. Revoke signs one out; changing the password signs out all others."
+      />
       <div className="table-wrap">
         <table>
           <thead>

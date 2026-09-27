@@ -7,7 +7,7 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import {
   api,
   ApiError,
@@ -20,9 +20,11 @@ import {
   type StrategyView,
 } from '../api';
 import { BacktestCharts, BacktestComparison } from '../components/BacktestCharts';
+import { InfoTip, LabelTip, TitleTip, WithTip } from '../components/InfoTip';
 import { formatPct } from '../components/StatsTiles';
 import { downloadCsv, toCsv } from '../csv';
 import { formatContracts, formatPrice, formatUsd, formatUsdExact } from '../format';
+import { METRIC_HELP, RULE_HELP, SKIP_REASON_HELP, SKIP_REASONS_HELP } from '../help';
 import { useLive } from '../live';
 import { Link, navigate, useLocation } from '../router';
 
@@ -196,9 +198,9 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
     }
   };
 
-  const field = (k: keyof AdHoc, label: string, step = 'any') => (
+  const field = (k: keyof AdHoc, label: string, tip: ReactNode, step = 'any') => (
     <div className="field">
-      <label htmlFor={`bt-${k}`}>{label}</label>
+      <LabelTip htmlFor={`bt-${k}`} label={label} tip={tip} />
       <input
         id={`bt-${k}`}
         type="number"
@@ -215,10 +217,29 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
       onSubmit={(e) => void submit(e)}
       aria-label="Run a backtest"
     >
-      <h2>Run a backtest</h2>
+      <TitleTip
+        as="h2"
+        title="Run a backtest"
+        tip={
+          <>
+            <p>
+              A backtest replays a strategy over past games with the production rule, guards and pricing, to
+              see how it would have done.
+            </p>
+            <p>
+              Backtests are a separate category: they are never plotted or added together with live or dry-run
+              trading. Historical games and prices are collected in Settings → Data.
+            </p>
+          </>
+        }
+      />
       <div className="field-grid">
         <div className="field">
-          <label htmlFor="bt-league">League</label>
+          <LabelTip
+            htmlFor="bt-league"
+            label="League"
+            tip="The league whose historical games are replayed. The number is how many games are stored for it."
+          />
           <select id="bt-league" value={league?.id ?? ''} onChange={(e) => setLeagueId(e.target.value)}>
             {leagues.map((l) => (
               <option key={l.id} value={l.id}>
@@ -228,7 +249,11 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="bt-strategy">Strategy</label>
+          <LabelTip
+            htmlFor="bt-strategy"
+            label="Strategy"
+            tip="Replay the current version of a saved strategy of this sport, or pick “Ad-hoc parameters” to try a rule without saving it."
+          />
           <select id="bt-strategy" value={strategyId} onChange={(e) => setStrategyId(e.target.value)}>
             <option value="">Ad-hoc parameters</option>
             {sportStrategies.map((s) => (
@@ -239,7 +264,11 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="bt-bankroll">Initial bankroll ($)</label>
+          <LabelTip
+            htmlFor="bt-bankroll"
+            label="Initial bankroll ($)"
+            tip="Virtual money the backtest starts with. Stakes are a percentage of it; it grows and shrinks with each settled trade."
+          />
           <input
             id="bt-bankroll"
             type="number"
@@ -252,7 +281,11 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
       </div>
 
       <fieldset>
-        <legend>Seasons (none selected = all)</legend>
+        <legend>
+          <WithTip tip="Tick the seasons to replay; none ticked = all seasons. Each shows how many games are stored and how many of them have Kalshi prices (needed for exact prices).">
+            Seasons (none selected = all)
+          </WithTip>
+        </legend>
         {league && league.seasons.length === 0 && (
           <p className="muted">No historical games for this league yet (Settings → Data imports them).</p>
         )}
@@ -278,7 +311,25 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
       </fieldset>
 
       <fieldset>
-        <legend>Prices</legend>
+        <legend>
+          <WithTip
+            tip={
+              <>
+                <p>
+                  <strong>Exact</strong>: the real Kalshi one-minute candles of each game; games without
+                  candles are skipped.
+                </p>
+                <p>
+                  <strong>Modelled</strong>: the typical ask for that lead and time left, from the price model
+                  (Settings → Data → Rebuild price model). Works for every game, but is an estimate; cells
+                  with too few observations fall back to a conservative seed table.
+                </p>
+              </>
+            }
+          >
+            Prices
+          </WithTip>
+        </legend>
         <label className="inline-check">
           <input
             type="radio"
@@ -301,13 +352,13 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
 
       {!strategyId && (
         <>
-          <h3>Rule</h3>
+          <TitleTip title="Rule" tip={RULE_HELP.rule} />
           <div className="field-grid">
-            {field('minLead', 'Min lead (goals)', '1')}
-            {field('atMinute', 'At minute', '1')}
-            {field('windowMinutes', 'Window (minutes)', '1')}
+            {field('minLead', 'Min lead (goals)', RULE_HELP.minLead, '1')}
+            {field('atMinute', 'At minute', RULE_HELP.atMinute(sport), '1')}
+            {field('windowMinutes', 'Window (minutes)', RULE_HELP.windowMinutes, '1')}
             <div className="field">
-              <label htmlFor="bt-leaderSide">Leader side</label>
+              <LabelTip htmlFor="bt-leaderSide" label="Leader side" tip={RULE_HELP.leaderSide} />
               <select
                 id="bt-leaderSide"
                 value={adHoc.leaderSide}
@@ -318,26 +369,40 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
                 <option value="away">Away</option>
               </select>
             </div>
-            {field('maxOpponentGoals', 'Max opponent goals (optional)', '1')}
+            {field('maxOpponentGoals', 'Max opponent goals (optional)', RULE_HELP.maxOpponentGoals, '1')}
             <div className="field">
-              <label className="inline-check">
-                <input
-                  type="checkbox"
-                  checked={adHoc.underdogOnly}
-                  onChange={(e) => set('underdogOnly', e.target.checked)}
-                />
-                Underdog only (kick-off ask; exact mode)
-              </label>
+              <span className="with-tip">
+                <label className="inline-check">
+                  <input
+                    type="checkbox"
+                    checked={adHoc.underdogOnly}
+                    onChange={(e) => set('underdogOnly', e.target.checked)}
+                  />
+                  Underdog only
+                </label>
+                <InfoTip>{RULE_HELP.underdogOnly}</InfoTip>
+              </span>
             </div>
           </div>
-          <h3>Sizing and prices</h3>
+          <TitleTip
+            title="Sizing and prices"
+            tip={
+              <>
+                <p>{RULE_HELP.sizing}</p>
+                <p>
+                  Backtests do not model orderbook depth or feed delays, so min depth and max feed age are not
+                  checked.
+                </p>
+              </>
+            }
+          />
           <div className="field-grid">
-            {field('percent', 'Stake (% of bankroll)')}
-            {field('minStakeUsd', 'Min stake ($)')}
-            {field('maxStakeUsd', 'Max stake ($)')}
-            {field('maxPrice', 'Max price ($)')}
-            {field('minPrice', 'Min price ($, optional)')}
-            {field('maxSlippage', 'Max slippage ($)')}
+            {field('percent', 'Stake (% of bankroll)', RULE_HELP.percent)}
+            {field('minStakeUsd', 'Min stake ($)', RULE_HELP.minStakeUsd)}
+            {field('maxStakeUsd', 'Max stake ($)', RULE_HELP.maxStakeUsd)}
+            {field('maxPrice', 'Max price ($)', RULE_HELP.maxPrice)}
+            {field('minPrice', 'Min price ($, optional)', RULE_HELP.minPrice)}
+            {field('maxSlippage', 'Max slippage ($)', RULE_HELP.maxSlippage)}
           </div>
         </>
       )}
@@ -362,10 +427,12 @@ const TILES: {
   label: string;
   value: (t: BacktestTiles) => string;
   hint?: (t: BacktestTiles) => string;
+  tip?: ReactNode;
 }[] = [
   {
     id: 'trades',
     label: 'Trades',
+    tip: 'Filled trades. Below: games where the rule matched (filled or skipped) out of all games replayed.',
     value: (t) => String(t.trades),
     hint: (t) => `${t.matched} matches in ${t.games} games`,
   },
@@ -407,7 +474,9 @@ function Tiles({ tiles }: { tiles: BacktestTiles }) {
     <section className="stats-tiles" aria-label="Backtest metrics" data-testid="backtest-tiles">
       {TILES.map((d) => (
         <div key={d.id} className="stat-tile" data-testid={`bt-tile-${d.id}`}>
-          <div className="stat-label">{d.label}</div>
+          <div className="stat-label">
+            <WithTip tip={d.tip ?? METRIC_HELP[d.id]}>{d.label}</WithTip>
+          </div>
           <div className="stat-values stat-values--1">
             <div className="stat-value stat-value--backtest">
               <strong className="stat-number">{d.value(tiles)}</strong>
@@ -427,7 +496,7 @@ export function ModelledBadge({ tiles }: { tiles: Pick<BacktestTiles, 'priceMode
     <span
       className="modelled-badge"
       data-testid="modelled-badge"
-      title="Prices come from the price model, not from real Kalshi candles"
+      title="Prices come from the price model, not from real Kalshi candles. The sample size is the fewest observations behind any price used; below 20 the conservative seed table was used."
     >
       Modelled prices · smallest sample size {n}
       {n < 20 ? ' (seed table)' : ''}
@@ -438,6 +507,33 @@ export function ModelledBadge({ tiles }: { tiles: Pick<BacktestTiles, 'priceMode
 // ---- trades table --------------------------------------------------------------------------------------
 
 const column = createColumnHelper<BacktestTradeView>();
+
+/** The ⓘ next to a column header, by column id. */
+const HEADER_TIPS: Record<string, ReactNode> = {
+  final: 'Final score of the game (home–away).',
+  minute: 'Game minute of the entry.',
+  side: 'The team whose YES contract was bought (the leader).',
+  priceSource: (
+    <ul>
+      <li>
+        <strong>candle</strong>: the Kalshi one-minute candle of that minute
+      </li>
+      <li>
+        <strong>next candle</strong>: the next minute with a candle
+      </li>
+      <li>
+        <strong>model</strong>: the price model (modelled backtests)
+      </li>
+    </ul>
+  ),
+  priceBp: 'Price paid per contract (the limit price).',
+  contractsCc: 'Contracts bought.',
+  feeMicros: 'Kalshi trading fee of the fill.',
+  settlementValueBp: 'What each contract paid at settlement: $1 won, $0 lost, anything else void.',
+  pnlMicros: 'Realized profit or loss of the trade after the fee.',
+  bankrollAfterMicros: 'Backtest bankroll after the trade settled.',
+  skipReason: SKIP_REASONS_HELP,
+};
 const dash = '—';
 const CSV_HEADER = [
   'category',
@@ -540,7 +636,11 @@ function TradesTable({ run }: { run: BacktestDetail }) {
   return (
     <section className="card" aria-labelledby="bt-trades-title">
       <div className="section-head">
-        <h3 id="bt-trades-title">Backtest trades ({run.trades.length})</h3>
+        <TitleTip
+          id="bt-trades-title"
+          title={`Backtest trades (${run.trades.length})`}
+          tip="Every time the rule matched: filled trades with their settlement, and skipped entries with the reason."
+        />
         <div className="actions">
           <button
             type="button"
@@ -571,18 +671,21 @@ function TradesTable({ run }: { run: BacktestDetail }) {
                             : undefined
                       }
                     >
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={h.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(h.column.columnDef.header, h.getContext())}
-                        {h.column.getIsSorted() === 'asc'
-                          ? ' ▲'
-                          : h.column.getIsSorted() === 'desc'
-                            ? ' ▼'
-                            : ''}
-                      </button>
+                      <span className="with-tip">
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={h.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.column.getIsSorted() === 'asc'
+                            ? ' ▲'
+                            : h.column.getIsSorted() === 'desc'
+                              ? ' ▼'
+                              : ''}
+                        </button>
+                        {HEADER_TIPS[h.column.id] && <InfoTip>{HEADER_TIPS[h.column.id]}</InfoTip>}
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -621,6 +724,17 @@ function describe(
       : 'all seasons';
   return `${what} · ${run.leagueIds.join(', ')} · ${when} · ${run.priceMode}`;
 }
+
+/** The meaning of the skip reasons a run actually has. */
+const SKIPS_TIP = (reasons: string[]) => (
+  <ul>
+    {reasons.map((r) => (
+      <li key={r}>
+        <strong>{r.replaceAll('_', ' ')}</strong>: {SKIP_REASON_HELP[r] ?? 'see the trades table'}
+      </li>
+    ))}
+  </ul>
+);
 
 function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   const queryClient = useQueryClient();
@@ -709,7 +823,7 @@ function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
           <Tiles tiles={run.summary} />
           {run.summary.skips.length > 0 && (
             <p className="muted" data-testid="backtest-skips">
-              Skipped:{' '}
+              <WithTip tip={SKIPS_TIP(run.summary.skips.map((s) => s.reason))}>Skipped:</WithTip>{' '}
               {run.summary.skips.map((s) => `${s.reason.replaceAll('_', ' ')} ${s.count}`).join(' · ')}
             </p>
           )}
@@ -719,7 +833,11 @@ function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
       )}
       <div className="card backtest-actions">
         <div className="field">
-          <label htmlFor="bt-name">Name</label>
+          <LabelTip
+            htmlFor="bt-name"
+            label="Name"
+            tip="Name the run and save it to keep it and compare it with other saved runs. Unsaved runs are listed under Recent runs."
+          />
           <input
             id="bt-name"
             value={name}
@@ -737,6 +855,7 @@ function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
             className="secondary"
             onClick={() => void promote()}
             disabled={run.status !== 'done'}
+            title="Create a new strategy with these parameters (kill switch on, dry run)"
           >
             Promote to strategy
           </button>
@@ -803,11 +922,14 @@ function RunList({
   );
   return (
     <section className="card" aria-labelledby="bt-saved-title">
-      <h2 id="bt-saved-title">Saved backtests</h2>
+      <TitleTip
+        as="h2"
+        id="bt-saved-title"
+        title="Saved backtests"
+        tip={`Click a run to open it. Tick up to ${MAX_COMPARE} saved runs to compare their equity curves and key numbers.`}
+      />
       {saved.length === 0 ? (
-        <p className="muted">
-          No saved backtests yet. Save a run to compare it with others (up to {MAX_COMPARE}).
-        </p>
+        <p className="muted">No saved backtests yet.</p>
       ) : (
         <ul className="backtest-list" data-testid="saved-backtests">
           {saved.map((r) => row(r, true))}
@@ -879,10 +1001,6 @@ export function BacktestPage() {
   return (
     <>
       <h1>Backtest</h1>
-      <p className="muted">
-        Backtests replay a strategy over past games with the production rule, guards and pricing. They are a
-        separate category and are never plotted together with real or simulated trading.
-      </p>
       <BacktestForm onStarted={(id) => url.set({ run: id })} />
       {url.run && (
         <RunView

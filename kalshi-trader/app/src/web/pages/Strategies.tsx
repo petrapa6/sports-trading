@@ -20,8 +20,10 @@ import {
   type StrategyView,
 } from '../api';
 import { FilterBar, useFilters } from '../components/FilterBar';
+import { InfoTip, LabelTip, TitleTip, WithTip } from '../components/InfoTip';
 import { ModeBadge } from '../components/ModeBadge';
 import { downloadCsv, toCsv } from '../csv';
+import { MODE_HELP, RULE_HELP } from '../help';
 import { useStepUp } from '../reauth';
 import { navigate } from '../router';
 
@@ -212,15 +214,19 @@ interface FieldProps {
   value: string;
   error: string | undefined;
   onChange: (v: string) => void;
-  hint?: string;
+  tip?: ReactNode;
   step?: string;
 }
 
-function NumberField({ id, label, value, error, onChange, hint, step }: FieldProps) {
+function NumberField({ id, label, value, error, onChange, tip, step }: FieldProps) {
   const inputId = `strategy-${id.replace('.', '-')}`;
   return (
     <div className="field">
-      <label htmlFor={inputId}>{label}</label>
+      {tip ? (
+        <LabelTip htmlFor={inputId} label={label} tip={tip} />
+      ) : (
+        <label htmlFor={inputId}>{label}</label>
+      )}
       <input
         id={inputId}
         type="number"
@@ -231,7 +237,6 @@ function NumberField({ id, label, value, error, onChange, hint, step }: FieldPro
         aria-describedby={error ? `${inputId}-error` : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
-      {hint && !error && <span className="hint">{hint}</span>}
       {error && (
         <span className="field-error error" id={`${inputId}-error`} role="alert" data-field={id}>
           {error}
@@ -244,7 +249,11 @@ function NumberField({ id, label, value, error, onChange, hint, step }: FieldPro
 function VersionHistory({ versions }: { versions: StrategyVersionView[] }) {
   return (
     <section aria-labelledby="versions-heading">
-      <h3 id="versions-heading">Version history</h3>
+      <TitleTip
+        id="versions-heading"
+        title="Version history"
+        tip="Every save of the rule, sizing, execution or leagues creates a new version. Trades keep the version they fired under."
+      />
       <ol className="version-list" data-testid="version-history" reversed>
         {[...versions].reverse().map((v) => (
           <li key={v.version} data-testid={`version-${v.version}`}>
@@ -437,7 +446,11 @@ function EditorForm({
     <Drawer title={detail === null ? 'New strategy' : `Edit “${detail.name}”`} onClose={onClose}>
       <form className="strategy-form" onSubmit={submit} noValidate>
         <div className="field">
-          <label htmlFor="strategy-name">Name</label>
+          <LabelTip
+            htmlFor="strategy-name"
+            label="Name"
+            tip="Your name for the strategy, shown on the Dashboard, in trades, reports and notifications."
+          />
           <input
             id="strategy-name"
             value={form.name}
@@ -452,7 +465,11 @@ function EditorForm({
           )}
         </div>
         <div className="field">
-          <label htmlFor="strategy-sport">Sport</label>
+          <LabelTip
+            htmlFor="strategy-sport"
+            label="Sport"
+            tip="Soccer or hockey; decides which leagues and minute range apply. It cannot be changed after the strategy is created."
+          />
           <select
             id="strategy-sport"
             value={form.sport}
@@ -465,7 +482,11 @@ function EditorForm({
           </select>
         </div>
         <fieldset className="field">
-          <legend>Leagues</legend>
+          <legend>
+            <WithTip tip="The strategy watches every game of the ticked leagues. Only leagues of the chosen sport are listed; leagues are managed in Settings → Leagues.">
+              Leagues
+            </WithTip>
+          </legend>
           <div className="chips">
             {sportLeagues.map((l) => (
               <label key={l.id} className="chip">
@@ -490,16 +511,22 @@ function EditorForm({
           )}
         </fieldset>
 
-        <h3>Rule: lead at time</h3>
+        <TitleTip title="Rule: lead at time" tip={RULE_HELP.rule} />
         <div className="field-grid">
-          {numberField('minLead', 'rule.minLead', 'Minimum lead (goals)', { step: '1' })}
+          {numberField('minLead', 'rule.minLead', 'Minimum lead (goals)', {
+            step: '1',
+            tip: RULE_HELP.minLead,
+          })}
           {numberField('atMinute', 'rule.atMinute', 'From minute', {
             step: '1',
-            hint: form.sport === 'soccer' ? 'Match minute 1–90 (stoppage = 90)' : 'Elapsed minute 1–59',
+            tip: RULE_HELP.atMinute(form.sport),
           })}
-          {numberField('windowMinutes', 'rule.windowMinutes', 'Window (minutes)', { step: '1' })}
+          {numberField('windowMinutes', 'rule.windowMinutes', 'Window (minutes)', {
+            step: '1',
+            tip: RULE_HELP.windowMinutes,
+          })}
           <div className="field">
-            <label htmlFor="strategy-leaderSide">Leader side</label>
+            <LabelTip htmlFor="strategy-leaderSide" label="Leader side" tip={RULE_HELP.leaderSide} />
             <select
               id="strategy-leaderSide"
               value={form.leaderSide}
@@ -512,39 +539,47 @@ function EditorForm({
           </div>
           {numberField('maxOpponentGoals', 'rule.maxOpponentGoals', 'Max opponent goals (optional)', {
             step: '1',
-            hint: 'The trailing team has scored at most this many goals',
+            tip: RULE_HELP.maxOpponentGoals,
           })}
           <div className="field">
-            <label className="inline-check">
-              <input
-                type="checkbox"
-                checked={form.underdogOnly}
-                onChange={(e) => set('underdogOnly', e.target.checked)}
-              />{' '}
-              Underdog only
-            </label>
-            <span className="hint muted">
-              Only when the leader&apos;s YES ask at kick-off was below the opponent&apos;s
+            <span className="with-tip">
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={form.underdogOnly}
+                  onChange={(e) => set('underdogOnly', e.target.checked)}
+                />{' '}
+                Underdog only
+              </label>
+              <InfoTip>{RULE_HELP.underdogOnly}</InfoTip>
             </span>
           </div>
         </div>
 
-        <h3>Sizing</h3>
+        <TitleTip title="Sizing" tip={RULE_HELP.sizing} />
         <div className="field-grid">
-          {numberField('percent', 'sizing.percent', 'Stake (% of balance)')}
-          {numberField('minStakeUsd', 'sizing.minStakeUsd', 'Min stake ($)')}
-          {numberField('maxStakeUsd', 'sizing.maxStakeUsd', 'Max stake ($)')}
+          {numberField('percent', 'sizing.percent', 'Stake (% of balance)', { tip: RULE_HELP.percent })}
+          {numberField('minStakeUsd', 'sizing.minStakeUsd', 'Min stake ($)', { tip: RULE_HELP.minStakeUsd })}
+          {numberField('maxStakeUsd', 'sizing.maxStakeUsd', 'Max stake ($)', { tip: RULE_HELP.maxStakeUsd })}
         </div>
 
-        <h3>Execution (IOC limit)</h3>
+        <TitleTip title="Execution (IOC limit)" tip={RULE_HELP.execution} />
         <div className="field-grid">
-          {numberField('maxPrice', 'execution.maxPrice', 'Max price ($)')}
-          {numberField('minPrice', 'execution.minPrice', 'Min price ($, optional)')}
-          {numberField('maxSlippage', 'execution.maxSlippage', 'Max slippage ($)')}
+          {numberField('maxPrice', 'execution.maxPrice', 'Max price ($)', { tip: RULE_HELP.maxPrice })}
+          {numberField('minPrice', 'execution.minPrice', 'Min price ($, optional)', {
+            tip: RULE_HELP.minPrice,
+          })}
+          {numberField('maxSlippage', 'execution.maxSlippage', 'Max slippage ($)', {
+            tip: RULE_HELP.maxSlippage,
+          })}
           {numberField('minDepthContracts', 'execution.minDepthContracts', 'Min depth (contracts)', {
             step: '1',
+            tip: RULE_HELP.minDepthContracts,
           })}
-          {numberField('maxFeedAgeSec', 'execution.maxFeedAgeSec', 'Max feed age (s)', { step: '1' })}
+          {numberField('maxFeedAgeSec', 'execution.maxFeedAgeSec', 'Max feed age (s)', {
+            step: '1',
+            tip: RULE_HELP.maxFeedAgeSec,
+          })}
         </div>
 
         {general.map(([k, v]) => (
@@ -597,6 +632,17 @@ function EditorForm({
 // ---- the page ----------------------------------------------------------------------------------------
 
 const column = createColumnHelper<StrategyView>();
+
+/** The ⓘ next to a column header, by column id. */
+const HEADER_TIPS: Record<string, ReactNode> = {
+  leagues: 'The leagues whose games the strategy watches.',
+  killSwitch: MODE_HELP.killSwitch,
+  mode: MODE_HELP.mode,
+  effectiveMode: MODE_HELP.effective,
+  trades30d: `Trades started in the last 30 days. ${MODE_HELP.liveVsDry}`,
+  pnl30d: `Realized P&L after fees of trades settled in the last 30 days. ${MODE_HELP.liveVsDry}`,
+  currentVersion: 'The current version; every edit of the definition creates a new one (see the editor).',
+};
 
 export function StrategiesPage() {
   const queryClient = useQueryClient();
@@ -798,16 +844,36 @@ export function StrategiesPage() {
       <FilterBar />
       <section className="card" aria-labelledby="strategies-heading">
         <div className="section-head">
-          <h2 id="strategies-heading">Strategies</h2>
+          <TitleTip
+            as="h2"
+            id="strategies-heading"
+            title="Strategies"
+            tip={
+              <>
+                <p>
+                  A strategy buys YES on a team when its rule matches a live game. Click a name to edit it or
+                  run a quick backtest.
+                </p>
+                <p>
+                  Turning a kill switch off or switching a strategy to live needs your password. The effective
+                  mode also follows the global switches (Settings → Trading) and the add-on lock set in Home
+                  Assistant.
+                </p>
+              </>
+            }
+          />
           <div className="actions">
-            <label className="inline-check">
-              <input
-                type="checkbox"
-                checked={showDeleted}
-                onChange={(e) => setShowDeleted(e.target.checked)}
-              />{' '}
-              Show deleted
-            </label>
+            <span className="with-tip">
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={showDeleted}
+                  onChange={(e) => setShowDeleted(e.target.checked)}
+                />{' '}
+                Show deleted
+              </label>
+              <InfoTip>Also list deleted strategies. Their trades always stay in the reports.</InfoTip>
+            </span>
             <button
               type="button"
               className="secondary small"
@@ -821,10 +887,6 @@ export function StrategiesPage() {
             </button>
           </div>
         </div>
-        <p className="muted">
-          Turning a kill switch off or switching a strategy to live needs your password. The effective mode
-          also follows the global switches and the add-on lock set in Home Assistant.
-        </p>
         {error && (
           <p className="error" role="alert">
             {error}
@@ -853,18 +915,21 @@ export function StrategiesPage() {
                               : undefined
                         }
                       >
-                        {h.column.getCanSort() ? (
-                          <button
-                            type="button"
-                            className="link-button"
-                            onClick={h.column.getToggleSortingHandler()}
-                          >
-                            {flexRender(h.column.columnDef.header, h.getContext())}
-                            {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
-                          </button>
-                        ) : (
-                          flexRender(h.column.columnDef.header, h.getContext())
-                        )}
+                        <span className="with-tip">
+                          {h.column.getCanSort() ? (
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={h.column.getToggleSortingHandler()}
+                            >
+                              {flexRender(h.column.columnDef.header, h.getContext())}
+                              {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
+                            </button>
+                          ) : (
+                            flexRender(h.column.columnDef.header, h.getContext())
+                          )}
+                          {HEADER_TIPS[h.column.id] && <InfoTip>{HEADER_TIPS[h.column.id]}</InfoTip>}
+                        </span>
                       </th>
                     ))}
                   </tr>
