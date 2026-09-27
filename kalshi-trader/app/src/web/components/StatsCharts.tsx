@@ -24,6 +24,8 @@ import {
   YAxis,
   ZAxis,
 } from 'recharts';
+import { SKIP_REASONS_HELP } from '../help';
+import { TitleTip } from './InfoTip';
 import type { Mode } from './ModeBadge';
 import { barFill, ChartDefs, lineStyle, MODE_LABEL, useChartPalette, type ChartPalette } from './chartStyle';
 import { formatPrice, formatUsd } from '../format';
@@ -93,11 +95,12 @@ export function ChartTooltip({
   );
 }
 
-/** A chart card: title, caption, loading / error / empty state, and the chart itself. */
+/** A chart card: title with its ⓘ explanation, an optional short note, loading / error / empty state, and the chart. */
 function ChartCard({
   id,
   title,
-  caption,
+  tip,
+  note,
   loading,
   failed,
   empty,
@@ -106,7 +109,8 @@ function ChartCard({
 }: {
   id: string;
   title: string;
-  caption?: string;
+  tip: ReactNode;
+  note?: string | undefined;
   loading: boolean;
   failed: boolean;
   empty: boolean;
@@ -116,10 +120,10 @@ function ChartCard({
   return (
     <section className="card chart-card" data-testid={`chart-${id}`} aria-labelledby={`chart-${id}-title`}>
       <div className="section-head">
-        <h3 id={`chart-${id}-title`}>{title}</h3>
+        <TitleTip id={`chart-${id}-title`} title={title} tip={tip} />
         {actions}
       </div>
-      {caption && <p className="muted chart-caption">{caption}</p>}
+      {note && <p className="muted chart-caption">{note}</p>}
       {loading ? (
         <p className="muted chart-empty">Loading…</p>
       ) : failed ? (
@@ -232,7 +236,7 @@ export function EquityChart(props: ChartProps) {
     <ChartCard
       id="equity"
       title="Equity curve"
-      caption="Cumulative realized P&L by settlement time (left axis); dry-run bankroll and live Kalshi balance (right axis)."
+      tip="Cumulative realized P&L by settlement time (left axis); the dry-run bankroll and the live Kalshi balance (right axis). Live and dry run are separate lines, never added together."
       {...cardState(props)}
       empty={pnlPoints === 0 && !hasCapital}
     >
@@ -309,7 +313,7 @@ export function DailyPnlChart(props: ChartProps) {
     <ChartCard
       id="daily-pnl"
       title="Daily P&L"
-      caption="Realized P&L per settlement day, stacked by strategy within each mode (live solid, dry run hatched)."
+      tip="Realized P&L per settlement day, stacked by strategy within each mode (live solid, dry run hatched)."
       {...cardState(props)}
       empty={data.length === 0}
     >
@@ -364,7 +368,7 @@ export function DrawdownChart(props: ChartProps) {
     <ChartCard
       id="drawdown"
       title="Drawdown"
-      caption="Drop from the running peak of the equity curve, in dollars (one area per mode)."
+      tip="How far cumulative P&L is below its highest point so far, in dollars (one area per mode). The deepest point is the max drawdown."
       {...cardState(props)}
       empty={data.length === 0}
     >
@@ -417,7 +421,7 @@ export function ImpliedVsActualChart(props: ChartProps) {
     <ChartCard
       id="implied-vs-actual"
       title="Implied vs actual"
-      caption="Mean price paid (implied probability) against the actual win rate, one point per strategy and league; point size = trades. Above the diagonal = edge."
+      tip="Mean price paid (the win probability the market implied) against the actual win rate, one point per strategy and league; point size = trades. Points above the diagonal won more often than the price implied: an edge."
       {...cardState(props)}
       empty={empty}
     >
@@ -508,7 +512,8 @@ export function PriceHistogramChart(props: ChartProps) {
     <ChartCard
       id="price-histogram"
       title="Price paid distribution"
-      caption={`Fill prices in 1¢ bins up to maxPrice, grouped by mode${outside > 0 ? ` (${outside} fills outside the range not shown)` : ''}.`}
+      tip="How many fills happened at each price, in 1¢ bins up to the strategies' max price, grouped by mode."
+      note={outside > 0 ? `${outside} fills outside the range are not shown.` : undefined}
       {...cardState(props)}
       empty={data.length === 0}
     >
@@ -565,7 +570,7 @@ export function TradesPerMinuteChart(props: ChartProps) {
     <ChartCard
       id="trades-per-minute"
       title="Trades per minute triggered"
-      caption="Filled trades by clock minute at entry, coloured by outcome, one stack per mode."
+      tip="Filled trades by the game minute at entry, coloured by outcome (won, lost, void, open), one stack per mode."
       {...cardState(props)}
       empty={data.length === 0}
     >
@@ -615,10 +620,15 @@ export function SkipReasonsChart(props: ChartProps) {
     <ChartCard
       id="skip-reasons"
       title="Skip reasons"
-      caption={
-        kind === 'final'
-          ? 'Trades that ended skipped, per reason and mode.'
-          : 'Attempts blocked by a guard or left unfilled, per reason and mode.'
+      tip={
+        <>
+          <p>
+            <strong>Final</strong>: trades that ended skipped, per reason and mode.{' '}
+            <strong>Per attempt</strong>: every attempt blocked by a guard or left unfilled (a trade can have
+            several).
+          </p>
+          {SKIP_REASONS_HELP}
+        </>
       }
       {...cardState(props)}
       empty={data.length === 0}
@@ -696,7 +706,7 @@ export function BalanceHistoryChart(props: ChartProps) {
     <ChartCard
       id="balance-history"
       title="Balance history"
-      caption="Live Kalshi cash balance (balance snapshots) and the shared dry-run bankroll (bankroll snapshots), never added together."
+      tip="The live Kalshi cash balance (recorded every 15 minutes and after each live fill or settlement) and the shared dry-run bankroll, never added together."
       {...cardState(props)}
       empty={data.length === 0}
     >

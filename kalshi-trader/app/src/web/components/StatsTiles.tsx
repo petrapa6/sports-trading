@@ -1,5 +1,7 @@
 import type { Mode } from './ModeBadge';
 import { MODE_LABEL } from './chartStyle';
+import { WithTip } from './InfoTip';
+import { METRIC_HELP, MODE_HELP } from '../help';
 import { formatPrice, formatUsd, formatUsdExact } from '../format';
 import { modesOf, type ModeTiles, type StatsResponse } from '../stats';
 
@@ -80,7 +82,18 @@ export function StatsTiles({ stats, loading }: { stats: StatsResponse | undefine
     <section className="stats-tiles" aria-label="Metrics" data-testid="stats-tiles">
       {TILES.map((def) => (
         <div key={def.id} className="stat-tile" data-testid={`tile-${def.id}`}>
-          <div className="stat-label">{def.label}</div>
+          <div className="stat-label">
+            <WithTip
+              tip={
+                <>
+                  <p>{METRIC_HELP[def.id]}</p>
+                  {modes.length > 1 && <p>{MODE_HELP.liveVsDry}</p>}
+                </>
+              }
+            >
+              {def.label}
+            </WithTip>
+          </div>
           <div className={`stat-values stat-values--${modes.length}`}>
             {modes.map((mode) => {
               const t = stats[mode];

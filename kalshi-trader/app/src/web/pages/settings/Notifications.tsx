@@ -7,6 +7,7 @@ import {
   type NotificationEvent,
   type NotificationSettings,
 } from '../../api';
+import { TitleTip } from '../../components/InfoTip';
 
 const EVENT_LABEL: Record<NotificationEvent, string> = {
   trade_filled: 'Trade filled',
@@ -68,12 +69,20 @@ export function NotificationsSettings() {
 
   return (
     <section className="settings-section" aria-labelledby="notifications-heading">
-      <h2 id="notifications-heading">Notifications</h2>
-      <p className="muted">
-        Home Assistant persistent notifications through the Supervisor. Every message states its mode (
-        <code>[LIVE]</code> / <code>[DRY RUN]</code>) and the Kalshi environment. While the global kill switch
-        is on nothing is sent.
-      </p>
+      <TitleTip
+        as="h2"
+        id="notifications-heading"
+        title="Notifications"
+        tip={
+          <>
+            <p>
+              Home Assistant persistent notifications (the bell in the sidebar). Every message starts with its
+              mode (<code>[LIVE]</code> / <code>[DRY RUN]</code>) and the Kalshi environment.
+            </p>
+            <p>While the global kill switch is on nothing is sent.</p>
+          </>
+        }
+      />
       {!s && <p className="muted">Loading…</p>}
       {s && !s.available && (
         <p className="muted" data-testid="notifications-unavailable">
@@ -82,7 +91,10 @@ export function NotificationsSettings() {
       )}
       {s && (
         <>
-          <h3>Modes</h3>
+          <TitleTip
+            title="Modes"
+            tip="A notification is sent only when both its mode and its event are switched on."
+          />
           <ul className="league-list">
             {toggle(
               'mode-live',
@@ -97,7 +109,10 @@ export function NotificationsSettings() {
               (on) => void change({ modes: { dry_run: on } }),
             )}
           </ul>
-          <h3>Events</h3>
+          <TitleTip
+            title="Events"
+            tip="Which events send a notification (for the modes switched on above)."
+          />
           <ul className="league-list">
             {NOTIFICATION_EVENTS.map((e) =>
               toggle(e, EVENT_LABEL[e], s.events[e], (on) => void change({ events: { [e]: on } })),
