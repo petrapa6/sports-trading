@@ -108,7 +108,7 @@ export function LoginPage() {
             />
           </>
         )}
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy} aria-busy={busy}>
           Sign in
         </button>
         {error && (

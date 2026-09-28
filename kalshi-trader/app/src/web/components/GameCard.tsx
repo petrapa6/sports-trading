@@ -1,4 +1,5 @@
 import type { GameView } from '../api';
+import { Flash } from './Flash';
 import { ModeBadge } from './ModeBadge';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -41,13 +42,13 @@ export function GameCard({ game: g }: { game: GameView }) {
         <div className="game-team">
           <span className="game-team-name">{g.homeTeam}</span>
           <span className="game-score" data-testid="home-score">
-            {g.homeScore ?? '–'}
+            <Flash value={g.homeScore}>{g.homeScore ?? '–'}</Flash>
           </span>
         </div>
         <div className="game-team">
           <span className="game-team-name">{g.awayTeam}</span>
           <span className="game-score" data-testid="away-score">
-            {g.awayScore ?? '–'}
+            <Flash value={g.awayScore}>{g.awayScore ?? '–'}</Flash>
           </span>
         </div>
       </div>

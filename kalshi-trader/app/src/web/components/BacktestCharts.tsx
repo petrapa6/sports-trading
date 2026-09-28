@@ -21,23 +21,17 @@ import {
 } from 'recharts';
 import type { BacktestDetail, BacktestSummary } from '../api';
 import { formatUsd } from '../format';
-import { useChartPalette, type ChartPalette } from './chartStyle';
+import {
+  axisProps,
+  legendProps,
+  tooltipContentStyle,
+  useChartPalette,
+  type ChartPalette,
+} from './chartStyle';
 import { TitleTip } from './InfoTip';
 
 const HEIGHT = 260;
 
-/** Colours of the backtest series (one per compared run), light and dark. */
-export const BACKTEST_COLORS: Record<ChartPalette['scheme'], readonly string[]> = {
-  light: ['#0d9488', '#ea580c', '#db2777'],
-  dark: ['#2dd4bf', '#fb923c', '#f472b6'],
-};
-
-const axisProps = (p: ChartPalette) => ({
-  stroke: p.axis,
-  tick: { fill: p.axis, fontSize: 11 },
-  tickLine: { stroke: p.axis },
-});
-const legendProps = { wrapperStyle: { fontSize: 12 } };
 const day = (ms: number) =>
   new Date(ms).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
 const usdTick = (v: number) => formatUsd(v);
@@ -82,17 +76,13 @@ function tooltipProps(p: ChartPalette, label: (v: unknown) => string) {
     formatter: (value: unknown, name: unknown) =>
       [formatUsd(Number(value)), String(name)] as [string, string],
     labelFormatter: label,
-    contentStyle: {
-      background: p.scheme === 'dark' ? '#1d2027' : '#ffffff',
-      borderColor: p.grid,
-      color: p.text,
-    },
+    contentStyle: tooltipContentStyle(p),
   };
 }
 
 export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
   const palette = useChartPalette();
-  const color = BACKTEST_COLORS[palette.scheme][0] ?? palette.live;
+  const color = palette.backtest[0] ?? palette.live;
   const equity = summary.series.equity.map((p) => ({
     x: Date.parse(p.t),
     pnl: p.cumMicros,
@@ -121,7 +111,7 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
           />
           <YAxis tickFormatter={usdTick} width={72} {...axisProps(palette)} />
           <Tooltip {...tooltipProps(palette, dateLabel)} />
-          <Legend {...legendProps} />
+          <Legend {...legendProps(palette)} />
           <Line
             type="stepAfter"
             dataKey="pnl"
@@ -151,7 +141,7 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
           />
           <YAxis tickFormatter={usdTick} width={72} {...axisProps(palette)} />
           <Tooltip {...tooltipProps(palette, dateLabel)} />
-          <Legend {...legendProps} />
+          <Legend {...legendProps(palette)} />
           <Area
             type="stepAfter"
             dataKey="dd"
@@ -174,7 +164,7 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
           <XAxis dataKey="month" {...axisProps(palette)} />
           <YAxis tickFormatter={usdTick} width={72} {...axisProps(palette)} />
           <Tooltip {...tooltipProps(palette, (v) => String(v))} />
-          <Legend {...legendProps} />
+          <Legend {...legendProps(palette)} />
           <Bar dataKey="pnlMicros" name="Backtest P&L per month" fill={color} isAnimationActive={false}>
             {monthly.map((m) => (
               <Cell key={m.month} fill={m.pnlMicros >= 0 ? palette.positive : palette.negative} />
@@ -189,7 +179,7 @@ export function BacktestCharts({ summary }: { summary: BacktestSummary }) {
 /** Equity lines of up to three saved runs, x = game date. */
 export function BacktestComparison({ runs }: { runs: BacktestDetail[] }) {
   const palette = useChartPalette();
-  const colors = BACKTEST_COLORS[palette.scheme];
+  const colors = palette.backtest;
   const rows = new Map<number, Record<string, number>>();
   runs.forEach((run, i) => {
     for (const p of run.summary?.series.equity ?? []) {
@@ -219,7 +209,7 @@ export function BacktestComparison({ runs }: { runs: BacktestDetail[] }) {
         />
         <YAxis tickFormatter={usdTick} width={72} {...axisProps(palette)} />
         <Tooltip {...tooltipProps(palette, (v) => day(Number(v)))} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {runs.map((run, i) => (
           <Line
             key={run.id}

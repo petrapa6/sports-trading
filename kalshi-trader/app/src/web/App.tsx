@@ -47,7 +47,15 @@ function Shell({ path }: { path: string }) {
     }
   };
 
-  if (!me.data) return <main className="loading muted">Loading…</main>;
+  if (!me.data)
+    return (
+      <main className="loading shell-skeleton" role="status" aria-busy="true">
+        <span className="visually-hidden">Loading…</span>
+        <span className="skeleton" aria-hidden="true" />
+        <span className="skeleton skeleton-card" aria-hidden="true" />
+        <span className="skeleton skeleton-card" aria-hidden="true" />
+      </main>
+    );
 
   const active = (to: string) => (to === '/' ? path === '/' : path === to || path.startsWith(`${to}/`));
   return (
@@ -65,7 +73,7 @@ function Shell({ path }: { path: string }) {
           <div className="header-right">
             <LiveIndicator />
             <span className="user muted">{me.data.username}</span>
-            <button type="button" className="secondary small" onClick={() => void logout()}>
+            <button type="button" className="ghost small" onClick={() => void logout()}>
               Sign out
             </button>
           </div>

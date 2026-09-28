@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import type { TradeView } from '../api';
 import type { Mode } from './ModeBadge';
-import { barFill, ChartDefs, MODE_LABEL, useChartPalette } from './chartStyle';
+import { axisProps, barFill, ChartDefs, legendProps, MODE_LABEL, useChartPalette } from './chartStyle';
 import { TitleTip } from './InfoTip';
 import { ChartTooltip } from './StatsCharts';
 import { formatPrice, formatUsdExact } from '../format';
@@ -67,7 +67,7 @@ export function TradeCharts({ rows, maxPriceBp }: { rows: readonly TradeView[]; 
   const hist = priceHistogram(rows, maxPriceBp ?? DEFAULT_MAX_BP);
   const fills = hist.reduce((n, b) => n + (b['live'] ?? 0) + (b['dry_run'] ?? 0), 0);
   const pnl = pnlPerTrade(rows);
-  const axis = { stroke: palette.axis, tick: { fill: palette.axis, fontSize: 11 } };
+  const axis = axisProps(palette);
   return (
     <div className="chart-grid chart-grid--two">
       <section
@@ -98,7 +98,7 @@ export function TradeCharts({ rows, maxPriceBp }: { rows: readonly TradeView[]; 
                     />
                   }
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Legend {...legendProps(palette)} />
                 {modes.map((mode) => (
                   <Bar
                     key={mode}
@@ -146,7 +146,7 @@ export function TradeCharts({ rows, maxPriceBp }: { rows: readonly TradeView[]; 
                     );
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Legend {...legendProps(palette)} />
                 {modes.map((mode) => (
                   <Bar
                     key={mode}

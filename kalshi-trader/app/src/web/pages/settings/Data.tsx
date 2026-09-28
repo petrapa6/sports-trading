@@ -280,7 +280,7 @@ export function DataSettings() {
           accept=".csv,text/csv"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
-        <button type="submit" disabled={!file || busy !== null}>
+        <button type="submit" className="secondary" disabled={!file || busy !== null}>
           Import CSV
         </button>
       </form>
@@ -310,7 +310,7 @@ export function DataSettings() {
           </label>
           <InfoTip>Also import preseason (exhibition) games.</InfoTip>
         </span>
-        <button type="submit" disabled={busy !== null}>
+        <button type="submit" className="secondary" disabled={busy !== null}>
           Fetch NHL season
         </button>
       </form>
@@ -341,7 +341,7 @@ export function DataSettings() {
           title="e.g. 2025 for 2025-26"
           onChange={(e) => setAfSeason(e.target.value.trim())}
         />
-        <button type="submit" disabled={busy !== null || !/^\d{4}$/.test(afSeason)}>
+        <button type="submit" className="secondary" disabled={busy !== null || !/^\d{4}$/.test(afSeason)}>
           Import API-Football season
         </button>
       </form>
@@ -370,7 +370,7 @@ export function DataSettings() {
         <input id="backfill-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <label htmlFor="backfill-to">To</label>
         <input id="backfill-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-        <button type="submit" disabled={busy !== null}>
+        <button type="submit" className="secondary" disabled={busy !== null}>
           Backfill settled events
         </button>
       </form>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { LoopStatus, SwitchStates } from '../api';
 import { formatUsd } from '../format';
+import { Flash } from './Flash';
 import { WithTip } from './InfoTip';
 
 type Tone = 'danger' | 'ok' | 'muted';
@@ -11,19 +12,22 @@ function Item({
   tone,
   testId,
   tip,
+  live,
 }: {
   label: string;
   value: string;
   tone?: Tone;
   testId?: string;
   tip: ReactNode;
+  /** The number behind a value that changes live (a change tints it briefly). */
+  live?: number | null | undefined;
 }) {
   return (
     <div className={`status-item${tone ? ` status-item--${tone}` : ''}`} data-testid={testId}>
       <span className="status-label">
         <WithTip tip={tip}>{label}</WithTip>
       </span>
-      <span className="status-value">{value}</span>
+      <span className="status-value">{live === undefined ? value : <Flash value={live}>{value}</Flash>}</span>
     </div>
   );
 }
@@ -100,6 +104,7 @@ export function StatusStripView({ switches: s, loop }: { switches: SwitchStates;
         label="Kalshi"
         value={kalshi}
         testId="status-kalshi"
+        live={balance?.cashMicros ?? null}
         tip="The Kalshi environment (demo = test money, prod = real money) and the cash balance of the subaccount."
       />
       <Item

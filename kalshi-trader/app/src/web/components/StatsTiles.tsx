@@ -1,5 +1,6 @@
 import type { Mode } from './ModeBadge';
 import { MODE_LABEL } from './chartStyle';
+import { Flash } from './Flash';
 import { WithTip } from './InfoTip';
 import { METRIC_HELP, MODE_HELP } from '../help';
 import { formatPrice, formatUsd, formatUsdExact } from '../format';
@@ -15,6 +16,8 @@ interface TileDef {
   label: string;
   value: (t: ModeTiles, mode: Mode) => string;
   hint?: (t: ModeTiles, mode: Mode) => string;
+  /** The number behind a value that changes live; a change tints the value briefly (components/Flash.tsx). */
+  live?: (t: ModeTiles) => number;
 }
 
 const decided = (t: ModeTiles) => t.won + t.lost;
@@ -26,6 +29,7 @@ export const TILES: TileDef[] = [
     label: 'Trades (settled)',
     value: (t) => String(t.trades),
     hint: (t) => `${t.filled} with a fill`,
+    live: (t) => t.trades,
   },
   {
     id: 'win-rate',
@@ -38,6 +42,7 @@ export const TILES: TileDef[] = [
     label: 'Net P&L',
     value: (t) => formatUsd(t.netPnlMicros),
     hint: (t) => `on ${formatUsd(t.investedMicros)} invested`,
+    live: (t) => t.netPnlMicros,
   },
   { id: 'roi', label: 'ROI', value: (t) => (t.investedMicros === 0 ? '—' : formatPct(t.roi)) },
   { id: 'max-drawdown', label: 'Max drawdown', value: (t) => formatUsd(t.maxDrawdownMicros) },
@@ -70,10 +75,26 @@ export const TILES: TileDef[] = [
 
 /** The Dashboard tiles: with mode = both, two values side by side (Live | Dry run). */
 export function StatsTiles({ stats, loading }: { stats: StatsResponse | undefined; loading: boolean }) {
+  if (!stats && loading) {
+    // Tile-shaped placeholders in the same grid, so the page does not shift when the numbers arrive.
+    return (
+      <section className="stats-tiles" aria-label="Metrics" aria-busy="true">
+        <p className="visually-hidden" role="status">
+          Loading metrics…
+        </p>
+        {TILES.map((def) => (
+          <div key={def.id} className="stat-tile stat-tile--skeleton" aria-hidden="true">
+            <span className="skeleton" />
+            <span className="skeleton" />
+          </div>
+        ))}
+      </section>
+    );
+  }
   if (!stats) {
     return (
       <section className="card" aria-label="Metrics">
-        <p className="muted">{loading ? 'Loading metrics…' : 'Could not load the metrics.'}</p>
+        <p className="muted">Could not load the metrics. They refresh every minute.</p>
       </section>
     );
   }
@@ -101,7 +122,13 @@ export function StatsTiles({ stats, loading }: { stats: StatsResponse | undefine
               return (
                 <div key={mode} className={`stat-value stat-value--${mode}`} data-mode={mode}>
                   <span className="stat-mode">{MODE_LABEL[mode]}</span>
-                  <strong className="stat-number">{def.value(t.tiles, mode)}</strong>
+                  <strong className="stat-number">
+                    {def.live ? (
+                      <Flash value={def.live(t.tiles)}>{def.value(t.tiles, mode)}</Flash>
+                    ) : (
+                      def.value(t.tiles, mode)
+                    )}
+                  </strong>
                   {def.hint && <span className="stat-hint muted">{def.hint(t.tiles, mode)}</span>}
                 </div>
               );

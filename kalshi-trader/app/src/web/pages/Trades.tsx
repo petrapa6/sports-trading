@@ -17,6 +17,8 @@ import { downloadCsv, toCsv } from '../csv';
 import { serializeFilters } from '../filters';
 import { formatContracts, formatPrice, formatUsd, formatUsdExact } from '../format';
 import { MODE_HELP, SKIP_REASON_HELP, SKIP_REASONS_HELP, STATUS_HELP } from '../help';
+import { NUMERIC, cellClass } from '../table';
+import { SkeletonTable } from '../components/Skeleton';
 
 // ---- status filter ---------------------------------------------------------------------------------
 
@@ -463,9 +465,14 @@ export function TradesPage() {
         ),
       }),
       column.accessor('status', { header: 'Status', cell: (c) => <StatusCell t={c.row.original} /> }),
-      column.accessor('askAtTriggerBp', { header: 'Ask at trigger', cell: (c) => price(c.getValue()) }),
+      column.accessor('askAtTriggerBp', {
+        header: 'Ask at trigger',
+        ...NUMERIC,
+        cell: (c) => price(c.getValue()),
+      }),
       column.accessor('avgFillPriceBp', {
         header: 'Fill',
+        ...NUMERIC,
         cell: (c) => {
           const t = c.row.original;
           return t.fillCc === null ? '—' : `${formatContracts(t.fillCc)} @ ${price(t.avgFillPriceBp)}`;
@@ -474,10 +481,12 @@ export function TradesPage() {
       column.accessor((t) => (t.costMicros ?? 0) + (t.feeMicros ?? 0), {
         id: 'cost',
         header: 'Cost + fee',
+        ...NUMERIC,
         cell: (c) => (c.row.original.costMicros === null ? '—' : formatUsdExact(c.getValue())),
       }),
       column.accessor('realizedPnlMicros', {
         header: 'P&L',
+        ...NUMERIC,
         cell: (c) => {
           const v = c.getValue();
           return v === null ? '—' : <span className={v < 0 ? 'neg' : 'pos'}>{formatUsdExact(v)}</span>;
@@ -548,7 +557,11 @@ export function TradesPage() {
           </div>
         </div>
         {!list.data ? (
-          <p className="muted">{list.isError ? 'Could not load trades.' : 'Loading…'}</p>
+          list.isError ? (
+            <p className="error">Could not load the trades. The list retries every 30 seconds.</p>
+          ) : (
+            <SkeletonTable label="Loading trades…" />
+          )
         ) : rows.length === 0 ? (
           <p className="muted" data-testid="no-trades">
             No trades match these filters.
@@ -562,6 +575,7 @@ export function TradesPage() {
                     {hg.headers.map((h) => (
                       <th
                         key={h.id}
+                        className={cellClass(h.column.columnDef.meta)}
                         aria-sort={
                           h.column.getIsSorted() === 'asc'
                             ? 'ascending'
@@ -591,7 +605,9 @@ export function TradesPage() {
                   <Fragment key={r.id}>
                     <tr data-testid={`trade-row-${r.original.id}`}>
                       {r.getVisibleCells().map((c) => (
-                        <td key={c.id}>{flexRender(c.column.columnDef.cell, c.getContext())}</td>
+                        <td key={c.id} className={cellClass(c.column.columnDef.meta)}>
+                          {flexRender(c.column.columnDef.cell, c.getContext())}
+                        </td>
                       ))}
                     </tr>
                     {expanded.has(r.original.id) && (

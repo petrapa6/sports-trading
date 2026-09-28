@@ -1,0 +1,173 @@
+/*
+ * Design tokens — the single source of every colour, size, radius, shadow and timing in the UI
+ * ("Soft Calm": airy, white cards on a faint green-gray background, green as the only brand hue).
+ *
+ * Imported by the React app (src/web/styles.css, bundled by Vite) and by the no-JavaScript fallback
+ * pages (public/assets/auth.css, served as-is). The chart palette (components/chartStyle.tsx) reads the
+ * --chart-* values at runtime, so charts follow the same tokens and the light / dark scheme.
+ *
+ * Text colours: --positive / --negative / --warning are for fills, borders, icons and chart marks; the
+ * matching *-text tokens are the AA-contrast (≥ 4.5:1 on --surface and --bg) versions for text.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Colour */
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --surface-muted: #eaf1ec;
+  --border: #dce6df;
+  --border-strong: #7e9587; /* inputs and switch tracks: 3:1 against --surface */
+  --text: #1c2b22;
+  --text-muted: #5e7266;
+  --primary: #2f7d5b;
+  --primary-hover: #276a4d;
+  --primary-subtle: #e3f1ea;
+  --on-primary: #ffffff;
+  /* Primary-coloured text on --primary-subtle / --surface-muted fills (the nav, secondary buttons). */
+  --on-primary-subtle: #276a4d;
+  --positive: #1f9d55;
+  --positive-text: #177a42;
+  --positive-subtle: #e3f4ea;
+  --negative: #d2555a;
+  --negative-text: #b83f45;
+  --negative-subtle: #fbecec;
+  --warning: #d99a2b;
+  --warning-text: #8a5a0b;
+  --warning-subtle: #fff6e5;
+  --backdrop: rgba(28, 43, 34, 0.35);
+  --skeleton: #e4ece6;
+  --skeleton-shine: #f1f6f2;
+  --tooltip-bg: #1c2b22;
+  --tooltip-text: #f4f7f5;
+  /* Always light: switch knobs and the TOTP QR code (scanners need a light quiet zone). */
+  --knob: #ffffff;
+  --qr-bg: #ffffff;
+  /* Live value change tints (~15 % opacity of --positive / --negative). */
+  --flash-up: rgba(31, 157, 85, 0.15);
+  --flash-down: rgba(210, 85, 90, 0.15);
+
+  /* Chart palette (read by components/chartStyle.tsx). Live = brand green, dry run = calm slate. */
+  --chart-live: #2f7d5b;
+  --chart-dry-run: #5f7a94;
+  --chart-positive: #1f9d55;
+  --chart-negative: #d2555a;
+  --chart-neutral: #8a9a90;
+  --chart-open: #d99a2b;
+  --chart-grid: rgba(28, 43, 34, 0.08);
+  --chart-axis: #5e7266;
+  --chart-text: #1c2b22;
+  --chart-tooltip-bg: #ffffff;
+  --chart-font-size: 12px;
+  /* Backtest runs (their own category, compared up to three at a time). */
+  --chart-backtest-1: #2f7d5b;
+  --chart-backtest-2: #b0741a;
+  --chart-backtest-3: #5f7a94;
+
+  /* Typography */
+  --font-sans:
+    'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-md: 1rem; /* 16, body */
+  --text-lg: 1.25rem; /* 20 */
+  --text-xl: 1.5rem; /* 24 */
+  --text-2xl: 2rem; /* 32 */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700; /* key figures only */
+  --leading-body: 1.5;
+  --leading-heading: 1.25;
+  --measure: 70ch; /* readable line length for running text */
+
+  /* Spacing */
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /* 32 */
+  --space-7: 3rem; /* 48 */
+
+  /* Sizing */
+  --control-height: 2.75rem; /* 44: buttons, inputs, tap targets */
+  --control-height-sm: 2.25rem; /* 36: compact buttons and chips, with a 44 px hit area */
+  --row-height: 3rem; /* 48: table rows */
+  --content-max: 76rem;
+
+  /* Radius */
+  --radius-sm: 8px; /* inputs, small buttons */
+  --radius-md: 12px; /* buttons, chips */
+  --radius-lg: 16px; /* cards */
+  --radius-xl: 20px; /* modals, sheets */
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(28, 43, 34, 0.06);
+  --shadow-md: 0 4px 16px rgba(28, 43, 34, 0.08);
+  --shadow-lg: 0 12px 32px rgba(28, 43, 34, 0.14);
+  --focus-ring: 0 0 0 3px rgba(47, 125, 91, 0.3);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --duration-flash: 600ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* The same calm palette at night: deep green-gray surfaces, lighter greens for contrast. */
+  :root {
+    --bg: #0f1712;
+    --surface: #17211b;
+    --surface-muted: #1e2b23;
+    --border: #2a3a30;
+    --border-strong: #647a6c;
+    --text: #e4ede7;
+    --text-muted: #9db2a5;
+    --primary: #5dbb8f;
+    --primary-hover: #74c99f;
+    --primary-subtle: #1d3328;
+    --on-primary: #0c1a12;
+    --on-primary-subtle: #7fd0a8;
+    --positive: #4cc784;
+    --positive-text: #5fd293;
+    --positive-subtle: #173222;
+    --negative: #f08a8e;
+    --negative-text: #f59a9e;
+    --negative-subtle: #3a1e20;
+    --warning: #e8b04f;
+    --warning-text: #eebd66;
+    --warning-subtle: #33280f;
+    --backdrop: rgba(4, 10, 6, 0.6);
+    --skeleton: #223029;
+    --skeleton-shine: #2b3b32;
+    --tooltip-bg: #e4ede7;
+    --tooltip-text: #0f1712;
+    --flash-up: rgba(76, 199, 132, 0.18);
+    --flash-down: rgba(240, 138, 142, 0.18);
+
+    --chart-live: #5dbb8f;
+    --chart-dry-run: #8ba3bd;
+    --chart-positive: #4cc784;
+    --chart-negative: #f08a8e;
+    --chart-neutral: #8a9a90;
+    --chart-open: #e8b04f;
+    --chart-grid: rgba(228, 237, 231, 0.1);
+    --chart-axis: #9db2a5;
+    --chart-text: #e4ede7;
+    --chart-tooltip-bg: #1e2b23;
+    --chart-backtest-1: #5dbb8f;
+    --chart-backtest-2: #e8b04f;
+    --chart-backtest-3: #8ba3bd;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+    --focus-ring: 0 0 0 3px rgba(93, 187, 143, 0.4);
+  }
+}

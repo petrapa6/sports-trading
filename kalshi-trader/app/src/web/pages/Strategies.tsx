@@ -26,6 +26,8 @@ import { downloadCsv, toCsv } from '../csv';
 import { MODE_HELP, RULE_HELP } from '../help';
 import { useStepUp } from '../reauth';
 import { navigate } from '../router';
+import { NUMERIC, cellClass } from '../table';
+import { SkeletonTable } from '../components/Skeleton';
 
 // ---- badges and small helpers --------------------------------------------------------------------
 
@@ -593,7 +595,7 @@ function EditorForm({
           </p>
         )}
         <div className="actions">
-          <button type="submit" disabled={busy}>
+          <button type="submit" disabled={busy} aria-busy={busy}>
             {isNew ? 'Create strategy' : 'Save'}
           </button>
           {isNew ? (
@@ -767,6 +769,7 @@ export function StrategiesPage() {
       column.accessor((s) => s.last30d.live.trades + s.last30d.dry_run.trades, {
         id: 'trades30d',
         header: 'Trades 30d (Live | Dry run)',
+        ...NUMERIC,
         cell: (c) => (
           <PerMode live={c.row.original.last30d.live.trades} dry={c.row.original.last30d.dry_run.trades} />
         ),
@@ -774,6 +777,7 @@ export function StrategiesPage() {
       column.display({
         id: 'pnl30d',
         header: 'P&L 30d (Live | Dry run)',
+        ...NUMERIC,
         cell: (c) => (
           <PerMode
             live={formatUsd(c.row.original.last30d.live.pnlMicros)}
@@ -893,7 +897,7 @@ export function StrategiesPage() {
           </p>
         )}
         {!list.data ? (
-          <p className="muted">Loading…</p>
+          <SkeletonTable label="Loading strategies…" />
         ) : rows.length === 0 ? (
           <p className="muted" data-testid="no-strategies">
             No strategies yet.
@@ -907,6 +911,7 @@ export function StrategiesPage() {
                     {hg.headers.map((h) => (
                       <th
                         key={h.id}
+                        className={cellClass(h.column.columnDef.meta)}
                         aria-sort={
                           h.column.getIsSorted() === 'asc'
                             ? 'ascending'
@@ -939,7 +944,11 @@ export function StrategiesPage() {
                 {table.getRowModel().rows.map((r) => (
                   <tr key={r.id} data-testid={`strategy-row-${r.original.id}`}>
                     {r.getVisibleCells().map((c) => (
-                      <td key={c.id} data-label={String(c.column.columnDef.header)}>
+                      <td
+                        key={c.id}
+                        className={cellClass(c.column.columnDef.meta)}
+                        data-label={String(c.column.columnDef.header)}
+                      >
                         {flexRender(c.column.columnDef.cell, c.getContext())}
                       </td>
                     ))}
