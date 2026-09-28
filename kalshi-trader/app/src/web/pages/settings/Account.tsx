@@ -78,7 +78,7 @@ function ChangePassword() {
         value={repeat}
         onChange={(e) => setRepeat(e.target.value)}
       />
-      <button type="submit" disabled={busy}>
+      <button type="submit" disabled={busy} aria-busy={busy}>
         Change password
       </button>
       {error && (
@@ -161,7 +161,7 @@ function TwoFactor() {
         )}
       </p>
       {!me.data.totpEnabled && !enrolment && (
-        <button type="button" onClick={() => void start()}>
+        <button type="button" className="secondary" onClick={() => void start()}>
           Set up two-factor
         </button>
       )}

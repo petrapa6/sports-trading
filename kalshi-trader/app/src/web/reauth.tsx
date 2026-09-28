@@ -99,7 +99,7 @@ export function ReauthProvider({ children }: { children: ReactNode }) {
               <button type="button" className="secondary" onClick={() => close(false)}>
                 Cancel
               </button>
-              <button type="submit" disabled={busy}>
+              <button type="submit" disabled={busy} aria-busy={busy}>
                 Confirm
               </button>
             </div>

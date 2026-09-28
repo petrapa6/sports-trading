@@ -27,6 +27,8 @@ import { formatContracts, formatPrice, formatUsd, formatUsdExact } from '../form
 import { METRIC_HELP, RULE_HELP, SKIP_REASON_HELP, SKIP_REASONS_HELP } from '../help';
 import { useLive } from '../live';
 import { Link, navigate, useLocation } from '../router';
+import { NUMERIC, cellClass } from '../table';
+import { SkeletonLines } from '../components/Skeleton';
 
 /**
  * Backtest page (SPEC.md §8, §9): a form (league, seasons, strategy version or ad-hoc parameters, initial
@@ -412,7 +414,7 @@ function BacktestForm({ onStarted }: { onStarted: (id: string) => void }) {
         </p>
       )}
       <div className="actions">
-        <button type="submit" disabled={busy || !league}>
+        <button type="submit" disabled={busy || !league} aria-busy={busy}>
           Run backtest
         </button>
       </div>
@@ -562,27 +564,32 @@ function TradesTable({ run }: { run: BacktestDetail }) {
       column.accessor('playedAt', { header: 'Date', cell: (c) => (c.getValue() ?? dash).slice(0, 10) }),
       column.accessor((r) => `${r.home ?? '?'} – ${r.away ?? '?'}`, { id: 'game', header: 'Game' }),
       column.accessor('final', { header: 'Final', cell: (c) => c.getValue() ?? dash }),
-      column.accessor('minute', { header: 'Minute', cell: (c) => c.getValue() ?? dash }),
+      column.accessor('minute', { header: 'Minute', ...NUMERIC, cell: (c) => c.getValue() ?? dash }),
       column.accessor('side', { header: 'Side', cell: (c) => c.getValue() ?? dash }),
       column.accessor('priceSource', { header: 'Price source', cell: (c) => c.getValue() ?? dash }),
       column.accessor('priceBp', {
         header: 'Price',
+        ...NUMERIC,
         cell: (c) => (c.getValue() === null ? dash : formatPrice(c.getValue() ?? 0)),
       }),
       column.accessor('contractsCc', {
         header: 'Contracts',
+        ...NUMERIC,
         cell: (c) => (c.getValue() === null ? dash : formatContracts(c.getValue() ?? 0)),
       }),
       column.accessor('feeMicros', {
         header: 'Fee',
+        ...NUMERIC,
         cell: (c) => (c.getValue() === null ? dash : formatUsdExact(c.getValue() ?? 0)),
       }),
       column.accessor('settlementValueBp', {
         header: 'Settled',
+        ...NUMERIC,
         cell: (c) => (c.getValue() === null ? dash : formatPrice(c.getValue() ?? 0)),
       }),
       column.accessor('pnlMicros', {
         header: 'P&L',
+        ...NUMERIC,
         cell: (c) => {
           const v = c.getValue();
           return v === null ? dash : <span className={v < 0 ? 'neg' : undefined}>{formatUsdExact(v)}</span>;
@@ -590,6 +597,7 @@ function TradesTable({ run }: { run: BacktestDetail }) {
       }),
       column.accessor('bankrollAfterMicros', {
         header: 'Bankroll',
+        ...NUMERIC,
         cell: (c) => (c.getValue() === null ? dash : formatUsd(c.getValue() ?? 0)),
       }),
       column.accessor('skipReason', {
@@ -663,6 +671,7 @@ function TradesTable({ run }: { run: BacktestDetail }) {
                   {hg.headers.map((h) => (
                     <th
                       key={h.id}
+                      className={cellClass(h.column.columnDef.meta)}
                       aria-sort={
                         h.column.getIsSorted() === 'asc'
                           ? 'ascending'
@@ -695,7 +704,9 @@ function TradesTable({ run }: { run: BacktestDetail }) {
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                    <td key={cell.id} className={cellClass(cell.column.columnDef.meta)}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
                   ))}
                 </tr>
               ))}
@@ -756,7 +767,12 @@ function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   }, [progress, queryClient]);
   useEffect(() => setName(run?.name ?? ''), [run?.name]);
 
-  if (detail.isPending) return <section className="card muted">Loading the backtest…</section>;
+  if (detail.isPending)
+    return (
+      <section className="card">
+        <SkeletonLines lines={4} label="Loading the backtest…" />
+      </section>
+    );
   if (!run) return <section className="card muted">This backtest no longer exists.</section>;
 
   const act = async (fn: () => Promise<string>) => {
@@ -781,6 +797,8 @@ function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
       return `Strategy "${s.name}" created (kill switch on, dry run).`;
     });
   const remove = async () => {
+    if (!window.confirm(`Delete this backtest${run.name ? ` ("${run.name}")` : ''}? This cannot be undone.`))
+      return;
     try {
       await api.post(`api/backtests/${id}/delete`);
       await queryClient.invalidateQueries({ queryKey: ['backtests'] });
@@ -847,7 +865,12 @@ function RunView({ id, onDeleted }: { id: string; onDeleted: () => void }) {
           />
         </div>
         <div className="actions">
-          <button type="button" onClick={() => void save()} disabled={run.status !== 'done'}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => void save()}
+            disabled={run.status !== 'done'}
+          >
             {run.saved ? 'Save name' : 'Save backtest'}
           </button>
           <button
@@ -962,11 +985,11 @@ function Comparison({ ids }: { ids: string[] }) {
           <thead>
             <tr>
               <th>Backtest</th>
-              <th>Trades</th>
-              <th>Win rate</th>
-              <th>Net P&amp;L</th>
-              <th>ROI</th>
-              <th>Max drawdown</th>
+              <th className="num">Trades</th>
+              <th className="num">Win rate</th>
+              <th className="num">Net P&amp;L</th>
+              <th className="num">ROI</th>
+              <th className="num">Max drawdown</th>
               <th>Prices</th>
             </tr>
           </thead>
@@ -974,11 +997,11 @@ function Comparison({ ids }: { ids: string[] }) {
             {runs.map((r) => (
               <tr key={r.id}>
                 <td>{r.name ?? r.id.slice(0, 8)}</td>
-                <td>{r.summary?.trades ?? dash}</td>
-                <td>{r.summary ? formatPct(r.summary.winRate) : dash}</td>
-                <td>{r.summary ? formatUsd(r.summary.netPnlMicros) : dash}</td>
-                <td>{r.summary ? formatPct(r.summary.roi) : dash}</td>
-                <td>{r.summary ? formatUsd(r.summary.maxDrawdownMicros) : dash}</td>
+                <td className="num">{r.summary?.trades ?? dash}</td>
+                <td className="num">{r.summary ? formatPct(r.summary.winRate) : dash}</td>
+                <td className="num">{r.summary ? formatUsd(r.summary.netPnlMicros) : dash}</td>
+                <td className="num">{r.summary ? formatPct(r.summary.roi) : dash}</td>
+                <td className="num">{r.summary ? formatUsd(r.summary.maxDrawdownMicros) : dash}</td>
                 <td>{r.priceMode}</td>
               </tr>
             ))}

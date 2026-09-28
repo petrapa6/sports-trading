@@ -77,7 +77,7 @@ export function SetupPage() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy} aria-busy={busy}>
           Create user
         </button>
         {error && (

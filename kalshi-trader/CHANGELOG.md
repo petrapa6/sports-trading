@@ -2,6 +2,14 @@
 
 All notable changes to the Kalshi Sports Trader app. Versions follow `config.yaml` / `package.json`.
 
+## Unreleased
+
+- **Web UI redesign ("Soft Calm"):** white rounded cards on a faint green-gray background, sage green as the only
+  brand hue, Plus Jakarta Sans (bundled, no external requests), 44 px tap targets, a green focus ring, loading
+  skeletons, spinners on submit buttons, a brief tint when a live value changes, softer charts in the same palette,
+  and matching light and dark schemes. All colours, sizes, radii, shadows and timings come from one token file
+  (`app/public/assets/tokens.css`). Deleting a saved backtest now asks for confirmation.
+
 ## 0.0.1 — 2026-09-27
 
 Initial release.

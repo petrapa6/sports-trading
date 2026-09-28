@@ -27,7 +27,15 @@ import {
 import { SKIP_REASONS_HELP } from '../help';
 import { TitleTip } from './InfoTip';
 import type { Mode } from './ModeBadge';
-import { barFill, ChartDefs, lineStyle, MODE_LABEL, useChartPalette, type ChartPalette } from './chartStyle';
+import {
+  axisProps,
+  barFill,
+  ChartDefs,
+  legendProps,
+  lineStyle,
+  MODE_LABEL,
+  useChartPalette,
+} from './chartStyle';
 import { formatPrice, formatUsd } from '../format';
 import { modesOf, type StatsResponse } from '../stats';
 
@@ -125,7 +133,9 @@ function ChartCard({
       </div>
       {note && <p className="muted chart-caption">{note}</p>}
       {loading ? (
-        <p className="muted chart-empty">Loading…</p>
+        <div className="chart-empty skeleton" role="status" aria-busy="true">
+          <span className="visually-hidden">Loading…</span>
+        </div>
       ) : failed ? (
         <p className="muted chart-empty">Could not load the data.</p>
       ) : empty ? (
@@ -142,14 +152,6 @@ function ChartCard({
     </section>
   );
 }
-
-const axisProps = (p: ChartPalette) => ({
-  stroke: p.axis,
-  tick: { fill: p.axis, fontSize: 11 },
-  tickLine: { stroke: p.axis },
-});
-
-const legendProps = { wrapperStyle: { fontSize: 12 } };
 
 /** Merges point series into one row per x (for shared tooltips); `key` becomes the row field. */
 function mergeByX(series: { key: string; points: { x: number; y: number }[] }[]): Record<string, number>[] {
@@ -261,7 +263,7 @@ export function EquityChart(props: ChartProps) {
           {...axisProps(palette)}
         />
         <Tooltip content={<ChartTooltip formatLabel={(l) => dateTime(Number(l))} formatValue={usd} />} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {series.map((s) => (
           <Line
             key={s.key}
@@ -324,7 +326,7 @@ export function DailyPnlChart(props: ChartProps) {
         <YAxis tickFormatter={usd} width={72} {...axisProps(palette)} />
         <ReferenceLine y={0} stroke={palette.axis} />
         <Tooltip content={<ChartTooltip formatLabel={(l) => String(l)} formatValue={usd} />} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {bars.map((b) => (
           <Bar
             key={b.key}
@@ -385,7 +387,7 @@ export function DrawdownChart(props: ChartProps) {
         />
         <YAxis tickFormatter={usd} width={72} {...axisProps(palette)} />
         <Tooltip content={<ChartTooltip formatLabel={(l) => dateTime(Number(l))} formatValue={usd} />} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {series.map((s) => (
           <Area
             key={s.key}
@@ -468,7 +470,7 @@ export function ImpliedVsActualChart(props: ChartProps) {
             );
           }}
         />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {series.map((s) => (
           <Scatter
             key={s.mode}
@@ -530,7 +532,7 @@ export function PriceHistogramChart(props: ChartProps) {
             />
           }
         />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {modes.map((mode) => (
           <Bar
             key={mode}
@@ -580,7 +582,7 @@ export function TradesPerMinuteChart(props: ChartProps) {
         <XAxis dataKey="minute" tickFormatter={(m: number) => `${m}'`} {...axisProps(palette)} />
         <YAxis allowDecimals={false} width={40} {...axisProps(palette)} />
         <Tooltip content={<ChartTooltip formatLabel={(l) => `Minute ${String(l)}`} formatValue={count} />} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {modes.flatMap((mode) =>
           OUTCOMES.map((o) => (
             <Bar
@@ -659,7 +661,7 @@ export function SkipReasonsChart(props: ChartProps) {
         <XAxis type="number" allowDecimals={false} {...axisProps(palette)} />
         <YAxis type="category" dataKey="reason" width={96} {...axisProps(palette)} />
         <Tooltip content={<ChartTooltip formatLabel={(l) => String(l)} formatValue={count} />} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {modes.map((mode) => (
           <Bar
             key={mode}
@@ -722,7 +724,7 @@ export function BalanceHistoryChart(props: ChartProps) {
         />
         <YAxis tickFormatter={usd} width={80} domain={['auto', 'auto']} {...axisProps(palette)} />
         <Tooltip content={<ChartTooltip formatLabel={(l) => dateTime(Number(l))} formatValue={usd} />} />
-        <Legend {...legendProps} />
+        <Legend {...legendProps(palette)} />
         {series.map((s) => (
           <Line
             key={s.key}

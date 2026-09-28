@@ -1,10 +1,11 @@
 /**
  * Shared chart style tokens (SPEC.md §8): every Recharts chart draws live series solid and dry-run
- * series dashed (lines) or hatched (bars), and its legend says "Live" or "Dry run". The palette follows
- * the colour scheme (light / dark); charts take it from `useChartPalette()` and put `<ChartDefs />`
- * (the hatch patterns) inside the chart.
+ * series dashed (lines) or hatched (bars), and its legend says "Live" or "Dry run". The palette is read
+ * from the design tokens (the `--chart-*` CSS variables in public/assets/tokens.css), so it follows the
+ * colour scheme (light / dark); charts take it from `useChartPalette()` and put `<ChartDefs />` (the hatch
+ * patterns) inside the chart.
  */
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import type { Mode } from './ModeBadge';
 
 export interface ChartPalette {
@@ -21,33 +22,12 @@ export interface ChartPalette {
   axis: string;
   /** Tooltip / reference line text. */
   text: string;
+  tooltipBg: string;
+  /** One colour per compared backtest run (Backtest page only). */
+  backtest: readonly string[];
+  /** Tick and legend text size in px. */
+  fontSize: number;
 }
-
-export const LIGHT_PALETTE: ChartPalette = {
-  scheme: 'light',
-  live: '#2563eb',
-  dryRun: '#8b5cf6',
-  positive: '#16a34a',
-  negative: '#dc2626',
-  neutral: '#6b7280',
-  open: '#d97706',
-  grid: 'rgba(127, 127, 127, 0.25)',
-  axis: '#5f6673',
-  text: '#16181d',
-};
-
-export const DARK_PALETTE: ChartPalette = {
-  scheme: 'dark',
-  live: '#60a5fa',
-  dryRun: '#c4b5fd',
-  positive: '#4ade80',
-  negative: '#f87171',
-  neutral: '#9ca3af',
-  open: '#fbbf24',
-  grid: 'rgba(160, 160, 160, 0.2)',
-  axis: '#9aa2b1',
-  text: '#e7e9ee',
-};
 
 /** Legend / tooltip name of each mode; every series name starts with one of these. */
 export const MODE_LABEL: Record<Mode, string> = { live: 'Live', dry_run: 'Dry run' };
@@ -63,11 +43,50 @@ function subscribeScheme(onChange: () => void): () => void {
 
 const isDark = () => typeof window !== 'undefined' && !!window.matchMedia?.(DARK_QUERY).matches;
 
+/** The chart palette from the current values of the design tokens. */
+export function readChartPalette(scheme: ChartPalette['scheme']): ChartPalette {
+  const style = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
+  // Outside a browser (server rendering, unit tests) the marks fall back to the text colour.
+  const token = (name: string) => style?.getPropertyValue(`--chart-${name}`).trim() || 'currentColor';
+  return {
+    scheme,
+    live: token('live'),
+    dryRun: token('dry-run'),
+    positive: token('positive'),
+    negative: token('negative'),
+    neutral: token('neutral'),
+    open: token('open'),
+    grid: token('grid'),
+    axis: token('axis'),
+    text: token('text'),
+    tooltipBg: token('tooltip-bg'),
+    backtest: [token('backtest-1'), token('backtest-2'), token('backtest-3')],
+    fontSize: Number.parseFloat(token('font-size')) || 12,
+  };
+}
+
 /** The palette for the current colour scheme; re-renders when the scheme changes. */
 export function useChartPalette(): ChartPalette {
   const dark = useSyncExternalStore(subscribeScheme, isDark, () => false);
-  return dark ? DARK_PALETTE : LIGHT_PALETTE;
+  return useMemo(() => readChartPalette(dark ? 'dark' : 'light'), [dark]);
 }
+
+/** Axis props: a quiet axis line, readable tick labels. */
+export const axisProps = (p: ChartPalette) => ({
+  stroke: p.grid,
+  tick: { fill: p.axis, fontSize: p.fontSize },
+  tickLine: { stroke: p.grid },
+});
+
+export const legendProps = (p: ChartPalette) => ({ wrapperStyle: { fontSize: p.fontSize } });
+
+/** Style of Recharts' default tooltip box. */
+export const tooltipContentStyle = (p: ChartPalette) => ({
+  background: p.tooltipBg,
+  border: 'none',
+  color: p.text,
+  fontSize: p.fontSize + 2,
+});
 
 /** Hatch pattern id for a palette colour key (dry-run bars). */
 export const hatchId = (key: HatchKey) => `kst-hatch-${key}`;
@@ -81,20 +100,20 @@ export function barFill(mode: Mode, key: HatchKey | 'live', palette: ChartPalett
 }
 
 /** Line/area props for a mode's series. */
-export const lineStyle = (mode: Mode, palette: ChartPalette = LIGHT_PALETTE) => ({
+export const lineStyle = (mode: Mode, palette: ChartPalette) => ({
   stroke: mode === 'live' ? palette.live : palette.dryRun,
   strokeWidth: 2,
   ...(mode === 'dry_run' ? { strokeDasharray: '6 4' } : {}),
 });
 
 /** Bar props for a mode's series. */
-export const barStyle = (mode: Mode, palette: ChartPalette = LIGHT_PALETTE) => ({
+export const barStyle = (mode: Mode, palette: ChartPalette) => ({
   stroke: mode === 'live' ? palette.live : palette.dryRun,
   fill: barFill(mode, 'live', palette),
 });
 
 /** SVG definitions every chart with dry-run bars includes (one diagonal hatch per colour). */
-export function ChartDefs({ palette = LIGHT_PALETTE }: { palette?: ChartPalette }) {
+export function ChartDefs({ palette }: { palette: ChartPalette }) {
   return (
     <defs>
       {HATCH_KEYS.map((key) => (
